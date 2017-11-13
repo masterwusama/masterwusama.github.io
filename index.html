@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="../build/react.js"></script>
-    <script src="../build/react-dom.js"></script>
-    <script src="../build/browser.min.js"></script>
+    <script src="build/react.js"></script>
+    <script src="build/react-dom.js"></script>
+    <script src="build/browser.min.js"></script>
   </head>
 <body>
 <style>
@@ -92,7 +92,7 @@ class Prompt extends Component{
 			<ul>
 				{content.map((val,i)=>{
 					return (
-						<li key={i}><input onClick={this.props.clickButton.bind(this)} value={val.name} onChange={this.ULiClick.bind(this)}></input></li>
+						<li key={i}><input onClick={this.props.clickButton.bind(this)} value={val.name} onChange={this.selectPrompt.bind(this)}></input></li>
 						)
 				})}
 			</ul>
