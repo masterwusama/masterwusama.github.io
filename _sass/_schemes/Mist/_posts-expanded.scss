@@ -52,7 +52,7 @@
     color: $grey-dim;
     background: none;
     border: none;
-    border-bottom: 2px solid $grey-dim;
+    /*border-bottom: 2px solid $grey-dim;*/
     transition-property: border;
 
     @include mobile() { font-size: $font-size-small; }
