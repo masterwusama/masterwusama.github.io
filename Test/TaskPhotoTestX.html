@@ -11,10 +11,10 @@
                 var file = document.querySelector("#selector").files;
                 var reader;
                 for (var i = 0; i < file.length;i++){
-                    reader = new FileReader(); //æ–°å»ºFileReaderå¯¹è±¡
+                    reader = new FileReader(); //ÐÂ½¨FileReader¶ÔÏó
                     var filesizeM = file[i].size / 1024 / 1024;
                     if (filesizeM > 5) {
-                        alert("è¯·ä¸Šä¼ 5Mä»¥ä¸‹çš„æ–‡ä»¶");
+                        alert("ÇëÉÏ´«5MÒÔÏÂµÄÎÄ¼þ");
                         flag = "1";
                         return false;
                     }
@@ -40,8 +40,8 @@
     <form id="form1" runat="server">
         <div>
             <video id="myVideo" autoplay="autoplay"></video> 
-            <br /><input type="file" value="æ‹ç…§" multiple="multiple" accept="image/*" /><br />
-			å›¾ç‰‡æ˜¾ç¤º
+            <br /><input type="file" value="ÅÄÕÕ" multiple="multiple" accept="image/*" capture="camera"/><br />
+			Í¼Æ¬ÏÔÊ¾
             <div id="result"></div>
         </div>
     </form>
