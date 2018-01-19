@@ -1,0 +1,30 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title></title>
+    <script src="https://cdn.bootcss.com/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript">
+ 
+        function shoot() {
+            var video = $("#myVideo")[0];
+            var canvas = capture(video);
+            $("#result").empty();
+            $("#result").append(canvas); 
+            var imgData = canvas.toDataURL("image/jpg");
+            var base64String = imgData.substr(22); 
+            alert(base64String);
+        }
+
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div>
+            <video id="myVideo" autoplay="autoplay"></video> 
+            <br /><input type="file" value="拍照" multiple="multiple" accept="image/*" capture="camera"/><br />
+			图片显示
+            <div id="result"></div>
+        </div>
+    </form>
+</body>
+</html>
