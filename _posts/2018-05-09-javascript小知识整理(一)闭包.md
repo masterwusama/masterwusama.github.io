@@ -11,7 +11,7 @@ description: js闭包
 
 [来源2](http://www.ruanyifeng.com/blog/2010/04/using_this_keyword_in_javascript.html)
 
-### 从外部读取局部变量
+## 从外部读取局部变量
 
 ```javascript
 function f1(){
@@ -73,7 +73,7 @@ result(); // 1000
 
 this指 :调用函数的那个对象
 
-- 最简单的函数内部调用
+-  最简单的函数内部调用
 
 ```javascript
 var x = 1;
@@ -87,7 +87,7 @@ alert(x); //0
 
 通常用法 属于全局调用 此时this代表全局对象Global
 
-- 作为对象方法的调用
+-  作为对象方法的调用
 
 ```javascript
 function test(){
@@ -101,7 +101,7 @@ o.m(); // 1
 
 此时this代表上级对象
 
-- 作为构造函数调用
+-  作为构造函数调用
 
 ```javascript
 function test(){
