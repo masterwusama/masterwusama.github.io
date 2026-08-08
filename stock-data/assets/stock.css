@@ -165,6 +165,84 @@
   color: #fff;
 }
 
+/* ---- 年度财务对比 ---- */
+.stock-compare-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.stock-compare-pick select {
+  padding: 4px 8px;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  background: #fff;
+}
+
+.stock-compare-wrap {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+.stock-compare {
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+  min-width: 560px;
+}
+
+.stock-compare th,
+.stock-compare td {
+  border: 1px solid #eee;
+  padding: 6px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 首列（指标名）横向滚动时固定 */
+.stock-compare th:first-child,
+.stock-compare td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.stock-compare thead th {
+  background: #f7f8fa;
+  font-weight: 600;
+}
+
+.stock-compare th.cmp-hl,
+.stock-compare td.cmp-hl {
+  background: #eef4ff;
+}
+
+.stock-compare tr.cmp-group td {
+  background: #f2f4f7;
+  font-weight: 600;
+  text-align: left;
+}
+
+.stock-compare tr.cmp-group td:first-child {
+  background: #f2f4f7;
+}
+
+.stock-compare .cmp-up {
+  color: #d63031;
+  font-weight: 600;
+}
+
+.stock-compare .cmp-down {
+  color: #00a854;
+  font-weight: 600;
+}
+
 /* ---- 估值快照 ---- */
 .stock-snapshot {
   display: grid;

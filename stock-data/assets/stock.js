@@ -156,6 +156,16 @@
       '<div class="stock-chart-block"><h4 id="stock-chart-roe-title">净资产收益率（各期累计）</h4><div class="stock-chart" id="stock-chart-roe"></div></div>' +
       '<p class="stock-chart-note" id="stock-chart-note">季度口径：单季值 = 本期累计 - 上期累计（一季报为当季值）；ROE 为报告期累计值</p></div>';
 
+    // 年度财务对比（年报口径，可任意选两个年份对比）
+    html += '<div class="stock-section"><div class="stock-section-head">' +
+      '<h3>年度财务对比</h3>' +
+      '<div class="stock-compare-pick">' +
+      '<select id="stock-compare-a"></select>' +
+      '<span>对比</span>' +
+      '<select id="stock-compare-b"></select>' +
+      '</div></div>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare" id="stock-compare-body"></table></div></div>';
+
     // 三大报表
     html += '<div class="stock-section"><h3>财务报表</h3>' +
       '<div class="stock-tabs">' +
@@ -195,7 +205,9 @@
 
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
+    bindComparePicks();
     renderCharts(d.indicators || []);
+    renderCompare(d.indicators || []);
     initSheet(d);
   }
 
@@ -323,6 +335,121 @@
         if (state.current) renderCharts(state.current.indicators || []);
       });
     });
+  }
+
+  /* ---------------- 年度财务对比 ---------------- */
+
+  // 年报对比指标配置（type: amount=亿元相对变化, pct=百分点差, ratio/yuan=绝对差, days=天数差）
+  var ANNUAL_METRICS = [
+    { group: '规模与成长', key: '营业总收入', label: '营业总收入', type: 'amount' },
+    { group: '规模与成长', key: '净利润', label: '净利润', type: 'amount' },
+    { group: '规模与成长', key: '扣非净利润', label: '扣非净利润', type: 'amount' },
+    { group: '盈利能力', key: '销售毛利率', label: '销售毛利率', type: 'pct' },
+    { group: '盈利能力', key: '销售净利率', label: '销售净利率', type: 'pct' },
+    { group: '盈利能力', key: '净资产收益率', label: '净资产收益率', type: 'pct' },
+    { group: '盈利能力', key: '净资产收益率-摊薄', label: '净资产收益率(摊薄)', type: 'pct' },
+    { group: '偿债能力', key: '资产负债率', label: '资产负债率', type: 'pct' },
+    { group: '偿债能力', key: '产权比率', label: '产权比率', type: 'ratio' },
+    { group: '偿债能力', key: '流动比率', label: '流动比率', type: 'ratio' },
+    { group: '偿债能力', key: '速动比率', label: '速动比率', type: 'ratio' },
+    { group: '偿债能力', key: '保守速动比率', label: '保守速动比率', type: 'ratio' },
+    { group: '每股与营运', key: '基本每股收益', label: '基本每股收益', type: 'yuan' },
+    { group: '每股与营运', key: '每股净资产', label: '每股净资产', type: 'yuan' },
+    { group: '每股与营运', key: '每股经营现金流', label: '每股经营现金流', type: 'yuan' },
+    { group: '每股与营运', key: '存货周转天数', label: '存货周转天数', type: 'days' },
+    { group: '每股与营运', key: '应收账款周转天数', label: '应收账款周转天数', type: 'days' },
+    { group: '每股与营运', key: '营业周期', label: '营业周期', type: 'days' }
+  ];
+
+  function bindComparePicks() {
+    var selA = $('stock-compare-a');
+    var selB = $('stock-compare-b');
+    if (!selA || !selB) return;
+    var refresh = function () {
+      if (selA.value && selA.value === selB.value) return; // 两选同一年时忽略
+      if (state.current) renderCompare(state.current.indicators || []);
+    };
+    selA.onchange = refresh;
+    selB.onchange = refresh;
+  }
+
+  function renderCompare(indicators) {
+    var rows = (indicators || []).filter(function (r) {
+      return String(r['报告期']).indexOf('12-31') >= 0;
+    }).slice().reverse(); // 升序：2021 -> 2025
+    if (!rows.length) return;
+    var selA = $('stock-compare-a');
+    var selB = $('stock-compare-b');
+    if (!selA || !selB) return;
+    var years = rows.map(function (r) { return String(r['报告期']).slice(0, 4); });
+
+    // 首次填充年份下拉，默认最新年报 vs 上年
+    if (!selA.options.length) {
+      years.forEach(function (y) { selA.add(new Option(y, y)); selB.add(new Option(y, y)); });
+      selA.value = years[years.length - 1];
+      selB.value = years.length > 1 ? years[years.length - 2] : years[0];
+    }
+    var a = selA.value, b = selB.value;
+    var ia = years.indexOf(a), ib = years.indexOf(b);
+    var rowA = ia >= 0 ? rows[ia] : null;
+    var rowB = ib >= 0 ? rows[ib] : null;
+
+    var html = '<thead><tr><th>指标</th>';
+    years.forEach(function (y) {
+      html += '<th' + (y === a ? ' class="cmp-hl"' : '') + '>' + y + '</th>';
+    });
+    html += '<th>' + a + ' vs ' + b + '</th></tr></thead><tbody>';
+
+    var curGroup = null;
+    ANNUAL_METRICS.forEach(function (m) {
+      if (m.group !== curGroup) {
+        curGroup = m.group;
+        html += '<tr class="cmp-group"><td colspan="' + (years.length + 2) + '">' + m.group + '</td></tr>';
+      }
+      html += '<tr><td>' + m.label + '</td>';
+      rows.forEach(function (r) {
+        html += '<td' + (String(r['报告期']).slice(0, 4) === a ? ' class="cmp-hl"' : '') + '>' +
+          fmtMetric(r[m.key], m) + '</td>';
+      });
+      html += '<td>' + fmtChange(rowA, rowB, m) + '</td></tr>';
+    });
+    html += '</tbody>';
+
+    $('stock-compare-body').innerHTML = html;
+  }
+
+  function fmtMetric(v, m) {
+    if (v == null) return '-';
+    if (m.type === 'amount') return (v / 1e8).toFixed(1) + '亿';
+    if (m.type === 'pct') return (v * 100).toFixed(1) + '%';
+    if (m.type === 'days') return (+v).toFixed(1) + '天';
+    return (+v).toFixed(2); // ratio / yuan
+  }
+
+  // 变化列：A 相对 B（红涨绿跌；比率用 pp，倍数/每股/天数用绝对差）
+  function fmtChange(ra, rb, m) {
+    var va = ra ? ra[m.key] : null;
+    var vb = rb ? rb[m.key] : null;
+    if (va == null || vb == null || vb === 0) return '-';
+    var d, cls, txt;
+    if (m.type === 'amount') {
+      d = (va - vb) / Math.abs(vb) * 100;
+      txt = (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+    } else if (m.type === 'pct') {
+      d = (va - vb) * 100;
+      txt = (d >= 0 ? '+' : '') + d.toFixed(1) + 'pp';
+    } else if (m.type === 'days') {
+      d = va - vb;
+      txt = (d >= 0 ? '+' : '') + d.toFixed(1) + '天';
+    } else if (m.type === 'yuan') {
+      d = va - vb;
+      txt = (d >= 0 ? '+' : '') + d.toFixed(2) + '元';
+    } else {
+      d = va - vb;
+      txt = (d >= 0 ? '+' : '') + d.toFixed(2);
+    }
+    cls = d >= 0 ? 'up' : 'down';
+    return '<span class="cmp-' + cls + '">' + txt + '</span>';
   }
 
   /* ---------------- 三大报表 ---------------- */
