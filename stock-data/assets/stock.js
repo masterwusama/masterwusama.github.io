@@ -7,7 +7,7 @@
   var DATA_BASE = './data/';
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = { companies: [], current: null, charts: [], view: 'quarter' };
+  var state = { companies: [], current: null, charts: [], view: 'year' };
 
   /* ---------------- 工具函数 ---------------- */
 
@@ -148,8 +148,8 @@
     html += '<div class="stock-section"><div class="stock-section-head">' +
       '<h3 id="stock-chart-title">关键指标趋势（近 ' + indCount + ' 期）</h3>' +
       '<div class="stock-view-toggle">' +
-      '<button data-view="quarter" class="active">季</button>' +
-      '<button data-view="year">年</button>' +
+      '<button data-view="quarter">季</button>' +
+      '<button data-view="year" class="active">年</button>' +
       '</div></div>' +
       '<div class="stock-chart-block"><h4 id="stock-chart-revenue-title">营业总收入 & 净利润（单季，亿元）</h4><div class="stock-chart" id="stock-chart-revenue"></div></div>' +
       '<div class="stock-chart-block"><h4 id="stock-chart-margin-title">销售毛利率 & 销售净利率（报告期口径）</h4><div class="stock-chart" id="stock-chart-margin"></div></div>' +
@@ -242,8 +242,8 @@
     $('stock-chart-margin-title').textContent = '销售毛利率 & 销售净利率（' + (isYear ? '年度' : '报告期') + '口径）';
     $('stock-chart-roe-title').textContent = '净资产收益率（' + (isYear ? '年度' : '各期累计') + '）';
     $('stock-chart-note').textContent = isYear
-      ? '年度口径：仅年报（12-31）数据；营收/净利为全年累计值'
-      : '季度口径：单季值 = 本期累计 - 上期累计（一季报为当季值）；ROE 为报告期累计值';
+      ? '年度口径：柱为全年累计值，折线为年度同比（右轴 %）'
+      : '季度口径：柱为单季值（本期累计 - 上期累计），折线为同比/环比（右轴 %，虚线=环比）；ROE 为报告期累计值';
 
     // 首次渲染创建实例，切换视图时复用并整体替换 option
     if (!state.charts.length) {
@@ -255,7 +255,7 @@
       };
     }
 
-    // 通用配置：图例 + 缩放条（数据点较多时可拖动）
+    // 通用配置：图例 + 缩放条 + 双 Y 轴（左=指标值，右=增长率 %）
     function baseOption(legendData, yName, yFormatter) {
       return {
         tooltip: {
@@ -263,12 +263,16 @@
           valueFormatter: function (v) { return v == null ? '-' : (yFormatter ? yFormatter(v) : v); }
         },
         legend: { data: legendData, top: 0 },
-        grid: { left: 60, right: 16, top: 34, bottom: 46 },
+        grid: { left: 60, right: 56, top: 34, bottom: 46 },
         xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11 } },
-        yAxis: {
-          type: 'value', name: yName,
-          axisLabel: { fontSize: 11, formatter: yFormatter }
-        },
+        yAxis: [
+          { type: 'value', name: yName, axisLabel: { fontSize: 11, formatter: yFormatter } },
+          {
+            type: 'value', name: '增长率',
+            axisLabel: { fontSize: 11, formatter: fmtPctAxis },
+            splitLine: { show: false }
+          }
+        ],
         dataZoom: [
           { type: 'inside', start: 0, end: 100 },
           { type: 'slider', height: 14, bottom: 6, start: 0, end: 100 }
@@ -301,12 +305,39 @@
 
     function fmtPctAxis(v) { return v + '%'; }
 
-    // 图 1：营业总收入 & 净利润（单季/全年）
-    var opt1 = baseOption(['营业总收入', '净利润'], '亿元');
+    // 增长率折线（右轴 %）：同比=隔 N 期，环比=隔 1 期；虚线为环比
+    function growthLine(name, field, color, step, dashed) {
+      return {
+        name: name, type: 'line', smooth: true, yAxisIndex: 1,
+        symbolSize: 4,
+        itemStyle: { color: color },
+        lineStyle: { color: color, width: 1.5, type: dashed ? 'dashed' : 'solid' },
+        data: data.map(function (r, i) {
+          if (i < step) return null;
+          var cur = r[field], prev = data[i - step][field];
+          if (cur == null || prev == null || prev === 0) return null;
+          return +((cur - prev) / Math.abs(prev) * 100).toFixed(1);
+        })
+      };
+    }
+
+    // 图 1：营业总收入 & 净利润（柱）+ 同比/环比增长率（折线，右轴 %）
+    var revKey = isYear ? '营业总收入' : '营业总收入_单季';
+    var netKey = isYear ? '净利润' : '净利润_单季';
+    var opt1Legend = isYear
+      ? ['营业总收入', '净利润', '营收同比', '净利同比']
+      : ['营业总收入', '净利润', '营收同比', '净利同比', '营收环比', '净利环比'];
+    var opt1 = baseOption(opt1Legend, '亿元');
     opt1.series = [
-      barYiSeries('营业总收入', isYear ? '营业总收入' : '营业总收入_单季', '#5b8ff9'),
-      barYiSeries('净利润', isYear ? '净利润' : '净利润_单季', '#61c0a8')
+      barYiSeries('营业总收入', revKey, '#5b8ff9'),
+      barYiSeries('净利润', netKey, '#61c0a8'),
+      growthLine('营收同比', revKey, '#5b8ff9', isYear ? 1 : 4, false),
+      growthLine('净利同比', netKey, '#61c0a8', isYear ? 1 : 4, false)
     ];
+    if (!isYear) {
+      opt1.series.push(growthLine('营收环比', revKey, '#5b8ff9', 1, true));
+      opt1.series.push(growthLine('净利环比', netKey, '#61c0a8', 1, true));
+    }
     state.charts[0].setOption(opt1, true);
 
     // 图 2：销售毛利率 & 销售净利率
