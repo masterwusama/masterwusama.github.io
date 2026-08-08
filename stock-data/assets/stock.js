@@ -136,6 +136,7 @@
       kv('市净率', fmtNum(s.pb)) +
       kv('总市值', fmtMoney(s.market_cap)) +
       kv('流通市值', fmtMoney(s.float_market_cap)) +
+      kv('近一年分红', recentDividends(d).length + ' 条') +
       '</div></div>';
 
     // 指标趋势图（按指标分 3 个独立图表；支持季/年视图切换）
@@ -168,24 +169,20 @@
       '<select id="stock-period"></select></div>' +
       '<table class="stock-table" id="stock-sheet-body"></table></div>';
 
-    // 近一年分红（替代原股息率估算；按派息日/公告日在最近一年内）
-    var divs = recentDividends(d);
-    html += '<div class="stock-section"><h3>近一年分红（' + divs.length + ' 条）</h3>';
-    if (divs.length) {
-      divs.forEach(function (r) {
-        var desc = r.description || '';
-        var extra = '';
-        if (r.pay_date) extra += '派息日 ' + fmtDate(r.pay_date);
-        html += '<div class="stock-list-item">' +
-          '<span class="d-year">' + (r.year || '-') + '</span>' +
-          '<span class="stock-badge">' + (r.type || '') + '</span>' +
-          '<span class="d-desc">' + desc + '</span>' +
-          (extra ? '<span class="d-date">' + extra + '</span>' : '') +
-          '</div>';
-      });
-    } else {
-      html += '<p class="stock-hint">近一年暂无分红记录</p>';
-    }
+    // 分红历史（全量）
+    var divs = d.dividends || [];
+    html += '<div class="stock-section"><h3>分红历史（' + divs.length + ' 条）</h3>';
+    divs.forEach(function (r) {
+      var desc = r.description || '';
+      var extra = '';
+      if (r.pay_date) extra += '派息日 ' + fmtDate(r.pay_date);
+      html += '<div class="stock-list-item">' +
+        '<span class="d-year">' + (r.year || '-') + '</span>' +
+        '<span class="stock-badge">' + (r.type || '') + '</span>' +
+        '<span class="d-desc">' + desc + '</span>' +
+        (extra ? '<span class="d-date">' + extra + '</span>' : '') +
+        '</div>';
+    });
     html += '</div>';
 
     // 定期报告
