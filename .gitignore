@@ -10,3 +10,7 @@ Thumbs.db
 .rvmrc
 
 *.lock
+
+# Python
+__pycache__/
+*.pyc

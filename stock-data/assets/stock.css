@@ -126,6 +126,45 @@
   margin: 18px 0 10px;
 }
 
+/* 图表标题行 + 季/年视图切换 */
+.stock-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stock-section-head h3 {
+  margin: 0;
+}
+
+.stock-view-toggle {
+  display: inline-flex;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stock-view-toggle button {
+  border: none;
+  background: #fff;
+  color: #5b8ff9;
+  padding: 4px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stock-view-toggle button + button {
+  border-left: 1px solid #dbe3ee;
+}
+
+.stock-view-toggle button.active {
+  background: #5b8ff9;
+  color: #fff;
+}
+
 /* ---- 估值快照 ---- */
 .stock-snapshot {
   display: grid;
@@ -160,6 +199,12 @@
 .stock-chart {
   width: 100%;
   height: 300px;
+}
+
+.stock-chart-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 /* ---- 报表 ---- */

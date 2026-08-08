@@ -7,7 +7,7 @@
   var DATA_BASE = './data/';
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = { companies: [], current: null, charts: [] };
+  var state = { companies: [], current: null, charts: [], view: 'quarter' };
 
   /* ---------------- 工具函数 ---------------- */
 
@@ -113,6 +113,9 @@
 
   function renderDetail(d) {
     state.current = d;
+    // 详情页 DOM 重建前释放旧图表实例
+    state.charts.forEach(function (c) { try { c.dispose(); } catch (e) {} });
+    state.charts = [];
     show('stock-detail');
     var s = d.snapshot || {};
     var yieldRate = calcYield(d);
@@ -140,12 +143,18 @@
       kv('股息率(估算)', fmtPct(yieldRate)) +
       '</div></div>';
 
-    // 指标趋势图（按指标分 3 个独立图表）
+    // 指标趋势图（按指标分 3 个独立图表；支持季/年视图切换）
     var indCount = (d.indicators || []).length;
-    html += '<div class="stock-section"><h3>关键指标趋势（近 ' + indCount + ' 期）</h3>' +
-      '<div class="stock-chart-block"><h4>营业总收入 & 净利润（亿元）</h4><div class="stock-chart" id="stock-chart-revenue"></div></div>' +
-      '<div class="stock-chart-block"><h4>销售毛利率 & 销售净利率</h4><div class="stock-chart" id="stock-chart-margin"></div></div>' +
-      '<div class="stock-chart-block"><h4>净资产收益率</h4><div class="stock-chart" id="stock-chart-roe"></div></div></div>';
+    html += '<div class="stock-section"><div class="stock-section-head">' +
+      '<h3 id="stock-chart-title">关键指标趋势（近 ' + indCount + ' 期）</h3>' +
+      '<div class="stock-view-toggle">' +
+      '<button data-view="quarter" class="active">季</button>' +
+      '<button data-view="year">年</button>' +
+      '</div></div>' +
+      '<div class="stock-chart-block"><h4 id="stock-chart-revenue-title">营业总收入 & 净利润（单季，亿元）</h4><div class="stock-chart" id="stock-chart-revenue"></div></div>' +
+      '<div class="stock-chart-block"><h4 id="stock-chart-margin-title">销售毛利率 & 销售净利率（报告期口径）</h4><div class="stock-chart" id="stock-chart-margin"></div></div>' +
+      '<div class="stock-chart-block"><h4 id="stock-chart-roe-title">净资产收益率（各期累计）</h4><div class="stock-chart" id="stock-chart-roe"></div></div>' +
+      '<p class="stock-chart-note" id="stock-chart-note">季度口径：单季值 = 本期累计 - 上期累计（一季报为当季值）；ROE 为报告期累计值</p></div>';
 
     // 三大报表
     html += '<div class="stock-section"><h3>财务报表</h3>' +
@@ -185,6 +194,7 @@
     html += '</div>';
 
     $('stock-detail-body').innerHTML = html;
+    bindViewToggle();
     renderCharts(d.indicators || []);
     initSheet(d);
   }
@@ -197,25 +207,43 @@
     return '<button data-sheet="' + key + '">' + label + '</button>';
   }
 
-  /* ---------------- 指标趋势图（3 个独立图表） ---------------- */
+  /* ---------------- 指标趋势图（3 个独立图表，支持季/年视图切换） ---------------- */
 
   function renderCharts(indicators) {
     if (typeof echarts === 'undefined') {
       $('stock-chart-revenue').innerHTML = '<p class="stock-hint">图表库加载失败（ECharts CDN 不可用）</p>';
       return;
     }
+    var isYear = state.view === 'year';
     var rows = indicators.slice().reverse(); // 升序排列
-    var dates = rows.map(function (r) { return fmtDate(r['报告期']); });
+    // 年视图仅保留年报（12-31）报告期
+    var data = isYear
+      ? rows.filter(function (r) { return String(r['报告期']).indexOf('12-31') >= 0; })
+      : rows;
+    var dates = data.map(function (r) { return fmtDate(r['报告期']); });
 
-    var charts = [];
+    // 标题与注释随视图切换
+    $('stock-chart-title').textContent = isYear
+      ? '关键指标趋势（年度口径）'
+      : '关键指标趋势（近 ' + indicators.length + ' 期）';
+    $('stock-chart-revenue-title').textContent = '营业总收入 & 净利润（' + (isYear ? '全年' : '单季') + '，亿元）';
+    $('stock-chart-margin-title').textContent = '销售毛利率 & 销售净利率（' + (isYear ? '年度' : '报告期') + '口径）';
+    $('stock-chart-roe-title').textContent = '净资产收益率（' + (isYear ? '年度' : '各期累计') + '）';
+    $('stock-chart-note').textContent = isYear
+      ? '年度口径：仅年报（12-31）数据；营收/净利为全年累计值'
+      : '季度口径：单季值 = 本期累计 - 上期累计（一季报为当季值）；ROE 为报告期累计值';
 
-    function initChart(elId) {
-      var chart = echarts.init($(elId));
-      charts.push(chart);
-      return chart;
+    // 首次渲染创建实例，切换视图时复用并整体替换 option
+    if (!state.charts.length) {
+      ['stock-chart-revenue', 'stock-chart-margin', 'stock-chart-roe'].forEach(function (id) {
+        state.charts.push(echarts.init($(id)));
+      });
+      window.onresize = function () {
+        state.charts.forEach(function (c) { c.resize(); });
+      };
     }
 
-    // 通用配置：图例 + 缩放条（20 期数据点较多）
+    // 通用配置：图例 + 缩放条（数据点较多时可拖动）
     function baseOption(legendData, yName, yFormatter) {
       return {
         tooltip: {
@@ -237,12 +265,12 @@
       };
     }
 
-    // 金额系列（亿元柱状）
+    // 金额系列（亿元柱状；年视图取累计字段，季视图取单季字段）
     function barYiSeries(name, key, color) {
       return {
         name: name, type: 'bar', barMaxWidth: 22,
         itemStyle: { color: color },
-        data: rows.map(function (r) {
+        data: data.map(function (r) {
           return r[key] == null ? null : +(r[key] / 1e8).toFixed(2);
         })
       };
@@ -253,7 +281,7 @@
       return {
         name: name, type: 'line', smooth: true,
         itemStyle: { color: color },
-        data: rows.map(function (r) {
+        data: data.map(function (r) {
           return r[key] == null ? null : +(r[key] * 100).toFixed(2);
         })
       };
@@ -261,13 +289,13 @@
 
     function fmtPctAxis(v) { return v + '%'; }
 
-    // 图 1：营业总收入 & 净利润
+    // 图 1：营业总收入 & 净利润（单季/全年）
     var opt1 = baseOption(['营业总收入', '净利润'], '亿元');
     opt1.series = [
-      barYiSeries('营业总收入', '营业总收入', '#5b8ff9'),
-      barYiSeries('净利润', '净利润', '#61c0a8')
+      barYiSeries('营业总收入', isYear ? '营业总收入' : '营业总收入_单季', '#5b8ff9'),
+      barYiSeries('净利润', isYear ? '净利润' : '净利润_单季', '#61c0a8')
     ];
-    initChart('stock-chart-revenue').setOption(opt1);
+    state.charts[0].setOption(opt1, true);
 
     // 图 2：销售毛利率 & 销售净利率
     var opt2 = baseOption(['销售毛利率', '销售净利率'], '%', fmtPctAxis);
@@ -275,17 +303,26 @@
       pctLineSeries('销售毛利率', '销售毛利率', '#f6bd16'),
       pctLineSeries('销售净利率', '销售净利率', '#e8684a')
     ];
-    initChart('stock-chart-margin').setOption(opt2);
+    state.charts[1].setOption(opt2, true);
 
     // 图 3：净资产收益率
     var opt3 = baseOption(['净资产收益率'], '%', fmtPctAxis);
     opt3.series = [pctLineSeries('净资产收益率', '净资产收益率', '#5b8ff9')];
-    initChart('stock-chart-roe').setOption(opt3);
+    state.charts[2].setOption(opt3, true);
+  }
 
-    state.charts = charts;
-    window.onresize = function () {
-      charts.forEach(function (c) { c.resize(); });
-    };
+  /* ---------------- 季/年视图切换 ---------------- */
+
+  function bindViewToggle() {
+    var btns = document.querySelectorAll('.stock-view-toggle button');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.classList.contains('active')) return;
+        btns.forEach(function (x) { x.classList.toggle('active', x === b); });
+        state.view = b.dataset.view;
+        if (state.current) renderCharts(state.current.indicators || []);
+      });
+    });
   }
 
   /* ---------------- 三大报表 ---------------- */

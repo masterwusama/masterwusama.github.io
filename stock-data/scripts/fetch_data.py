@@ -32,7 +32,8 @@ from config import DEFAULT_COMPANIES, REQUEST_INTERVAL
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data"
 COMPANIES_DIR = OUTPUT_DIR / "companies"
 
-# 新浪/同花顺源一次请求返回的报告期上限（最新 N 期，20 期 ≈ 5 年）
+# 输出报告期数基准（实际输出 MAX_PERIODS+1 期 ≈ 5 年；
+# 多 1 期用于最早一期单季值的还原，相应多抓 1 期被丢弃）
 MAX_PERIODS = 20
 
 # 巨潮资讯定期报告类别（年报/半年报/一季报/三季报）
@@ -123,13 +124,35 @@ def pd_isna(val):
 
 
 def fetch_indicators(code: str):
-    """同花顺财务摘要：关键指标，按报告期倒序取最近 MAX_PERIODS 期"""
+    """同花顺财务摘要：关键指标，按报告期倒序取最近 MAX_PERIODS 期。
+
+    财务数据为累计口径（一季报=Q1，半年报=Q1+Q2，三季报=前三季，年报=全年），
+    额外计算单季口径（营业总收入/净利润）：本期累计 - 上期累计；
+    一季报(03-31)本身就是单季。新增字段 `*_单季`，保留原始累计值。
+    多抓 2 期：1 期供最早一期的单季还原，另 1 期因无上期而被丢弃。
+    """
     df = ak.stock_financial_abstract_ths(symbol=code, indicator="按报告期")
     if df is None or df.empty:
         return []
     df = df.copy()
     df["_dt"] = pd_to_datetime(df["报告期"])
-    df = df.sort_values("_dt", ascending=False).head(MAX_PERIODS)
+    df = df.sort_values("_dt", ascending=False).head(MAX_PERIODS + 2)
+    df = df.sort_values("_dt", ascending=True).reset_index(drop=True)
+    # 单季化（升序遍历，累计差）
+    for col in ("营业总收入", "净利润"):
+        single = []
+        for i, row in df.iterrows():
+            cum = parse_number(row[col])
+            if i == 0:
+                single.append(None)  # 最早一期无上期，无法还原
+            elif str(row["报告期"]).endswith("03-31"):
+                single.append(cum)
+            else:
+                prev = parse_number(df.loc[i - 1, col])
+                single.append(None if (cum is None or prev is None) else round(cum - prev, 4))
+        df[f"{col}_单季"] = single
+    df = df.iloc[1:]  # 丢弃最早一期（该期之前已用其一季报还原相邻期单季值）
+    df = df.sort_values("_dt", ascending=False)
     df = df.drop(columns=["_dt"])
     # 除报告期外均为数值列（带亿/% 等单位的原始字符串，需统一解析）
     numeric_cols = [c for c in df.columns if c != "报告期"]
