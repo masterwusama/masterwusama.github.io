@@ -20,12 +20,7 @@
     return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 });
   }
 
-  // 小数比率 → "12.34%"
-  function fmtPct(v) {
-    if (v == null || isNaN(v)) return '-';
-    return (v * 100).toFixed(2) + '%';
-  }
-
+  // 小数 → "12.34"
   function fmtNum(v) {
     if (v == null || isNaN(v)) return '-';
     return Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
@@ -40,11 +35,14 @@
     return v > 0 ? 'up' : 'down';
   }
 
-  // 股息率：最近一次年度分红 ÷ 最新价
-  function calcYield(d) {
-    var ann = (d.dividends || []).filter(function (r) { return r.type === '年度分红'; })[0];
-    if (!ann || !ann.bonus_per_10 || !d.snapshot || !d.snapshot.price) return null;
-    return ann.bonus_per_10 / 10 / d.snapshot.price;
+  // 最近一年分红记录（按派息日/公告日 ≥ 一年前，数据已按日期倒序）
+  function recentDividends(d) {
+    var cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
+    var cutoffStr = cutoff.toISOString().slice(0, 10);
+    return (d.dividends || []).filter(function (r) {
+      return (r.pay_date || r.announce_date || '') >= cutoffStr;
+    });
   }
 
   /* ---------------- 视图切换 ---------------- */
@@ -118,7 +116,6 @@
     state.charts = [];
     show('stock-detail');
     var s = d.snapshot || {};
-    var yieldRate = calcYield(d);
     var chg = s.change_pct;
 
     var html = '';
@@ -139,8 +136,6 @@
       kv('市净率', fmtNum(s.pb)) +
       kv('总市值', fmtMoney(s.market_cap)) +
       kv('流通市值', fmtMoney(s.float_market_cap)) +
-      kv('换手率', fmtPct(s.turnover_rate)) +
-      kv('股息率(估算)', fmtPct(yieldRate)) +
       '</div></div>';
 
     // 指标趋势图（按指标分 3 个独立图表；支持季/年视图切换）
@@ -173,20 +168,24 @@
       '<select id="stock-period"></select></div>' +
       '<table class="stock-table" id="stock-sheet-body"></table></div>';
 
-    // 分红历史
-    var divs = d.dividends || [];
-    html += '<div class="stock-section"><h3>分红历史（' + divs.length + ' 条）</h3>';
-    divs.forEach(function (r) {
-      var desc = r.description || '';
-      var extra = '';
-      if (r.pay_date) extra += '派息日 ' + fmtDate(r.pay_date);
-      html += '<div class="stock-list-item">' +
-        '<span class="d-year">' + (r.year || '-') + '</span>' +
-        '<span class="stock-badge">' + (r.type || '') + '</span>' +
-        '<span class="d-desc">' + desc + '</span>' +
-        (extra ? '<span class="d-date">' + extra + '</span>' : '') +
-        '</div>';
-    });
+    // 近一年分红（替代原股息率估算；按派息日/公告日在最近一年内）
+    var divs = recentDividends(d);
+    html += '<div class="stock-section"><h3>近一年分红（' + divs.length + ' 条）</h3>';
+    if (divs.length) {
+      divs.forEach(function (r) {
+        var desc = r.description || '';
+        var extra = '';
+        if (r.pay_date) extra += '派息日 ' + fmtDate(r.pay_date);
+        html += '<div class="stock-list-item">' +
+          '<span class="d-year">' + (r.year || '-') + '</span>' +
+          '<span class="stock-badge">' + (r.type || '') + '</span>' +
+          '<span class="d-desc">' + desc + '</span>' +
+          (extra ? '<span class="d-date">' + extra + '</span>' : '') +
+          '</div>';
+      });
+    } else {
+      html += '<p class="stock-hint">近一年暂无分红记录</p>';
+    }
     html += '</div>';
 
     // 定期报告
