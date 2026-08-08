@@ -131,12 +131,20 @@
       '</div>';
 
     // 估值快照
+    var recDivs = recentDividends(d);
+    var divBox = '<div class="kv kv-div"><div class="k">近一年分红</div><div class="v">' + recDivs.length + ' 条</div>' +
+      '<div class="div-list">' + (recDivs.length
+        ? recDivs.map(function (r) {
+          return '<span class="div-item">' + (r.year ? r.year + ' ' : '') + (r.description || '') + '</span>';
+        }).join('')
+        : '<span class="div-item">暂无</span>') +
+      '</div></div>';
     html += '<div class="stock-section"><div class="stock-snapshot">' +
       kv('市盈率(TTM)', fmtNum(s.pe_ttm)) +
       kv('市净率', fmtNum(s.pb)) +
       kv('总市值', fmtMoney(s.market_cap)) +
       kv('流通市值', fmtMoney(s.float_market_cap)) +
-      kv('近一年分红', recentDividends(d).length + ' 条') +
+      divBox +
       '</div></div>';
 
     // 指标趋势图（按指标分 3 个独立图表；支持季/年视图切换）
