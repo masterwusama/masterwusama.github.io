@@ -42,12 +42,12 @@
         </div>
         <nav class="site-state motion-element">
 
-          {% if site.archive_dir != '/' %}
+          {% if site.posts.size > 0 %}
             <div class="site-state-item site-state-posts">
-              <a href="{{ site.menu.archives | relative_url }}">
+              {% if site.menu.archives %}<a href="{{ site.menu.archives | relative_url }}">{% endif %}
                 <span class="site-state-item-count">{{ site.posts.size }}</span>
                 <span class="site-state-item-name">{{ __.state.posts }}</span>
-              </a>
+              {% if site.menu.archives %}</a>{% endif %}
             </div>
           {% endif %}
 

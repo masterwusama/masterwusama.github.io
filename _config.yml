@@ -120,8 +120,6 @@ menu:
   home: /
   #categories: /categories/
   #about: /about/
-  archives: /archives/
-  tags: /tags/
   stocks: /stock-data/
   #sitemap: /sitemap.xml
   #commonweal: /404.html
@@ -139,8 +137,6 @@ menu_icons:
   about: user
   categories: th
   schedule: calendar
-  tags: tags
-  archives: archive
   stocks: line-chart
   sitemap: sitemap
   commonweal: heartbeat
