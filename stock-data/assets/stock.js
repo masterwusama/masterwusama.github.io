@@ -156,9 +156,9 @@
       '<div class="stock-chart-block"><h4 id="stock-chart-roe-title">净资产收益率（各期累计）</h4><div class="stock-chart" id="stock-chart-roe"></div></div>' +
       '<p class="stock-chart-note" id="stock-chart-note">季度口径：单季值 = 本期累计 - 上期累计（一季报为当季值）；ROE 为报告期累计值</p></div>';
 
-    // 年度财务对比（年报口径，可任意选两个年份对比）
+    // 财务对比（年报/季报，任意两个报告期可对比）
     html += '<div class="stock-section"><div class="stock-section-head">' +
-      '<h3>年度财务对比</h3>' +
+      '<h3>财务对比</h3>' +
       '<div class="stock-compare-pick">' +
       '<select id="stock-compare-a"></select>' +
       '<span>对比</span>' +
@@ -337,12 +337,13 @@
     });
   }
 
-  /* ---------------- 年度财务对比 ---------------- */
+  /* ---------------- 财务对比（年报/季报，任意两个报告期） ---------------- */
 
-  // 年报对比指标配置（type: amount=亿元相对变化, pct=百分点差, ratio/yuan=绝对差, days=天数差）
+  // 对比指标配置（type: amount=亿元相对变化, pct=百分点差, ratio/yuan=绝对差, days=天数差）
+  // keySingle: 金额类在季报对比时改用单季字段（与图表季视图口径一致）
   var ANNUAL_METRICS = [
-    { group: '规模与成长', key: '营业总收入', label: '营业总收入', type: 'amount' },
-    { group: '规模与成长', key: '净利润', label: '净利润', type: 'amount' },
+    { group: '规模与成长', key: '营业总收入', keySingle: '营业总收入_单季', label: '营业总收入', type: 'amount' },
+    { group: '规模与成长', key: '净利润', keySingle: '净利润_单季', label: '净利润', type: 'amount' },
     { group: '规模与成长', key: '扣非净利润', label: '扣非净利润', type: 'amount' },
     { group: '盈利能力', key: '销售毛利率', label: '销售毛利率', type: 'pct' },
     { group: '盈利能力', key: '销售净利率', label: '销售净利率', type: 'pct' },
@@ -361,12 +362,17 @@
     { group: '每股与营运', key: '营业周期', label: '营业周期', type: 'days' }
   ];
 
+  function periodLabel(p) {
+    var names = { '03': '一季报', '06': '半年报', '09': '三季报', '12': '年报' };
+    return String(p).slice(0, 4) + (names[String(p).slice(5, 7)] || '');
+  }
+
   function bindComparePicks() {
     var selA = $('stock-compare-a');
     var selB = $('stock-compare-b');
     if (!selA || !selB) return;
     var refresh = function () {
-      if (selA.value && selA.value === selB.value) return; // 两选同一年时忽略
+      if (selA.value && selA.value === selB.value) return; // 两选同一报告期时忽略
       if (state.current) renderCompare(state.current.indicators || []);
     };
     selA.onchange = refresh;
@@ -374,44 +380,57 @@
   }
 
   function renderCompare(indicators) {
-    var rows = (indicators || []).filter(function (r) {
-      return String(r['报告期']).indexOf('12-31') >= 0;
-    }).slice().reverse(); // 升序：2021 -> 2025
+    var rows = (indicators || []).slice(); // 保持倒序（最新报告期在前）
     if (!rows.length) return;
     var selA = $('stock-compare-a');
     var selB = $('stock-compare-b');
     if (!selA || !selB) return;
-    var years = rows.map(function (r) { return String(r['报告期']).slice(0, 4); });
 
-    // 首次填充年份下拉，默认最新年报 vs 上年
+    // 首次填充报告期下拉（按年份分组），默认最新年报 vs 上一年报
     if (!selA.options.length) {
-      years.forEach(function (y) { selA.add(new Option(y, y)); selB.add(new Option(y, y)); });
-      selA.value = years[years.length - 1];
-      selB.value = years.length > 1 ? years[years.length - 2] : years[0];
+      var lastYear = null, ogA = null, ogB = null;
+      rows.forEach(function (r) {
+        var y = String(r['报告期']).slice(0, 4);
+        if (y !== lastYear) {
+          lastYear = y;
+          ogA = document.createElement('optgroup');
+          ogA.label = y + ' 年';
+          selA.appendChild(ogA);
+          ogB = document.createElement('optgroup');
+          ogB.label = y + ' 年';
+          selB.appendChild(ogB);
+        }
+        ogA.appendChild(new Option(periodLabel(r['报告期']), r['报告期']));
+        ogB.appendChild(new Option(periodLabel(r['报告期']), r['报告期']));
+      });
+      var annual = rows.filter(function (r) { return String(r['报告期']).indexOf('12-31') >= 0; });
+      selA.value = annual[0] ? annual[0]['报告期'] : rows[0]['报告期'];
+      selB.value = annual[1] ? annual[1]['报告期'] : selA.value;
     }
-    var a = selA.value, b = selB.value;
-    var ia = years.indexOf(a), ib = years.indexOf(b);
-    var rowA = ia >= 0 ? rows[ia] : null;
-    var rowB = ib >= 0 ? rows[ib] : null;
 
-    var html = '<thead><tr><th>指标</th>';
-    years.forEach(function (y) {
-      html += '<th' + (y === a ? ' class="cmp-hl"' : '') + '>' + y + '</th>';
+    var a = selA.value, b = selB.value;
+    var rowA = null, rowB = null;
+    rows.forEach(function (r) {
+      if (r['报告期'] === a) rowA = r;
+      if (r['报告期'] === b) rowB = r;
     });
-    html += '<th>' + a + ' vs ' + b + '</th></tr></thead><tbody>';
+    // 两期均为年报时用累计值（全年），否则用单季值（与图表季视图口径一致）
+    var isAnnualCmp = a.indexOf('12-31') >= 0 && b.indexOf('12-31') >= 0;
+
+    var html = '<thead><tr><th>指标</th><th>' + periodLabel(a) + '</th><th>' + periodLabel(b) +
+      '</th><th>变化</th></tr></thead><tbody>';
 
     var curGroup = null;
     ANNUAL_METRICS.forEach(function (m) {
       if (m.group !== curGroup) {
         curGroup = m.group;
-        html += '<tr class="cmp-group"><td colspan="' + (years.length + 2) + '">' + m.group + '</td></tr>';
+        html += '<tr class="cmp-group"><td colspan="4">' + m.group + '</td></tr>';
       }
-      html += '<tr><td>' + m.label + '</td>';
-      rows.forEach(function (r) {
-        html += '<td' + (String(r['报告期']).slice(0, 4) === a ? ' class="cmp-hl"' : '') + '>' +
-          fmtMetric(r[m.key], m) + '</td>';
-      });
-      html += '<td>' + fmtChange(rowA, rowB, m) + '</td></tr>';
+      var key = (m.type === 'amount' && !isAnnualCmp) ? (m.keySingle || m.key) : m.key;
+      html += '<tr><td>' + m.label + '</td>' +
+        '<td>' + fmtMetric(rowA ? rowA[key] : null, m) + '</td>' +
+        '<td>' + fmtMetric(rowB ? rowB[key] : null, m) + '</td>' +
+        '<td>' + fmtChange(rowA, rowB, m, key) + '</td></tr>';
     });
     html += '</tbody>';
 
@@ -427,9 +446,9 @@
   }
 
   // 变化列：A 相对 B（红涨绿跌；比率用 pp，倍数/每股/天数用绝对差）
-  function fmtChange(ra, rb, m) {
-    var va = ra ? ra[m.key] : null;
-    var vb = rb ? rb[m.key] : null;
+  function fmtChange(ra, rb, m, key) {
+    var va = ra ? ra[key] : null;
+    var vb = rb ? rb[key] : null;
     if (va == null || vb == null || vb === 0) return '-';
     var d, cls, txt;
     if (m.type === 'amount') {
