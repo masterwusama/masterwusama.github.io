@@ -32,8 +32,8 @@ from config import DEFAULT_COMPANIES, REQUEST_INTERVAL
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data"
 COMPANIES_DIR = OUTPUT_DIR / "companies"
 
-# 新浪/同花顺源一次请求返回的报告期上限（最新 N 期）
-MAX_PERIODS = 8
+# 新浪/同花顺源一次请求返回的报告期上限（最新 N 期，20 期 ≈ 5 年）
+MAX_PERIODS = 20
 
 # 巨潮资讯定期报告类别（年报/半年报/一季报/三季报）
 REPORT_CATEGORIES = ["年报", "半年报", "一季报", "三季报"]

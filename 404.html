@@ -1,10 +1,142 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="zh-Hans">
 <head>
-  <meta http-equiv="content-type" content="text/html;charset=utf-8;"/>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 · 页面疑似退市</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+      color: #334155;
+      padding: 24px;
+    }
+    .wrap { text-align: center; max-width: 560px; }
+
+    /* 大号 404：渐变 + 浮动 */
+    .code {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      font-size: 120px;
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(135deg, #5b8ff9 0%, #61c0a8 55%, #e8684a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: float 3.5s ease-in-out infinite;
+      user-select: none;
+    }
+    .code span { display: inline-block; }
+    .code .zero { animation: spin 8s linear infinite; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* K 线装饰：最后一根直接走丢 */
+    .kline { margin: 26px auto 0; display: block; }
+    .kline .candle { animation: twinkle 2.4s ease-in-out infinite; }
+    .kline .candle:nth-child(2n) { animation-delay: 0.6s; }
+    .kline .candle:nth-child(3n) { animation-delay: 1.2s; }
+    .kline .lost { animation: dash 2.2s ease-in-out infinite; }
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    @keyframes dash {
+      0%, 100% { stroke-dashoffset: 0; }
+      50% { stroke-dashoffset: 60; }
+    }
+
+    .msg { margin-top: 28px; font-size: 22px; font-weight: 600; }
+    .msg b { color: #e8684a; }
+    .sub { margin-top: 10px; font-size: 14px; color: #94a3b8; }
+    .path {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #64748b;
+      background: #e2e8f0;
+      border-radius: 6px;
+      display: inline-block;
+      padding: 6px 14px;
+      max-width: 100%;
+      word-break: break-all;
+    }
+    .actions { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .actions a {
+      text-decoration: none;
+      padding: 10px 28px;
+      border-radius: 999px;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .actions .home { background: #5b8ff9; color: #fff; }
+    .actions .home:hover { background: #3f73e0; transform: translateY(-2px); }
+    .actions .stock { background: #fff; color: #5b8ff9; border: 1.5px solid #5b8ff9; }
+    .actions .stock:hover { background: #eef4ff; transform: translateY(-2px); }
+
+    .foot { margin-top: 26px; font-size: 12px; color: #cbd5e1; }
+  </style>
 </head>
 <body>
-<p>总而言之404了</p>
+  <div class="wrap">
+    <div class="code"><span>4</span><span class="zero">0</span><span>4</span></div>
+
+    <!-- K 线：前几根还好好的，最后一根走丢了 -->
+    <svg class="kline" width="300" height="90" viewBox="0 0 300 90">
+      <g class="candle">
+        <line x1="38" y1="12" x2="38" y2="30" stroke="#3a9d5d" stroke-width="2"/>
+        <rect x="30" y="30" width="16" height="28" rx="2" fill="#3a9d5d"/>
+        <line x1="38" y1="58" x2="38" y2="72" stroke="#3a9d5d" stroke-width="2"/>
+      </g>
+      <g class="candle">
+        <line x1="86" y1="22" x2="86" y2="40" stroke="#3a9d5d" stroke-width="2"/>
+        <rect x="78" y="40" width="16" height="18" rx="2" fill="#3a9d5d"/>
+        <line x1="86" y1="58" x2="86" y2="68" stroke="#3a9d5d" stroke-width="2"/>
+      </g>
+      <g class="candle">
+        <line x1="134" y1="18" x2="134" y2="34" stroke="#e8684a" stroke-width="2"/>
+        <rect x="126" y="34" width="16" height="26" rx="2" fill="#e8684a"/>
+        <line x1="134" y1="60" x2="134" y2="74" stroke="#e8684a" stroke-width="2"/>
+      </g>
+      <g class="candle">
+        <line x1="182" y1="30" x2="182" y2="46" stroke="#e8684a" stroke-width="2"/>
+        <rect x="174" y="46" width="16" height="20" rx="2" fill="#e8684a"/>
+        <line x1="182" y1="66" x2="182" y2="78" stroke="#e8684a" stroke-width="2"/>
+      </g>
+      <!-- 走丢的 K 线：虚线一路向下，找不到头 -->
+      <path class="lost" d="M 230 40 C 250 52, 262 62, 276 78" fill="none"
+            stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round"/>
+      <circle cx="276" cy="78" r="4" fill="#94a3b8">
+        <animate attributeName="opacity" values="1;0.2;1" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+
+    <p class="msg">这只页面<b>停牌</b>了，暂时买不到</p>
+    <p class="sub">地址可能敲错了，也可能它已经退市，再也找不回来了……</p>
+    <p class="path">你找的是：<code id="path"></code></p>
+
+    <div class="actions">
+      <a class="home" href="/">回首页</a>
+      <a class="stock" href="/stock-data/">去看看股票分析</a>
+    </div>
+
+    <p class="foot">本页不存在，但数据服务正常运行中</p>
+  </div>
+  <script>
+    document.getElementById('path').textContent = location.pathname + location.search;
+  </script>
 </body>
 </html>

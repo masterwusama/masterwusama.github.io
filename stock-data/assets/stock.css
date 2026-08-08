@@ -146,9 +146,20 @@
 .stock-snapshot .kv .v { font-size: 16px; font-weight: 700; margin-top: 4px; }
 
 /* ---- 图表 ---- */
-#stock-chart {
+.stock-chart-block {
+  margin-top: 18px;
+}
+
+.stock-chart-block h4 {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.stock-chart {
   width: 100%;
-  height: 320px;
+  height: 300px;
 }
 
 /* ---- 报表 ---- */
