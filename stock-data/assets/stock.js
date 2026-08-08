@@ -260,6 +260,8 @@
     }
 
     // 通用配置：图例 + 缩放条 + 双 Y 轴（左=指标值，右=增长率 %）
+    // 默认显示窗口：年度=最近 3 年，季度=最近 8 个季度（可拖动缩放条查看全部）
+    var zoomN = isYear ? 3 : 8;
     function baseOption(legendData, yName, yFormatter) {
       return {
         tooltip: {
@@ -278,8 +280,8 @@
           }
         ],
         dataZoom: [
-          { type: 'inside', start: 0, end: 100 },
-          { type: 'slider', height: 14, bottom: 6, start: 0, end: 100 }
+          { type: 'inside', startValue: data.length - zoomN, endValue: data.length - 1 },
+          { type: 'slider', height: 14, bottom: 6, startValue: data.length - zoomN, endValue: data.length - 1 }
         ],
         series: []
       };
