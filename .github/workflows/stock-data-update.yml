@@ -1,0 +1,53 @@
+name: update-stock-data
+
+# 定时更新 A 股财务数据（stock-data/ 子文件夹）
+# 说明：GitHub Actions 的 workflow 文件必须放在仓库根目录 .github/workflows/ 下
+#      才会被执行，因此本文件无法放进 stock-data/ 子文件夹中隔离。
+#      它只提交 stock-data/data 下的数据文件，不会触碰博客的其他内容。
+
+on:
+  # 每天 3 次（UTC 时间）：1:00 / 9:00 / 17:00
+  # 对应北京时间：9:00 / 17:00 / 次日 1:00
+  schedule:
+    - cron: "0 1,9,17 * * *"
+  # 支持在 GitHub 网页上手动触发
+  workflow_dispatch:
+
+# 只授予读取仓库 + 写回数据文件的最小权限
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-data-update
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖
+        working-directory: stock-data/scripts
+        run: pip install -r requirements.txt
+
+      - name: 抓取数据
+        working-directory: stock-data/scripts
+        run: python fetch_data.py
+
+      - name: 提交数据变更
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(stock-data): 更新 A 股财务数据"
+          file_pattern: stock-data/data/*
+          commit_user_name: stock-data-bot
+          commit_user_email: stock-data-bot@users.noreply.github.com
+          skip_fetch: true
+          skip_checkout: true
