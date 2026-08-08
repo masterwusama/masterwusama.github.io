@@ -1,66 +1,72 @@
 {
- "updated_at": "2026-08-08T21:25:52+08:00",
- "count": 10,
+ "updated_at": "2026-08-08T21:41:02+08:00",
+ "count": 11,
  "companies": [
   {
    "code": "002027",
    "name": "分众传媒",
    "industry": null,
-   "updated_at": "2026-08-08T21:24:23+08:00"
+   "updated_at": "2026-08-08T21:39:32+08:00"
   },
   {
    "code": "603599",
    "name": "广信股份",
    "industry": null,
-   "updated_at": "2026-08-08T21:24:32+08:00"
+   "updated_at": "2026-08-08T21:39:40+08:00"
   },
   {
    "code": "600079",
    "name": "人福医药",
    "industry": null,
-   "updated_at": "2026-08-08T21:24:41+08:00"
+   "updated_at": "2026-08-08T21:39:48+08:00"
   },
   {
    "code": "603856",
    "name": "东宏股份",
    "industry": null,
-   "updated_at": "2026-08-08T21:24:51+08:00"
+   "updated_at": "2026-08-08T21:39:57+08:00"
   },
   {
    "code": "601020",
    "name": "华钰矿业",
    "industry": null,
-   "updated_at": "2026-08-08T21:24:59+08:00"
+   "updated_at": "2026-08-08T21:40:05+08:00"
   },
   {
    "code": "002594",
    "name": "比亚迪",
    "industry": null,
-   "updated_at": "2026-08-08T21:25:07+08:00"
+   "updated_at": "2026-08-08T21:40:13+08:00"
   },
   {
    "code": "601333",
    "name": "广深铁路",
    "industry": null,
-   "updated_at": "2026-08-08T21:25:17+08:00"
+   "updated_at": "2026-08-08T21:40:21+08:00"
   },
   {
    "code": "600873",
    "name": "梅花生物",
    "industry": null,
-   "updated_at": "2026-08-08T21:25:25+08:00"
+   "updated_at": "2026-08-08T21:40:29+08:00"
   },
   {
    "code": "000528",
    "name": "柳工",
    "industry": null,
-   "updated_at": "2026-08-08T21:25:34+08:00"
+   "updated_at": "2026-08-08T21:40:37+08:00"
   },
   {
    "code": "600511",
    "name": "国药股份",
    "industry": null,
-   "updated_at": "2026-08-08T21:25:43+08:00"
+   "updated_at": "2026-08-08T21:40:46+08:00"
+  },
+  {
+   "code": "300750",
+   "name": "宁德时代",
+   "industry": null,
+   "updated_at": "2026-08-08T21:40:55+08:00"
   }
  ]
 }
