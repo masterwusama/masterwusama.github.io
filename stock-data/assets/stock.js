@@ -211,7 +211,7 @@
     bindViewToggle();
     bindComparePicks();
     renderCharts(d.indicators || []);
-    renderCompare(d.indicators || []);
+    renderCompare(d);
     initSheet(d);
   }
 
@@ -378,10 +378,15 @@
 
   // 对比指标配置（type: amount=亿元相对变化, pct=百分点差, ratio/yuan=绝对差, days=天数差）
   // keySingle: 金额类在季报对比时改用单季字段（与图表季视图口径一致）
+  // src: 数据来源（缺省 indicators；income/balance/cashflow 三大报表按报告日关联）
+  //      金额类在季报对比时自动单季化（本期累计 - 上期累计），single:false 为时点值不单季化
   var ANNUAL_METRICS = [
     { group: '规模与成长', key: '营业总收入', keySingle: '营业总收入_单季', label: '营业总收入', type: 'amount' },
     { group: '规模与成长', key: '净利润', keySingle: '净利润_单季', label: '净利润', type: 'amount' },
     { group: '规模与成长', key: '扣非净利润', label: '扣非净利润', type: 'amount' },
+    { group: '成长能力', key: '营业总收入同比增长率', label: '营收同比增长率', type: 'pct' },
+    { group: '成长能力', key: '净利润同比增长率', label: '净利同比增长率', type: 'pct' },
+    { group: '成长能力', key: '扣非净利润同比增长率', label: '扣非净利同比增长率', type: 'pct' },
     { group: '盈利能力', key: '销售毛利率', label: '销售毛利率', type: 'pct' },
     { group: '盈利能力', key: '销售净利率', label: '销售净利率', type: 'pct' },
     { group: '盈利能力', key: '净资产收益率', label: '净资产收益率', type: 'pct' },
@@ -391,9 +396,32 @@
     { group: '偿债能力', key: '流动比率', label: '流动比率', type: 'ratio' },
     { group: '偿债能力', key: '速动比率', label: '速动比率', type: 'ratio' },
     { group: '偿债能力', key: '保守速动比率', label: '保守速动比率', type: 'ratio' },
+    { group: '费用与利润', src: 'income', key: '营业总成本', label: '营业总成本', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '营业成本', label: '营业成本', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '销售费用', label: '销售费用', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '管理费用', label: '管理费用', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '财务费用', label: '财务费用', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '研发费用', label: '研发费用', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '营业利润', label: '营业利润', type: 'amount' },
+    { group: '费用与利润', src: 'income', key: '利润总额', label: '利润总额', type: 'amount' },
+    { group: '资产与负债', src: 'balance', key: '资产总计', label: '资产总计', type: 'amount', single: false },
+    { group: '资产与负债', src: 'balance', key: '负债合计', label: '负债合计', type: 'amount', single: false },
+    { group: '资产与负债', src: 'balance', key: '所有者权益(或股东权益)合计', label: '所有者权益合计', type: 'amount', single: false },
+    { group: '资产与负债', src: 'balance', key: '归属于母公司股东权益合计', label: '归母股东权益', type: 'amount', single: false },
+    { group: '资产与负债', src: 'balance', key: '货币资金', label: '货币资金', type: 'amount', single: false },
+    { group: '资产与负债', src: 'balance', key: '存货', label: '存货', type: 'amount', single: false },
+    { group: '资产与负债', src: 'balance', key: '应收账款', label: '应收账款', type: 'amount', single: false },
+    { group: '现金流量', src: 'cashflow', key: '经营活动产生的现金流量净额', label: '经营现金流净额', type: 'amount' },
+    { group: '现金流量', src: 'cashflow', key: '投资活动产生的现金流量净额', label: '投资现金流净额', type: 'amount' },
+    { group: '现金流量', src: 'cashflow', key: '筹资活动产生的现金流量净额', label: '筹资现金流净额', type: 'amount' },
+    { group: '现金流量', src: 'cashflow', key: '销售商品、提供劳务收到的现金', label: '销售商品收到现金', type: 'amount' },
+    { group: '现金流量', src: 'cashflow', key: '期末现金及现金等价物余额', label: '期末现金及等价物', type: 'amount', single: false },
     { group: '每股与营运', key: '基本每股收益', label: '基本每股收益', type: 'yuan' },
     { group: '每股与营运', key: '每股净资产', label: '每股净资产', type: 'yuan' },
     { group: '每股与营运', key: '每股经营现金流', label: '每股经营现金流', type: 'yuan' },
+    { group: '每股与营运', key: '每股未分配利润', label: '每股未分配利润', type: 'yuan' },
+    { group: '每股与营运', key: '每股资本公积金', label: '每股资本公积金', type: 'yuan' },
+    { group: '每股与营运', key: '存货周转率', label: '存货周转率', type: 'ratio' },
     { group: '每股与营运', key: '存货周转天数', label: '存货周转天数', type: 'days' },
     { group: '每股与营运', key: '应收账款周转天数', label: '应收账款周转天数', type: 'days' },
     { group: '每股与营运', key: '营业周期', label: '营业周期', type: 'days' }
@@ -410,18 +438,28 @@
     if (!selA || !selB) return;
     var refresh = function () {
       if (selA.value && selA.value === selB.value) return; // 两选同一报告期时忽略
-      if (state.current) renderCompare(state.current.indicators || []);
+      if (state.current) renderCompare(state.current);
     };
     selA.onchange = refresh;
     selB.onchange = refresh;
   }
 
-  function renderCompare(indicators) {
-    var rows = (indicators || []).slice(); // 保持倒序（最新报告期在前）
+  function renderCompare(d) {
+    var rows = ((d && d.indicators) || []).slice(); // 保持倒序（最新报告期在前）
     if (!rows.length) return;
     var selA = $('stock-compare-a');
     var selB = $('stock-compare-b');
     if (!selA || !selB) return;
+
+    // 三大报表按报告日升序（金额项单季化：本期累计 - 上期累计）
+    var rpt = {};
+    ['income', 'balance', 'cashflow'].forEach(function (sec) {
+      rpt[sec] = ((d[sec] || []).slice()).sort(function (x, y) {
+        return x['报告日'] < y['报告日'] ? -1 : 1;
+      });
+    });
+    var indBy = {};
+    rows.forEach(function (r) { indBy[r['报告期']] = r; });
 
     // 首次填充报告期下拉（按年份分组），默认最新年报 vs 上一年报
     if (!selA.options.length) {
@@ -446,13 +484,35 @@
     }
 
     var a = selA.value, b = selB.value;
-    var rowA = null, rowB = null;
-    rows.forEach(function (r) {
-      if (r['报告期'] === a) rowA = r;
-      if (r['报告期'] === b) rowB = r;
-    });
     // 两期均为年报时用累计值（全年），否则用单季值（与图表季视图口径一致）
     var isAnnualCmp = a.indexOf('12-31') >= 0 && b.indexOf('12-31') >= 0;
+
+    // 取数：indicators 直接取值；报表按报告日关联，非年报对比时金额类单季化（时点值除外）
+    function valOf(period, m) {
+      if (m.src && m.src !== 'indicator') {
+        var list = rpt[m.src];
+        for (var i = 0; i < list.length; i++) {
+          if (list[i]['报告日'] === period) {
+            var v = list[i][m.key];
+            if (v == null) return null;
+            if (m.type === 'amount' && !isAnnualCmp && m.single !== false) {
+              // 一季报累计即当季值，无需差分；其余季度单季 = 本期累计 - 上期累计
+              if (String(period).slice(5, 7) !== '03' && i > 0) {
+                var pv = list[i - 1][m.key];
+                return pv == null ? null : v - pv;
+              }
+              return v;
+            }
+            return v;
+          }
+        }
+        return null;
+      }
+      var row = indBy[period];
+      if (!row) return null;
+      var k = (m.type === 'amount' && !isAnnualCmp && m.keySingle) ? m.keySingle : m.key;
+      return row[k] == null ? null : row[k];
+    }
 
     var html = '<thead><tr><th>指标</th><th>' + periodLabel(a) + '</th><th>' + periodLabel(b) +
       '</th><th>变化</th></tr></thead><tbody>';
@@ -463,11 +523,11 @@
         curGroup = m.group;
         html += '<tr class="cmp-group"><td colspan="4">' + m.group + '</td></tr>';
       }
-      var key = (m.type === 'amount' && !isAnnualCmp) ? (m.keySingle || m.key) : m.key;
+      var va = valOf(a, m), vb = valOf(b, m);
       html += '<tr><td>' + m.label + '</td>' +
-        '<td>' + fmtMetric(rowA ? rowA[key] : null, m) + '</td>' +
-        '<td>' + fmtMetric(rowB ? rowB[key] : null, m) + '</td>' +
-        '<td>' + fmtChange(rowA, rowB, m, key) + '</td></tr>';
+        '<td>' + fmtMetric(va, m) + '</td>' +
+        '<td>' + fmtMetric(vb, m) + '</td>' +
+        '<td>' + fmtChange(va, vb, m) + '</td></tr>';
     });
     html += '</tbody>';
 
@@ -483,9 +543,7 @@
   }
 
   // 变化列：A 相对 B（红涨绿跌；比率用 pp，倍数/每股/天数用绝对差）
-  function fmtChange(ra, rb, m, key) {
-    var va = ra ? ra[key] : null;
-    var vb = rb ? rb[key] : null;
+  function fmtChange(va, vb, m) {
     if (va == null || vb == null || vb === 0) return '-';
     var d, cls, txt;
     if (m.type === 'amount') {
