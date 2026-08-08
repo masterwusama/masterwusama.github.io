@@ -1,0 +1,22 @@
+---
+layout: page
+title: 股票分析
+---
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="./assets/stock.css">
+
+<div id="stock-app">
+  <div id="stock-loading" class="stock-hint">数据加载中...</div>
+  <div id="stock-error" class="stock-hint" style="display:none"></div>
+
+  <div id="stock-list" style="display:none"></div>
+
+  <div id="stock-detail" style="display:none">
+    <p><a href="#" id="stock-back" class="stock-back">← 返回列表</a></p>
+    <div id="stock-detail-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script charset="utf-8" src="./assets/stock.js"></script>

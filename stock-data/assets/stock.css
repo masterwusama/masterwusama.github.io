@@ -1,0 +1,236 @@
+/* 股票分析模块样式 —— 与 NexT 主题风格协调的浅色卡片布局 */
+
+#stock-app {
+  margin: 8px 0;
+}
+
+.stock-hint {
+  padding: 32px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+/* ---- 公司卡片列表 ---- */
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.stock-card {
+  border: 1px solid #e1e1e1;
+  border-radius: 6px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  background: #fff;
+}
+
+.stock-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.stock-card .s-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.stock-card .s-code {
+  font-size: 12px;
+  color: #999;
+  margin-left: 6px;
+}
+
+.stock-card .s-price-row {
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.stock-card .s-price-row .s-chg {
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.stock-card .s-metrics {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.stock-card .s-metrics b {
+  color: #333;
+  font-weight: 600;
+  float: right;
+}
+
+.up { color: #d9534f !important; }
+.down { color: #3a9d5d !important; }
+.flat { color: #888 !important; }
+
+/* ---- 详情页 ---- */
+.stock-back {
+  font-size: 13px;
+  color: #555;
+}
+
+.stock-back:hover { color: #222; }
+
+.stock-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 14px 0 10px;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 16px;
+}
+
+.stock-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stock-header .s-code {
+  color: #999;
+  font-size: 14px;
+}
+
+.stock-header .s-price {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.stock-header .s-meta { font-size: 13px; color: #666; }
+
+.stock-header .s-meta b { color: #333; }
+
+.stock-section {
+  margin: 18px 0;
+}
+
+.stock-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  border-left: 3px solid #555;
+  padding-left: 8px;
+  margin: 18px 0 10px;
+}
+
+/* ---- 估值快照 ---- */
+.stock-snapshot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.stock-snapshot .kv {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px 12px;
+  background: #fafafa;
+  text-align: center;
+}
+
+.stock-snapshot .kv .k { font-size: 12px; color: #999; }
+
+.stock-snapshot .kv .v { font-size: 16px; font-weight: 700; margin-top: 4px; }
+
+/* ---- 图表 ---- */
+#stock-chart {
+  width: 100%;
+  height: 320px;
+}
+
+/* ---- 报表 ---- */
+.stock-tabs { margin: 8px 0; }
+
+.stock-tabs button {
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  color: #555;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 3px;
+  margin-right: 6px;
+}
+
+.stock-tabs button.active {
+  background: #555;
+  border-color: #555;
+  color: #fff;
+}
+
+.stock-tabs select {
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  margin-left: 12px;
+}
+
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stock-table td {
+  border: 1px solid #eee;
+  padding: 6px 10px;
+}
+
+.stock-table td.k {
+  width: 42%;
+  background: #fafafa;
+  color: #666;
+}
+
+.stock-table td.v {
+  color: #333;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 分红/报告列表 ---- */
+.stock-list-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 8px 4px;
+  border-bottom: 1px dashed #eee;
+  font-size: 13px;
+}
+
+.stock-list-item .d-year { font-weight: 600; color: #333; }
+
+.stock-list-item .d-desc { color: #555; }
+
+.stock-list-item .d-date { color: #999; font-size: 12px; }
+
+.stock-list-item a { color: #2a6496; }
+
+.stock-list-item a:hover { text-decoration: underline; }
+
+.stock-badge {
+  display: inline-block;
+  font-size: 12px;
+  background: #f0f0f0;
+  color: #555;
+  border-radius: 3px;
+  padding: 1px 8px;
+}
+
+@media (max-width: 600px) {
+  .stock-grid { grid-template-columns: 1fr; }
+}

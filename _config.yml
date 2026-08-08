@@ -32,7 +32,7 @@ paginate: 10
   #paginate_path: "/page:num/"
 
 # Handling Reading
-exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md", "Gemfile", "Gemfile.lock", "README_en.md"]
+exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md", "Gemfile", "Gemfile.lock", "README_en.md", "stock-data/scripts"]
 
 # Separator
 #excerpt_separator: <!-- more -->
@@ -122,6 +122,7 @@ menu:
   #about: /about/
   archives: /archives/
   tags: /tags/
+  stocks: /stock-data/
   #sitemap: /sitemap.xml
   #commonweal: /404.html
 
@@ -140,6 +141,7 @@ menu_icons:
   schedule: calendar
   tags: tags
   archives: archive
+  stocks: line-chart
   sitemap: sitemap
   commonweal: heartbeat
 
