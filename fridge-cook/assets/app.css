@@ -214,6 +214,9 @@
 }
 
 /* ---------- library ---------- */
+.fc-lib-bar { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; }
+.fc-lib-bar .fc-cats { margin-top: 0; flex: 1; }
+.fc-fav-only { flex-shrink: 0; white-space: nowrap; }
 .fc-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .fc-cat {
   border: 1px solid #dfe6e9;

@@ -31,7 +31,7 @@
 
   var DB = { meta: null, recipes: [], alias: {}, index: {} };  // 菜谱库
   var state = Store.state();                                    // 用户状态（内部引用，修改即同步到存储）
-  var sel = { tools: null, difficulty: 0, maxTime: 0, sort: 'fridge', search: '', cat: '' };
+  var sel = { tools: null, difficulty: 0, maxTime: 0, sort: 'fridge', search: '', cat: '', favOnly: false };
   var ingredientsIndex = []; // 全部食材标准名（联想用）
 
   /* ==================== 工具函数 ==================== */
@@ -486,6 +486,7 @@
   function renderLibrary() {
     var q = norm(sel.search);
     var list = DB.recipes.filter(function (r) {
+      if (sel.favOnly && state.favorites.indexOf(r.id) < 0) return false;
       if (sel.cat && r.cat !== sel.cat) return false;
       if (q) {
         var hit = (r.name || '').indexOf(q) >= 0
@@ -497,7 +498,10 @@
     });
     var box = $('fc-library');
     box.innerHTML = '';
-    if (!list.length) { box.innerHTML = '<div class="fc-empty">没有找到相关菜谱</div>'; return; }
+    if (!list.length) {
+      box.innerHTML = '<div class="fc-empty">' + (sel.favOnly ? '还没有收藏的菜谱，点卡片右上角 ☆ 收藏喜欢的菜' : '没有找到相关菜谱') + '</div>';
+      return;
+    }
     list.forEach(function (r) {
       var card = document.createElement('div');
       card.className = 'fc-recipe fc-recipe-lib';
@@ -698,6 +702,13 @@
 
     $('fc-search').addEventListener('input', function () {
       sel.search = this.value;
+      renderLibrary();
+    });
+
+    $('fc-fav-only').addEventListener('click', function () {
+      sel.favOnly = !sel.favOnly;
+      this.classList.toggle('is-active', sel.favOnly);
+      this.textContent = sel.favOnly ? '★ 只看收藏' : '☆ 只看收藏';
       renderLibrary();
     });
 
