@@ -31,6 +31,7 @@
     if (DnD.LevelsUI) DnD.LevelsUI.init();
     if (DnD.EncounterUI) DnD.EncounterUI.init();
     if (DnD.MagicUI) DnD.MagicUI.init();
+    if (DnD.TextAdv) DnD.TextAdv.init();
   }
 
   document.addEventListener('DOMContentLoaded', function () {

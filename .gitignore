@@ -20,3 +20,7 @@ stock-data/_check*
 stock-data/_dump_out.txt
 stock-data/_test_annual.pdf
 stock-data/assets/echarts.min.js
+
+# D&D ����ð�տ����زģ���Ȩ�ı��������ֿ⣩
+dnd-table/de-src/
+dnd-table/_gist*.json
