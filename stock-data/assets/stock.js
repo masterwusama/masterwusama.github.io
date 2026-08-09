@@ -197,10 +197,17 @@
     var reports = d.reports || [];
     html += '<div class="stock-section"><h3>定期报告（' + reports.length + ' 份）</h3>';
     reports.forEach(function (r) {
+      var audit = '';
+      // 审计信息：年报/半年报附事务所与意见类型（季报不审计，无该字段）
+      if (r.audit_firm || r.audit_opinion) {
+        audit = '<span class="d-audit">审计：' + (r.audit_firm || '—') +
+          (r.audit_opinion ? ' · ' + r.audit_opinion : '') + '</span>';
+      }
       html += '<div class="stock-list-item">' +
         '<span class="stock-badge">' + r.category + '</span>' +
         '<span class="d-year">' + r.title + '</span>' +
         '<span class="d-date">' + fmtDate(r.date) + '</span>' +
+        audit +
         '<a href="' + r.pdf_url + '" target="_blank" rel="noopener">PDF 原文</a>' +
         '<a href="' + r.detail_url + '" target="_blank" rel="noopener">详情</a>' +
         '</div>';

@@ -14,3 +14,9 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# stock-data 本地验证临时文件（线上图表用 CDN，均不提交）
+stock-data/_check*
+stock-data/_dump_out.txt
+stock-data/_test_annual.pdf
+stock-data/assets/echarts.min.js

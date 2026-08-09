@@ -6922,7 +6922,9 @@
    "category": "半年报",
    "date": "2026-07-25",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-07-25/1225441586.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1225441586&orgId=GD165627&announcementTime=2026-07-25"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1225441586&orgId=GD165627&announcementTime=2026-07-25",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "2026年一季度报告",
@@ -6936,7 +6938,9 @@
    "category": "年报",
    "date": "2026-03-10",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-03-10/1225002214.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1225002214&orgId=GD165627&announcementTime=2026-03-10"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1225002214&orgId=GD165627&announcementTime=2026-03-10",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "2025年三季度报告",
@@ -6950,7 +6954,9 @@
    "category": "半年报",
    "date": "2025-07-31",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-07-31/1224342874.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1224342874&orgId=GD165627&announcementTime=2025-07-31"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1224342874&orgId=GD165627&announcementTime=2025-07-31",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "2025年一季度报告",
@@ -6964,7 +6970,9 @@
    "category": "年报",
    "date": "2025-03-15",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-03-15/1222806982.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1222806982&orgId=GD165627&announcementTime=2025-03-15"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1222806982&orgId=GD165627&announcementTime=2025-03-15",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "2024年三季度报告",
@@ -6978,7 +6986,9 @@
    "category": "半年报",
    "date": "2024-07-27",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-07-27/1220740372.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1220740372&orgId=GD165627&announcementTime=2024-07-27"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1220740372&orgId=GD165627&announcementTime=2024-07-27",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "2024年一季度报告",
@@ -6992,7 +7002,9 @@
    "category": "年报",
    "date": "2024-03-16",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-03-16/1219313047.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1219313047&orgId=GD165627&announcementTime=2024-03-16"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1219313047&orgId=GD165627&announcementTime=2024-03-16",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "2023年三季度报告",

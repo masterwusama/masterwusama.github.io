@@ -6889,7 +6889,9 @@
    "category": "年报",
    "date": "2026-04-22",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-04-22/1225141200.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1225141200&orgId=9900030896&announcementTime=2026-04-22"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1225141200&orgId=9900030896&announcementTime=2026-04-22",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "东宏股份2026年第一季度报告",
@@ -6910,14 +6912,18 @@
    "category": "半年报",
    "date": "2025-08-28",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-08-28/1224598311.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1224598311&orgId=9900030896&announcementTime=2025-08-28"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1224598311&orgId=9900030896&announcementTime=2025-08-28",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "东宏股份2024年年度报告",
    "category": "年报",
    "date": "2025-04-25",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-04-25/1223287278.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1223287278&orgId=9900030896&announcementTime=2025-04-25"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1223287278&orgId=9900030896&announcementTime=2025-04-25",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "东宏股份2025年第一季度报告",
@@ -6938,14 +6944,18 @@
    "category": "半年报",
    "date": "2024-08-21",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-08-21/1220925409.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1220925409&orgId=9900030896&announcementTime=2024-08-21"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1220925409&orgId=9900030896&announcementTime=2024-08-21",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "东宏股份2023年年度报告",
    "category": "年报",
    "date": "2024-04-26",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-04-26/1219836454.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1219836454&orgId=9900030896&announcementTime=2024-04-26"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1219836454&orgId=9900030896&announcementTime=2024-04-26",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "东宏股份2024年第一季度报告",
@@ -6966,7 +6976,9 @@
    "category": "半年报",
    "date": "2023-08-25",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-08-25/1217637214.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1217637214&orgId=9900030896&announcementTime=2023-08-25"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603856&announcementId=1217637214&orgId=9900030896&announcementTime=2023-08-25",
+   "audit_firm": null,
+   "audit_opinion": null
   }
  ],
  "errors": null

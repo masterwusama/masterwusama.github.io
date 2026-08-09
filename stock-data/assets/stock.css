@@ -375,6 +375,8 @@
 
 .stock-list-item .d-date { color: #999; font-size: 12px; }
 
+.stock-list-item .d-audit { color: #7a6a4d; font-size: 12px; margin-left: 8px; }
+
 .stock-list-item a { color: #2a6496; }
 
 .stock-list-item a:hover { text-decoration: underline; }

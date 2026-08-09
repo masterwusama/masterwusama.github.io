@@ -7010,14 +7010,18 @@
    "category": "年报",
    "date": "2026-05-30",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-05-30/1225338291.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1225338291&orgId=gssh0600873&announcementTime=2026-05-30"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1225338291&orgId=gssh0600873&announcementTime=2026-05-30",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "梅花生物2025年年度报告",
    "category": "年报",
    "date": "2026-04-22",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-04-22/1225140873.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1225140873&orgId=gssh0600873&announcementTime=2026-04-22"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1225140873&orgId=gssh0600873&announcementTime=2026-04-22",
+   "audit_firm": "容诚会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "梅花生物2026年第一季度报告",
@@ -7038,21 +7042,27 @@
    "category": "半年报",
    "date": "2025-09-16",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-09-16/1224659528.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1224659528&orgId=gssh0600873&announcementTime=2025-09-16"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1224659528&orgId=gssh0600873&announcementTime=2025-09-16",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "梅花生物2025年半年度报告",
    "category": "半年报",
    "date": "2025-08-20",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-08-20/1224519101.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1224519101&orgId=gssh0600873&announcementTime=2025-08-20"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1224519101&orgId=gssh0600873&announcementTime=2025-08-20",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "梅花生物2024年年度报告（英文版）",
    "category": "年报",
    "date": "2025-04-26",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-04-26/1223300196.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1223300196&orgId=gssh0600873&announcementTime=2025-04-26"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1223300196&orgId=gssh0600873&announcementTime=2025-04-26",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "梅花生物2025年第一季度报告",
@@ -7066,7 +7076,9 @@
    "category": "年报",
    "date": "2025-03-18",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-03-18/1222822807.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1222822807&orgId=gssh0600873&announcementTime=2025-03-18"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1222822807&orgId=gssh0600873&announcementTime=2025-03-18",
+   "audit_firm": "大华会计师事务所",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "梅花生物2024年第三季度报告",
@@ -7080,14 +7092,18 @@
    "category": "半年报",
    "date": "2024-07-30",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-07-30/1220745339.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1220745339&orgId=gssh0600873&announcementTime=2024-07-30"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1220745339&orgId=gssh0600873&announcementTime=2024-07-30",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "梅花生物2023年年度报告（英文版）",
    "category": "年报",
    "date": "2024-04-20",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-04-20/1219689082.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1219689082&orgId=gssh0600873&announcementTime=2024-04-20"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1219689082&orgId=gssh0600873&announcementTime=2024-04-20",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "梅花生物2024年第一季度报告",
@@ -7101,7 +7117,9 @@
    "category": "年报",
    "date": "2024-03-19",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-03-19/1219331307.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1219331307&orgId=gssh0600873&announcementTime=2024-03-19"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1219331307&orgId=gssh0600873&announcementTime=2024-03-19",
+   "audit_firm": "大华会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "梅花生物2023年第三季度报告",
@@ -7115,7 +7133,9 @@
    "category": "半年报",
    "date": "2023-08-19",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-08-19/1217575809.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1217575809&orgId=gssh0600873&announcementTime=2023-08-19"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1217575809&orgId=gssh0600873&announcementTime=2023-08-19",
+   "audit_firm": null,
+   "audit_opinion": null
   }
  ],
  "errors": null

@@ -7098,7 +7098,9 @@
    "category": "年报",
    "date": "2026-04-25",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-04-25/1225185067.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1225185067&orgId=gssz0000528&announcementTime=2026-04-25"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1225185067&orgId=gssz0000528&announcementTime=2026-04-25",
+   "audit_firm": "安永华明会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "2026年一季度报告",
@@ -7119,7 +7121,9 @@
    "category": "半年报",
    "date": "2025-08-27",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-08-27/1224579412.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1224579412&orgId=gssz0000528&announcementTime=2025-08-27"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1224579412&orgId=gssz0000528&announcementTime=2025-08-27",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "2025年一季度报告",
@@ -7133,7 +7137,9 @@
    "category": "年报",
    "date": "2025-03-29",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-03-29/1222950803.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1222950803&orgId=gssz0000528&announcementTime=2025-03-29"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1222950803&orgId=gssz0000528&announcementTime=2025-03-29",
+   "audit_firm": "安永华明会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "2024年三季度报告",
@@ -7147,7 +7153,9 @@
    "category": "半年报",
    "date": "2024-08-29",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-08-29/1221028498.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1221028498&orgId=gssz0000528&announcementTime=2024-08-29"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1221028498&orgId=gssz0000528&announcementTime=2024-08-29",
+   "audit_firm": null,
+   "audit_opinion": null
   },
   {
    "title": "2024年一季度报告",
@@ -7161,7 +7169,9 @@
    "category": "年报",
    "date": "2024-03-30",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-03-30/1219473414.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1219473414&orgId=gssz0000528&announcementTime=2024-03-30"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1219473414&orgId=gssz0000528&announcementTime=2024-03-30",
+   "audit_firm": "致同会计师事务所（特殊普通合伙）",
+   "audit_opinion": "标准无保留意见"
   },
   {
    "title": "2023年三季度报告",
@@ -7175,7 +7185,9 @@
    "category": "半年报",
    "date": "2023-08-31",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-08-31/1217713157.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1217713157&orgId=gssz0000528&announcementTime=2023-08-31"
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1217713157&orgId=gssz0000528&announcementTime=2023-08-31",
+   "audit_firm": null,
+   "audit_opinion": null
   }
  ],
  "errors": null

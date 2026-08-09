@@ -8,6 +8,7 @@
 - 最新估值快照（最新价/PE/PB/市值）：腾讯行情接口
 - 分红历史：巨潮资讯
 - 定期报告 PDF 链接：巨潮资讯
+- 审计信息（事务所/意见类型）：定期报告 PDF 文本解析（巨潮直链）
 
 用法：
     python fetch_data.py                 # 抓取全部配置的公司
@@ -17,6 +18,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import traceback
@@ -24,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import akshare as ak
+import pymupdf
 import requests
 
 from config import DEFAULT_COMPANIES, REQUEST_INTERVAL
@@ -275,6 +278,159 @@ def fetch_dividends(code: str):
     return records
 
 
+# 事务所名称前的常见修饰语（聘任表格文本：本次变更业经/续聘/已由等）
+FIRM_NOISE = (
+    "本次变更业经", "变更业经", "业经", "已由", "本次", "变更",
+    "续聘", "改聘", "聘请", "聘任", "拟聘", "公司", "经", "由",
+)
+
+# 会计师事务所全称（名称 2-15 字 + 可选（特殊普通合伙）/（普通合伙）后缀，内部允许空白）
+FIRM_RE = r"([\u4e00-\u9fa5]{2,15}?会计师事务所(?:[（(]\s*(?:特殊普通|普通)?\s*合伙\s*[）)])?)"
+
+
+def clean_firm(raw: str):
+    """去掉事务所名称前的修饰语，如「本次变更业经立信会计师事务所」→「立信会计师事务所」"""
+    raw = raw.strip()
+    m = re.search(FIRM_RE, raw)
+    if m:
+        raw = m.group(1)
+    idx = 0
+    for w in FIRM_NOISE:
+        p = raw.find(w)
+        if p >= 0:
+            idx = max(idx, p + len(w))
+    return raw[idx:].strip() if idx else raw
+
+
+def first_firm(text: str):
+    """提取会计师事务所名称：优先沪市「境内会计师事务所名称」/深市「审计机构名称」表格，
+    兜底全文首个带（特殊普通合伙）后缀的全称。"""
+    for anchor in ("境内会计师事务所名称", "审计机构名称"):
+        m = re.search(anchor + r"\s*\n?\s*" + FIRM_RE, text)
+        if m:
+            return clean_firm(m.group(1))
+    m = re.search(FIRM_RE, text)
+    return clean_firm(m.group(1)) if m else None
+
+
+def has_real_retention(text: str) -> bool:
+    """判断是否真的为保留意见（排除「标准(的)无保留意见」中的子串误命中）。"""
+    t = text
+    for kw in ("标准的无保留意见", "标准无保留意见", "带强调事项段的无保留意见", "无保留意见"):
+        t = t.replace(kw, "")
+    return "保留意见" in t
+
+
+def classify_opinion(text: str):
+    """全文关键词精判审计意见类型。
+
+    注意：「无保留意见」包含子串「保留意见」，必须先排除「无」前缀。
+    """
+    if "无法表示意见" in text:
+        return "无法表示意见"
+    if "否定意见" in text:
+        return "否定意见"
+    if "带强调事项段" in text or "带持续经营重大不确定性事项段" in text:
+        return "带强调事项段的无保留意见"
+    if has_real_retention(text):
+        return "保留意见"
+    if "标准的无保留意见" in text or "标准无保留意见" in text:
+        return "标准无保留意见"
+    if "无保留意见" in text:
+        return "无保留意见"
+    return None
+
+
+def extract_audit(text: str, is_annual: bool = False):
+    """从年报/半年报 PDF 文本提取审计信息（会计师事务所 + 审计意见）。
+
+    深市披露表：「审计机构名称」「审计意见类型」；
+    沪市表格：「境内会计师事务所名称」+ 董事会「非标准意见审计报告」说明
+    （√/☑不适用 = 标准无保留意见，√/☑适用 = 非标准意见 → 转关键词精判）。
+    以审计报告正文标志「我们审计了」判定是否真的审计：
+    半年报未审计时（仅“聘任会计师事务所”表格），一律返回空，避免误导。
+    """
+    if re.search(r"我们\s*审\s*计\s*了", text) is None:
+        # 年报理论必有审计报告；扫描版/解析失败时保守返回空
+        return None, None
+
+    # 1) 会计师事务所名称
+    firm = first_firm(text)
+
+    # 2) 审计意见类型
+    opinion = None
+    m = re.search(r"非标准意见审计报告.{0,200}?说明.{0,80}?[√☑✓]\s*不适用", text, re.S)
+    if m:
+        opinion = "标准无保留意见"
+    else:
+        m = re.search(r"非标准意见审计报告.{0,200}?说明.{0,80}?[√☑✓]\s*适用", text, re.S)
+        if m:
+            opinion = classify_opinion(text)
+        else:
+            m = re.search(r"审计意见类型\s*\n?\s*([^\n]{0,18})", text)
+            if m:
+                v = m.group(1).strip()
+                if "无法表示意见" in v:
+                    opinion = "无法表示意见"
+                elif "否定意见" in v:
+                    opinion = "否定意见"
+                elif has_real_retention(v):
+                    opinion = "保留意见"
+                elif "标准的无保留意见" in v or "标准无保留意见" in v:
+                    opinion = "标准无保留意见"
+                elif "无保留意见" in v:
+                    opinion = "无保留意见"
+            else:
+                opinion = classify_opinion(text)
+    # 有审计报告且未检出非标准信号 → 标准无保留意见
+    if opinion is None:
+        opinion = "标准无保留意见"
+    return firm, opinion
+
+
+def fetch_audit(code: str, reports: list):
+    """解析定期报告 PDF 的审计信息（事务所 + 意见类型），写回 reports 条目。
+
+    仅年报/半年报可能附审计报告（季报不审计，保持为空）；
+    已解析且 PDF 链接未变化的条目直接复用旧 JSON 缓存，避免重复下载。
+    返回失败下载数（网络抖动时由调用方记录到 errors）。
+    """
+    old = {}
+    try:
+        prev = json.loads((COMPANIES_DIR / f"{code}.json").read_text(encoding="utf-8"))
+        for r in prev.get("reports") or []:
+            if r.get("audit_firm") or r.get("audit_opinion"):
+                old[r.get("pdf_url")] = {
+                    "audit_firm": r.get("audit_firm"),
+                    "audit_opinion": r.get("audit_opinion"),
+                }
+    except (OSError, ValueError):
+        pass
+    headers = {"User-Agent": "Mozilla/5.0"}
+    failed = 0
+    for r in reports:
+        if r["category"] not in ("年报", "半年报"):
+            continue
+        cached = old.get(r.get("pdf_url"))
+        if cached:
+            r.update(cached)
+            continue
+        try:
+            resp = requests.get(r["pdf_url"], headers=headers, timeout=90)
+            resp.raise_for_status()
+            doc = pymupdf.open(stream=resp.content, filetype="pdf")
+            text = "".join(page.get_text() for page in doc)
+            doc.close()
+            firm, opinion = extract_audit(text, r["category"] == "年报")
+            r["audit_firm"] = firm
+            r["audit_opinion"] = opinion
+        except Exception:
+            failed += 1
+            r["audit_firm"] = None
+            r["audit_opinion"] = None
+    return failed
+
+
 def fetch_reports(code: str):
     """巨潮资讯定期报告列表（官方披露 PDF 直链），按日期倒序"""
     reports = []
@@ -367,6 +523,14 @@ def fetch_company(code: str, name: str):
     except Exception as e:
         result["reports"] = []
         errors.append(f"reports: {e}")
+
+    # 审计信息：解析年报/半年报 PDF（事务所 + 意见类型），失败不中断
+    try:
+        failed = fetch_audit(code, result["reports"])
+        if failed:
+            errors.append(f"audit: {failed} 份报告 PDF 解析失败（下次抓取自动重试）")
+    except Exception as e:
+        errors.append(f"audit: {e}")
 
     result["errors"] = errors if errors else None
     return result
