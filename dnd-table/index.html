@@ -15,8 +15,9 @@ title: 跑团桌
   <nav class="dnd-tabs" id="dnd-tabs">
     <button type="button" class="dnd-tab-btn active" data-tab="dice">掷骰器</button>
     <button type="button" class="dnd-tab-btn" data-tab="character">角色卡</button>
-    <button type="button" class="dnd-tab-btn" data-tab="combat">战斗追踪</button>
     <button type="button" class="dnd-tab-btn" data-tab="random">随机表</button>
+    <button type="button" class="dnd-tab-btn" data-tab="spells">魔法书</button>
+    <button type="button" class="dnd-tab-btn" data-tab="monsters">怪物图鉴</button>
   </nav>
 
   <!-- ===== Tab: 掷骰器 ===== -->
@@ -43,16 +44,6 @@ title: 跑团桌
       </div>
 
       <div class="dnd-card">
-        <h2 class="dnd-card-title">批量先攻</h2>
-        <p class="dnd-hint">每行一个：名字 + 敏捷调整值</p>
-        <textarea id="init-list" class="dnd-input dnd-textarea" placeholder="战士 +2&#10;哥布林 +1&#10;盗贼 3"></textarea>
-        <div class="dnd-field-row" style="margin-top:10px;margin-bottom:0">
-          <button type="button" class="dnd-btn dnd-btn-gold" id="init-roll-btn">掷先攻</button>
-        </div>
-        <div id="init-result"></div>
-      </div>
-
-      <div class="dnd-card">
         <h2 class="dnd-card-title">历史记录</h2>
         <ul class="dice-history" id="dice-history"></ul>
         <button type="button" class="dnd-btn dnd-btn-sm" id="dice-clear-history">清空记录</button>
@@ -67,17 +58,24 @@ title: 跑团桌
     </div>
   </section>
 
-  <!-- ===== Tab: 战斗追踪 ===== -->
-  <section class="dnd-pane" id="pane-combat">
-    <div class="dnd-placeholder" id="combat-root">
-      <p class="dnd-placeholder-text">战斗追踪模块 · 开发中</p>
-    </div>
-  </section>
-
   <!-- ===== Tab: 随机表 ===== -->
   <section class="dnd-pane" id="pane-random">
     <div class="dnd-placeholder" id="random-root">
       <p class="dnd-placeholder-text">随机表模块 · 开发中</p>
+    </div>
+  </section>
+
+  <!-- ===== Tab: 魔法书 ===== -->
+  <section class="dnd-pane" id="pane-spells">
+    <div class="dnd-placeholder" id="spells-root">
+      <p class="dnd-placeholder-text">魔法书模块 · 开发中</p>
+    </div>
+  </section>
+
+  <!-- ===== Tab: 怪物图鉴 ===== -->
+  <section class="dnd-pane" id="pane-monsters">
+    <div class="dnd-placeholder" id="monsters-root">
+      <p class="dnd-placeholder-text">怪物图鉴模块 · 开发中</p>
     </div>
   </section>
 </div>
@@ -86,6 +84,7 @@ title: 跑团桌
 <script src="./assets/data.js"></script>
 <script src="./assets/dice.js"></script>
 <script src="./assets/character.js"></script>
-<script src="./assets/combat.js"></script>
 <script src="./assets/random.js"></script>
+<script src="./assets/spells.js"></script>
+<script src="./assets/monsters.js"></script>
 <script src="./assets/app.js"></script>

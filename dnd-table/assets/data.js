@@ -89,6 +89,9 @@
     getMonsters: function () { return getList('monsters'); },
     getMonster: function (index) { return get('/monsters/' + index); },
 
+    getSpells: function () { return getList('spells'); },
+    getSpell: function (index) { return get('/spells/' + index); },
+
     /* 本地模糊搜索怪物（基于已缓存索引） */
     searchMonsters: function (keyword) {
       var kw = String(keyword || '').trim().toLowerCase();

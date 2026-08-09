@@ -13,6 +13,13 @@
   var SLOTS_KEY = 'dnd_characters';
   var MAX_SLOTS = 4;
 
+  /* 9 宫格阵营（行：守序/中立/混乱，列：善良/中立/邪恶） */
+  var ALIGN_GRID = [
+    'lawful-good', 'neutral-good', 'chaotic-good',
+    'lawful-neutral', 'true-neutral', 'chaotic-neutral',
+    'lawful-evil', 'neutral-evil', 'chaotic-evil'
+  ];
+
   /* 熟练加值表（等级 1-20） */
   var PROF_BONUS = [0, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6];
 
@@ -77,7 +84,7 @@
   function newCharacter() {
     return {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-      name: '', player: '', level: 1,
+      name: '', player: '', level: 1, alignment: '',
       scores: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 },
       bonusMap: {}, /* 种族加成固化 {con:2} */
       raceIndex: '', raceName: '',
@@ -284,6 +291,7 @@
       + '<div class="sheet-classline">' + G.raceName(c.raceIndex) + ' · '
       + G.className(c.classIndex) + ' · 等级 ' + c.level + '</div>'
       + '<div class="sheet-meta">' + (c.player ? '玩家: ' + esc(c.player) + ' · ' : '')
+      + (c.alignment ? '阵营 ' + G.alignmentName(c.alignment) + ' · ' : '')
       + '体型 ' + (c.size || '—') + ' · 速度 ' + (c.speed || '—') + ' 尺'
       + (c.xp ? ' · 经验 ' + c.xp + (function () {
         var nx = G.nextLevelXp(c.level, c.xp);
@@ -418,8 +426,24 @@
       + '<div class="dnd-field-row"><label class="dnd-label">角色名</label>'
       + '<input type="text" id="w-name" class="dnd-input" value="' + esc(c.name) + '" placeholder="例如：伊尔·影风"></div>'
       + '<div class="dnd-field-row"><label class="dnd-label">玩家名</label>'
-      + '<input type="text" id="w-player" class="dnd-input" value="' + esc(c.player) + '" placeholder="可选"></div>';
+      + '<input type="text" id="w-player" class="dnd-input" value="' + esc(c.player) + '" placeholder="可选"></div>'
+      + '<div class="dnd-field-col"><label class="dnd-label">阵营</label>'
+      + '<div class="align-grid">'
+      + ALIGN_GRID.map(function (a) {
+        return '<button type="button" class="align-cell' + (c.alignment === a ? ' selected" data-align="' + a : '" data-align="' + a) + '">' + G.alignmentName(a) + '</button>';
+      }).join('')
+      + '</div>'
+      + '<button type="button" class="align-none' + (c.alignment === 'none' ? ' selected" data-align="none' : '" data-align="none') + '">无阵营</button>'
+      + '</div>';
     body.appendChild(card);
+    /* 阵营 9 宫格点选 */
+    card.querySelectorAll('[data-align]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        c.alignment = this.getAttribute('data-align');
+        card.querySelectorAll('[data-align]').forEach(function (b) { b.classList.remove('selected'); });
+        this.classList.add('selected');
+      });
+    });
     body.appendChild(wizardNav(
       function () {},
       function () {

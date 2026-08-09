@@ -285,7 +285,7 @@
       var card = el('div', 'dnd-card enc-card');
       card.innerHTML = '<div class="enc-roll">' + TERRAIN_CN[terSel.value] + ' · d100 = <b>' + roll + '</b></div>'
         + '<div class="enc-text">' + esc(hit.text) + '</div>'
-        + (hit.en ? '<div class="enc-hint">战斗 Tab 搜索：' + esc(hit.en) + '</div>' : '');
+        + (hit.en ? '<div class="enc-hint">怪物：' + esc(hit.en) + '</div>' : '');
       out.appendChild(card);
     }
     btn.addEventListener('click', doRoll);

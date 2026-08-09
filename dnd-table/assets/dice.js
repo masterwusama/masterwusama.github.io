@@ -100,31 +100,6 @@
     return { ok: true, total: total, groups: groups, mods: mods };
   }
 
-  /* ---------- 批量先攻 ---------- */
-  function parseInitLine(line) {
-    line = (line || '').trim();
-    if (!line) return null;
-    var m = line.match(/^(.+?)[,\s]+([+-]?\d+)$/);
-    if (!m) m = line.match(/^(.+?)([+-]\d+)$/);
-    if (!m) return null;
-    return { name: m[1].trim(), mod: parseInt(m[2], 10) };
-  }
-
-  function rollInitiative(lines) {
-    var list = [];
-    for (var i = 0; i < lines.length; i++) {
-      var item = parseInitLine(lines[i]);
-      if (!item) continue;
-      var d20 = rollDie(20);
-      list.push({ name: item.name, mod: item.mod, roll: d20, total: d20 + item.mod });
-    }
-    list.sort(function (a, b) {
-      if (b.total !== a.total) return b.total - a.total;
-      return b.mod - a.mod;
-    });
-    return list;
-  }
-
   /* ---------- 历史记录 ---------- */
   function loadHistory() {
     try {
@@ -164,7 +139,7 @@
     { faces: 4, label: 'd4' }, { faces: 6, label: 'd6' },
     { faces: 8, label: 'd8' }, { faces: 10, label: 'd10' },
     { faces: 12, label: 'd12' }, { faces: 20, label: 'd20' },
-    { faces: 100, label: 'd%' }
+    { faces: 100, label: 'd100' }
   ];
 
   function esc(s) {
@@ -327,32 +302,6 @@
       rollWith(exprInput.value.trim() || 'd20', { crit: true }, 'expr-result');
     });
 
-    /* 批量先攻 */
-    document.getElementById('init-roll-btn').addEventListener('click', function () {
-      var lines = document.getElementById('init-list').value.split('\n');
-      var list = rollInitiative(lines);
-      var box = document.getElementById('init-result');
-      box.innerHTML = '';
-      if (!list.length) {
-        box.innerHTML = '<p class="dice-error">请按格式输入，如：战士 +2</p>';
-        return;
-      }
-      var card = document.createElement('div');
-      card.className = 'dnd-card init-result-card';
-      list.forEach(function (it, idx) {
-        var row = document.createElement('div');
-        row.className = 'init-row';
-        row.innerHTML = '<span class="init-rank">' + (idx + 1) + '</span>'
-          + '<span class="init-name">' + esc(it.name) + '</span>'
-          + '<span class="init-detail">d20 ' + it.roll
-          + (it.mod >= 0 ? ' + ' + it.mod : ' - ' + Math.abs(it.mod)) + '</span>'
-          + '<span class="init-total">' + it.total + '</span>';
-        card.appendChild(row);
-      });
-      box.appendChild(card);
-      addHistory('先攻 x' + list.length, { ok: true, total: list[0].total, groups: [], mods: 0 });
-    });
-
     /* 历史 */
     document.getElementById('dice-clear-history').addEventListener('click', function () {
       clearHistory();
@@ -364,8 +313,7 @@
   DnD.Dice = {
     rollDie: rollDie,
     parseExpr: parseExpr,
-    rollExpr: rollExpr,
-    rollInitiative: rollInitiative
+    rollExpr: rollExpr
   };
   DnD.DiceUI = { init: init };
 })(window);

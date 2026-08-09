@@ -24,8 +24,9 @@
     if (!DnD) return;
     if (DnD.DiceUI) DnD.DiceUI.init();
     if (DnD.CharacterUI) DnD.CharacterUI.init();
-    if (DnD.CombatUI) DnD.CombatUI.init();
     if (DnD.RandomUI) DnD.RandomUI.init();
+    if (DnD.SpellUI) DnD.SpellUI.init();
+    if (DnD.MonsterUI) DnD.MonsterUI.init();
   }
 
   document.addEventListener('DOMContentLoaded', function () {

@@ -100,6 +100,36 @@
 
   var ARMOR_TYPES = { light: '轻甲', medium: '中甲', heavy: '重甲', shield: '盾牌' };
 
+  /* 9 宫格阵营 */
+  var ALIGNMENTS = {
+    'lawful-good': '守序善良', 'neutral-good': '中立善良', 'chaotic-good': '混乱善良',
+    'lawful-neutral': '守序中立', 'true-neutral': '绝对中立', 'chaotic-neutral': '混乱中立',
+    'lawful-evil': '守序邪恶', 'neutral-evil': '中立邪恶', 'chaotic-evil': '混乱邪恶',
+    none: '无阵营'
+  };
+
+  /* 法术学派 */
+  var SCHOOLS = {
+    abjuration: '防护', conjuration: '咒法', divination: '预言',
+    enchantment: '惑控', evocation: '塑能', illusion: '幻术',
+    necromancy: '死灵', transmutation: '变化'
+  };
+
+  /* 伤害类型（用于抗性/免疫展示） */
+  var DAMAGE_TYPES = {
+    acid: '强酸', bludgeoning: '钝击', cold: '寒冷', fire: '火焰', force: '力场',
+    lightning: '闪电', necrotic: '死灵', piercing: '穿刺', poison: '毒素',
+    psychic: '心灵', radiant: '光耀', slashing: '挥砍', thunder: '雷鸣'
+  };
+
+  /* 生物类型（怪物元数据） */
+  var TYPE_CN = {
+    aberration: '异怪', beast: '野兽', celestial: '天界生物', construct: '构装体',
+    dragon: '龙', elemental: '元素生物', fey: '妖精', fiend: '邪魔',
+    giant: '巨人', humanoid: '类人生物', monstrosity: '怪物', ooze: '泥怪',
+    plant: '植物', undead: '亡灵', swarm: '虫群'
+  };
+
   /* 升级经验阈值（标准 5e 表，大部分职业一致） */
   var LEVEL_XP = [0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
 
@@ -122,6 +152,10 @@
     conditions: CONDITIONS,
     monsters: MONSTERS,
     armorTypes: ARMOR_TYPES,
+    alignments: ALIGNMENTS,
+    schools: SCHOOLS,
+    damageTypes: DAMAGE_TYPES,
+    typeCn: TYPE_CN,
 
     abilityMod: function (score) {
       return Math.floor((Number(score || 0) - 10) / 2);
@@ -158,6 +192,22 @@
     armorName: function (index) {
       var i = String(index || '').toLowerCase();
       return ARMOR_TYPES[i] || i;
+    },
+    alignmentName: function (index) {
+      var i = String(index || '').toLowerCase();
+      return ALIGNMENTS[i] || i;
+    },
+    schoolName: function (index) {
+      var i = String(index || '').toLowerCase();
+      return SCHOOLS[i] || i;
+    },
+    damageName: function (index) {
+      var i = String(index || '').toLowerCase();
+      return DAMAGE_TYPES[i] || i;
+    },
+    typeName: function (index) {
+      var i = String(index || '').toLowerCase();
+      return TYPE_CN[i] || i;
     },
 
     /* 下一级所需经验：{need, left, ready} */

@@ -269,31 +269,6 @@
 }
 .dice-error { color: #e07870; font-size: 13px; margin: 8px 0; }
 
-/* ---------- 批量先攻 ---------- */
-.init-result-card { margin-top: 4px; }
-.init-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  border-bottom: 1px dashed var(--dnd-line);
-  font-size: 14px;
-}
-.init-row:last-child { border-bottom: none; }
-.init-rank {
-  width: 22px;
-  height: 22px;
-  line-height: 22px;
-  text-align: center;
-  border-radius: 50%;
-  background: var(--dnd-gold);
-  color: #241c10;
-  font-size: 12px;
-}
-.init-name { font-weight: bold; color: var(--dnd-text); }
-.init-detail { color: var(--dnd-text-dim); font-size: 12px; }
-.init-total { margin-left: auto; font-size: 18px; color: var(--dnd-gold); }
-
 /* ---------- 历史记录 ---------- */
 .dice-history {
   list-style: none;
@@ -505,67 +480,10 @@
 .eq-edit-row .eq-del { flex: none; }
 .armor-box .dnd-field-row label { min-width: 76px; }
 
-/* ---------- 战斗追踪 ---------- */
-.cb-toolbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-.cb-name-input { flex: 1; min-width: 160px; }
-.cb-turn-label { color: var(--dnd-gold); font-size: 14px; letter-spacing: 1px; white-space: nowrap; }
-.cb-focus-toggle { display: flex; align-items: center; color: var(--dnd-text-dim); font-size: 13px; cursor: pointer; }
-.cb-focus-toggle input { accent-color: var(--dnd-gold); }
+/* ---------- 随机表 ---------- */
+/* 子 Tab 按钮样式（沿用 cb-add-tabs） */
 .cb-add-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
 .cb-add-tabs .dnd-btn.active { color: #1c1628; background: linear-gradient(180deg, #e6c868, var(--dnd-gold)); border-color: var(--dnd-gold); }
-.cb-pc-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; max-height: 200px; overflow-y: auto; }
-.cb-pc-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dnd-text); cursor: pointer; }
-.cb-pc-item input { accent-color: var(--dnd-gold); }
-.cb-monster-results { margin-top: 8px; max-height: 260px; overflow-y: auto; }
-.cb-monster-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed var(--dnd-line); }
-.cb-monster-name { font-size: 13px; color: var(--dnd-text); }
-.cb-monster-name i { color: var(--dnd-text-dim); font-size: 12px; }
-.cb-list { margin-top: 14px; }
-.cb-rows { display: flex; flex-direction: column; gap: 10px; }
-.cb-row { background: var(--dnd-bg-0); border: 1px solid var(--dnd-line); border-radius: 4px; padding: 10px 12px; transition: border-color .2s, box-shadow .2s; }
-.cb-row.current { border-color: var(--dnd-gold); box-shadow: 0 0 10px var(--dnd-gold-glow); }
-.cb-row.dead { opacity: .55; }
-.cb-head { display: flex; align-items: center; gap: 10px; }
-.cb-order { width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--dnd-gold); color: #241c10; font-size: 12px; }
-.cb-row.current .cb-order { background: var(--dnd-red); color: #fff; }
-.cb-name { flex: 1; font-size: 15px; color: var(--dnd-text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.cb-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; }
-.cb-badge-pc { background: rgba(63, 154, 74, .25); color: var(--dnd-green); border: 1px solid var(--dnd-green); }
-.cb-badge-monster { background: rgba(192, 57, 43, .2); color: #e07870; border: 1px solid var(--dnd-red); }
-.cb-badge-custom { background: rgba(163, 130, 42, .2); color: var(--dnd-gold-dim); border: 1px solid var(--dnd-gold-dim); }
-.cb-badge-dead { background: rgba(0, 0, 0, .4); color: #999; border: 1px solid #555; }
-.cb-badge-stable { background: rgba(63, 154, 74, .15); color: var(--dnd-green); border: 1px dashed var(--dnd-green); }
-.cb-init { display: flex; align-items: center; gap: 6px; }
-.cb-init-label { color: var(--dnd-text-dim); font-size: 12px; }
-.cb-init-input { width: 52px; background: var(--dnd-panel); border: 1px solid var(--dnd-line); color: var(--dnd-gold); border-radius: 3px; padding: 3px 6px; text-align: center; font-size: 14px; }
-.cb-stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 6px 0 4px; font-size: 12px; color: var(--dnd-text-dim); }
-.cb-hp b { color: var(--dnd-text); font-size: 14px; }
-.cb-temp { color: var(--dnd-green); font-style: normal; }
-.cb-hpbar { height: 6px; background: var(--dnd-panel); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
-.cb-hpbar-fill { height: 100%; background: linear-gradient(90deg, #3f9a4a, #7ecb84); border-radius: 3px; transition: width .3s; }
-.cb-hpbar-fill.low { background: linear-gradient(90deg, #c0392b, #e07870); }
-.cb-ops { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.cb-op-input { width: 64px; background: var(--dnd-panel); border: 1px solid var(--dnd-line); color: var(--dnd-text); border-radius: 3px; padding: 4px 6px; }
-.cb-btn-dmg { border-color: var(--dnd-red); color: #e07870; }
-.cb-btn-dmg:hover { background: rgba(192, 57, 43, .15); }
-.cb-btn-heal { border-color: var(--dnd-green); color: #8fd99a; }
-.cb-btn-heal:hover { background: rgba(63, 154, 74, .15); }
-.cb-cond-select { background: var(--dnd-panel); border: 1px solid var(--dnd-line); color: var(--dnd-text); border-radius: 3px; padding: 4px 6px; font-size: 12px; }
-.cb-conds { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.cb-cond-chip { background: rgba(212, 175, 55, .12); border: 1px dashed var(--dnd-gold-dim); color: var(--dnd-gold); font-size: 12px; padding: 2px 8px; border-radius: 10px; cursor: pointer; }
-.cb-death { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--dnd-red); }
-.cb-death-label { color: var(--dnd-red); font-size: 12px; letter-spacing: 1px; }
-.cb-death-count { color: var(--dnd-text-dim); font-size: 12px; }
-.cb-focus-msg { margin-top: 8px; font-size: 13px; padding: 6px 10px; border-radius: 3px; }
-.cb-focus-msg.ok { background: rgba(63, 154, 74, .12); border: 1px solid var(--dnd-green); color: #8fd99a; }
-.cb-focus-msg.fail { background: rgba(192, 57, 43, .12); border: 1px solid var(--dnd-red); color: #e07870; }
-/* XP 结算弹层 */
-.cb-xp-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; z-index: 999; }
-.cb-xp-panel { min-width: 300px; }
-.cb-xp-line { font-size: 14px; color: var(--dnd-text); margin: 6px 0; }
-.cb-xp-gold { color: var(--dnd-gold); font-size: 18px; }
-
-/* ---------- 随机表 ---------- */
 .rand-body { }
 .npc-card { margin-top: 10px; }
 .npc-name { font-size: 22px; color: var(--dnd-gold); letter-spacing: 2px; text-align: center; }
@@ -586,3 +504,109 @@
 /* ---------- 分享提示条 ---------- */
 .share-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(212, 175, 55, .12); border: 1px dashed var(--dnd-gold-dim); border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--dnd-text); }
 .share-bar b { color: var(--dnd-gold); }
+
+/* ---------- 角色卡：9 宫格阵营 ---------- */
+.dnd-field-col { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.align-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-width: 420px;
+}
+.align-cell {
+  background: var(--dnd-panel);
+  border: 1px solid var(--dnd-line);
+  border-radius: 4px;
+  color: var(--dnd-text);
+  padding: 8px 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.align-cell:hover { border-color: var(--dnd-gold-dim); }
+.align-cell.selected {
+  background: linear-gradient(180deg, #e6c868, var(--dnd-gold));
+  border-color: var(--dnd-gold);
+  color: #1c1628;
+  font-weight: bold;
+}
+.align-none {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed var(--dnd-line);
+  border-radius: 4px;
+  color: var(--dnd-text-dim);
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.align-none.selected { border-color: var(--dnd-gold); color: var(--dnd-gold); }
+
+/* ---------- 魔法书 / 怪物图鉴（共用图鉴布局） ---------- */
+.lib-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.lib-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.lib-filters .dnd-btn.active { color: #1c1628; background: linear-gradient(180deg, #e6c868, var(--dnd-gold)); border-color: var(--dnd-gold); }
+.lib-search { flex: 1; min-width: 180px; }
+.lib-count { color: var(--dnd-text-dim); font-size: 13px; white-space: nowrap; }
+.lib-wrap { display: flex; gap: 14px; align-items: flex-start; }
+.lib-list {
+  flex: none;
+  width: 280px;
+  max-height: 640px;
+  overflow-y: auto;
+  background: var(--dnd-bg-0);
+  border: 1px solid var(--dnd-line);
+  border-radius: 4px;
+  padding: 8px;
+}
+.lib-group { color: var(--dnd-gold); font-size: 13px; letter-spacing: 1px; margin: 10px 4px 4px; }
+.lib-group:first-child { margin-top: 0; }
+.lib-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  color: var(--dnd-text);
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.lib-item i { color: var(--dnd-text-dim); font-size: 12px; font-style: normal; }
+.lib-item:hover { background: rgba(212, 175, 55, .08); }
+.lib-item.active { background: rgba(212, 175, 55, .14); border-left-color: var(--dnd-gold); color: var(--dnd-gold); }
+.lib-detail { flex: 1; min-width: 0; }
+.lib-detail-body { display: flex; flex-direction: column; gap: 10px; }
+.lib-detail-head { border-bottom: 1px dashed var(--dnd-line); padding-bottom: 10px; }
+.lib-detail-name { font-size: 22px; color: var(--dnd-gold); letter-spacing: 2px; }
+.lib-detail-sub { color: var(--dnd-text-dim); font-size: 13px; margin-top: 4px; }
+.lib-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; }
+.lib-info-row { display: flex; gap: 8px; font-size: 13px; }
+.lib-info-label { flex: none; color: var(--dnd-gold-dim); min-width: 62px; }
+.lib-info-val { color: var(--dnd-text); }
+.lib-desc { display: flex; flex-direction: column; gap: 8px; }
+.lib-desc-p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--dnd-text); }
+.lib-higher { border: 1px dashed var(--dnd-line); border-radius: 4px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.lib-higher-title { color: var(--dnd-gold); font-size: 13px; letter-spacing: 1px; }
+.lib-classes { font-size: 12px; color: var(--dnd-text-dim); border-top: 1px dashed var(--dnd-line); padding-top: 8px; }
+
+/* ---------- 怪物图鉴：详情 ---------- */
+.mon-core .sheet-stat-val { font-size: 13px; }
+.mon-abil-grid { margin-top: 4px; }
+.mon-info { display: flex; flex-direction: column; gap: 4px; }
+.mon-line { font-size: 13px; color: var(--dnd-text); display: flex; gap: 8px; }
+.mon-line-label { flex: none; color: var(--dnd-gold-dim); min-width: 62px; }
+.mon-block { border: 1px solid var(--dnd-line); border-radius: 4px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.mon-block-title { color: var(--dnd-gold); font-size: 14px; letter-spacing: 2px; border-bottom: 1px dashed var(--dnd-line); padding-bottom: 6px; }
+.mon-feat-name { font-size: 13px; font-weight: bold; color: var(--dnd-text); }
+.mon-feat-name i { font-weight: normal; color: var(--dnd-text-dim); font-size: 12px; }
+.mon-feat-desc { font-size: 13px; line-height: 1.7; color: var(--dnd-text); margin-top: 3px; white-space: pre-line; }
+
+/* ---------- 窄屏（魔法书/怪物图鉴堆叠） ---------- */
+@media (max-width: 860px) {
+  .lib-wrap { flex-direction: column; }
+  .lib-list { width: 100%; max-height: 280px; }
+  .lib-info-grid { grid-template-columns: 1fr; }
+}
