@@ -811,6 +811,13 @@
   position: fixed; inset: 0; z-index: 999;
   background: rgba(8, 5, 14, .72); backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center; padding: 20px;
+  /* 弹窗挂在 body 下，#dnd-app 的 CSS 变量不生效，需在此补齐并设默认文字色 */
+  --dnd-gold: #d4af37;
+  --dnd-gold-dim: #a3822a;
+  --dnd-gold-glow: rgba(212, 175, 55, 0.45);
+  --dnd-text: #e9e2cf;
+  --dnd-text-dim: #a396b8;
+  color: var(--dnd-text);
 }
 .de-modal {
   width: min(520px, 94vw); max-height: 80vh; overflow-y: auto;
