@@ -7,7 +7,8 @@
   var DATA_BASE = './data/';
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = { companies: [], current: null, charts: [], view: 'year' };
+  var state = { companies: [], current: null, charts: [], view: 'year',
+    indexUpdatedAt: null, listScroll: 0, keyword: '' };
 
   /* ---------------- 工具函数 ---------------- */
 
@@ -28,6 +29,11 @@
 
   function fmtDate(s) {
     return s ? String(s).slice(0, 10) : '-';
+  }
+
+  // "2026-08-09T01:37:56+08:00" → "2026-08-09 01:37"
+  function fmtFullDate(s) {
+    return s ? String(s).replace('T', ' ').slice(0, 16) : '-';
   }
 
   function cls(v) {
@@ -60,7 +66,11 @@
 
   function route() {
     var m = location.hash.match(/^#\/(\d{6})$/);
-    if (m) { showDetail(m[1]); } else { showList(); }
+    if (m) {
+      // 进入详情前记录列表滚动位置，返回时恢复
+      state.listScroll = window.scrollY;
+      showDetail(m[1]);
+    } else { showList(); }
   }
 
   window.addEventListener('hashchange', route);
@@ -74,15 +84,52 @@
     if (!state.companies.length) { fetchIndex(); return; }
     show('stock-list');
     var box = $('stock-list');
-    var html = '<div class="stock-grid">';
+    var kw = (state.keyword || '').trim().toLowerCase();
+    var html = '<div class="stock-search-wrap">' +
+      '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
+      'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>';
+    html += '<div class="stock-grid">';
     state.companies.forEach(function (c) {
+      var k = (c.name + ' ' + c.code).toLowerCase();
+      if (kw && k.indexOf(kw) < 0) return;
       html +=
-        '<div class="stock-card" onclick="location.hash=\'#/' + c.code + '\'">' +
-        '<div><span class="s-name">' + c.name + '</span><span class="s-code">' + c.code + '</span></div>' +
-        '</div>';
+        '<div class="stock-card" data-k="' + k + '" data-code="' + c.code + '" tabindex="0" role="link" ' +
+        'onclick="location.hash=\'#/' + c.code + '\'">' +
+        '<div><span class="s-name">' + c.name + '</span><span class="s-code">' + c.code + '</span>' +
+        (c.industry ? '<span class="s-industry">' + c.industry + '</span>' : '') +
+        '</div></div>';
     });
     html += '</div>';
+    html += '<div class="stock-hint" id="stock-search-empty" style="display:none">未找到匹配的公司</div>';
+    html += '<div class="stock-list-foot">数据更新于 ' + fmtFullDate(state.indexUpdatedAt) + '</div>';
     box.innerHTML = html;
+
+    // 搜索框输入即时过滤（名称/代码模糊匹配）
+    var input = $('stock-search');
+    input.addEventListener('input', function () {
+      state.keyword = input.value;
+      var q = state.keyword.trim().toLowerCase();
+      var shown = 0;
+      box.querySelectorAll('.stock-card').forEach(function (card) {
+        var hit = !q || (card.getAttribute('data-k') || '').indexOf(q) >= 0;
+        card.style.display = hit ? '' : 'none';
+        if (hit) shown++;
+      });
+      $('stock-search-empty').style.display = shown ? 'none' : '';
+    });
+
+    // 键盘可达：Enter/空格进入详情
+    box.querySelectorAll('.stock-card').forEach(function (card) {
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          location.hash = '#/' + card.getAttribute('data-code');
+        }
+      });
+    });
+
+    // 从详情返回时恢复滚动位置
+    if (state.listScroll) window.scrollTo(0, state.listScroll);
   }
 
   function fetchIndex() {
@@ -91,6 +138,7 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
         state.companies = data.companies || [];
+        state.indexUpdatedAt = data.updated_at;
         showList();
       })
       .catch(function () { fail('公司列表加载失败，请稍后刷新重试'); });
