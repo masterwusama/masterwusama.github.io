@@ -1,0 +1,297 @@
+/* app.css —— 冰箱做菜 样式（移动端优先，不依赖主题） */
+
+* { box-sizing: border-box; }
+
+/* hidden 属性优先于任何 display 设置（防 flex 覆盖） */
+[hidden] { display: none !important; }
+
+#fc-app {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 12px 48px;
+  color: #2d3436;
+  line-height: 1.6;
+}
+
+.fc-header { margin-bottom: 16px; }
+.fc-title { font-size: 24px; margin: 8px 0 4px; }
+.fc-sub { color: #8395a7; font-size: 13px; margin: 0; }
+
+/* ---------- tabs ---------- */
+.fc-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.fc-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: 1px solid #dfe6e9;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 15px;
+  color: #636e72;
+  cursor: pointer;
+}
+.fc-tab.is-active {
+  background: #feca57;
+  border-color: #feca57;
+  color: #2d3436;
+  font-weight: 600;
+}
+
+/* ---------- cards ---------- */
+.fc-card {
+  background: #fff;
+  border: 1px solid #dfe6e9;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.fc-card-title { font-weight: 600; margin-bottom: 6px; }
+.fc-card-sub { font-size: 12px; color: #8395a7; font-weight: 400; }
+
+/* ---------- input ---------- */
+.fc-input-row { display: flex; gap: 8px; }
+.fc-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #dfe6e9;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  background: #fff;
+}
+.fc-input:focus { border-color: #feca57; }
+
+.fc-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fc-btn-primary { background: #feca57; color: #2d3436; font-weight: 600; }
+.fc-btn-ghost { background: #f1f2f6; color: #57606f; border: 1px solid #dfe6e9; }
+.fc-btn-danger { color: #e17055; }
+.fc-link-btn {
+  border: none;
+  background: none;
+  color: #0984e3;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* ---------- suggest ---------- */
+.fc-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.fc-suggest-item {
+  border: 1px solid #dfe6e9;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ---------- chips ---------- */
+.fc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  min-height: 20px;
+}
+.fc-chip {
+  border: 1px solid #feca57;
+  background: #fff7e6;
+  color: #2d3436;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fc-chip.is-urgent { background: #ff7675; border-color: #ff7675; color: #fff; }
+.fc-chip.is-flash { animation: fc-flash 0.6s; }
+.fc-chip-light { background: #f1f2f6; border-color: #dfe6e9; }
+@keyframes fc-flash { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+.fc-chips-label { margin-top: 12px; font-size: 12px; color: #8395a7; }
+.fc-empty-hint { color: #b2bec3; font-size: 13px; }
+
+/* ---------- filters ---------- */
+.fc-filter-row { display: flex; align-items: flex-start; margin-bottom: 8px; }
+.fc-filter-label { flex-shrink: 0; font-size: 13px; color: #636e72; line-height: 30px; margin-right: 8px; }
+.fc-filter-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.fc-fopt {
+  border: 1px solid #dfe6e9;
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.fc-fopt.is-active { background: #0984e3; border-color: #0984e3; color: #fff; }
+
+/* ---------- result head ---------- */
+.fc-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 2px 8px;
+  font-size: 13px;
+  color: #636e72;
+}
+
+/* ---------- recipe card ---------- */
+.fc-result, .fc-library { display: flex; flex-direction: column; gap: 10px; }
+.fc-recipe {
+  background: #fff;
+  border: 1px solid #dfe6e9;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.fc-recipe-head { display: flex; align-items: center; gap: 10px; }
+.fc-recipe-emoji { font-size: 26px; flex-shrink: 0; }
+.fc-recipe-main { flex: 1; min-width: 0; }
+.fc-recipe-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fc-recipe-meta { display: flex; gap: 8px; font-size: 12px; color: #8395a7; margin-top: 2px; flex-wrap: wrap; }
+.fc-recipe-ing { margin: 8px 0 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+.fc-star {
+  border: none;
+  background: none;
+  font-size: 20px;
+  color: #b2bec3;
+  cursor: pointer;
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+.fc-star.is-on { color: #feca57; }
+
+.fc-tag { border-radius: 6px; padding: 1px 8px; font-size: 12px; }
+.fc-tag-ok { background: #55efc4; color: #006266; }
+.fc-tag-so { background: #ffeaa7; color: #8c6d00; }
+.fc-tag-no { background: #fab1a0; color: #b33939; }
+.fc-tag-cat { background: #dfe6e9; color: #57606f; }
+.fc-eaten-tag { font-size: 11px; color: #b2bec3; border: 1px dashed #dfe6e9; border-radius: 6px; padding: 0 6px; }
+
+.fc-ing { border-radius: 6px; padding: 2px 8px; font-size: 12px; }
+.fc-ing-used { background: #e8f8f5; color: #218c74; }
+.fc-ing-miss { background: #ffe5e5; color: #e17055; }
+.fc-ing-alt { background: #f4f1ff; color: #6c5ce7; }
+
+.fc-urgent-line { font-size: 12px; color: #d63031; margin: 4px 0; }
+.fc-fb-title { font-size: 13px; font-weight: 600; color: #636e72; margin: 6px 2px 0; }
+
+/* ---------- shopping ---------- */
+.fc-shopping-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.fc-shop-item { background: #fdf2e9; border: 1px solid #fab1a0; color: #b33939; border-radius: 8px; padding: 4px 10px; font-size: 13px; }
+
+/* ---------- empty & error ---------- */
+.fc-empty {
+  text-align: center;
+  color: #b2bec3;
+  padding: 32px 12px;
+  font-size: 14px;
+}
+.fc-error {
+  background: #ffe5e5;
+  color: #b33939;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+}
+
+/* ---------- library ---------- */
+.fc-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.fc-cat {
+  border: 1px solid #dfe6e9;
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.fc-cat.is-active { background: #feca57; border-color: #feca57; font-weight: 600; }
+.fc-lib-ing { margin: 8px 0 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- detail modal ---------- */
+.fc-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.fc-detail {
+  background: #fff;
+  width: 100%;
+  max-width: 640px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+}
+.fc-detail-head { display: flex; align-items: center; gap: 10px; }
+.fc-detail-name { font-size: 18px; font-weight: 700; }
+.fc-close {
+  margin-left: auto;
+  border: none;
+  background: #f1f2f6;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.fc-detail-ing { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.fc-detail-sec {
+  font-weight: 600;
+  margin: 14px 0 6px;
+  padding-left: 8px;
+  border-left: 3px solid #feca57;
+}
+.fc-step { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; }
+.fc-step-no {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  background: #feca57;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 12px;
+  line-height: 22px;
+  font-weight: 700;
+}
+.fc-fail { background: #ffe5e5; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin: 8px 0; }
+.fc-alt { background: #f4f1ff; border-radius: 8px; padding: 6px 10px; font-size: 13px; margin: 6px 0; }
+.fc-note { background: #fff7e6; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin: 8px 0; }
+.fc-miss-line { font-size: 13px; margin: 4px 0; }
+.fc-miss-none { color: #218c74; }
+.fc-detail-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+/* ---------- settings ---------- */
+.fc-settings-tip { font-size: 12px; color: #8395a7; margin: 4px 0 10px; }
+.fc-settings-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.fc-footer { text-align: center; color: #b2bec3; font-size: 12px; margin-top: 20px; }
+
+/* ---------- desktop 微调 ---------- */
+@media (min-width: 768px) {
+  .fc-mask { align-items: center; }
+  .fc-detail { border-radius: 16px; }
+  #fc-app { padding-top: 24px; }
+}
