@@ -490,9 +490,12 @@
 .npc-sub { text-align: center; color: var(--dnd-text-dim); font-size: 13px; margin: 4px 0 12px; }
 .npc-line { font-size: 13px; color: var(--dnd-text); padding: 4px 0; display: flex; gap: 8px; align-items: baseline; }
 .npc-tag { color: var(--dnd-gold); font-size: 12px; border: 1px solid var(--dnd-gold-dim); border-radius: 3px; padding: 0 6px; height: 18px; line-height: 16px; white-space: nowrap; flex: none; }
+.npc-secret { margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--dnd-line); color: var(--dnd-text-dim); }
 .enc-card { margin-top: 10px; }
 .enc-roll { color: var(--dnd-gold); font-size: 13px; letter-spacing: 1px; }
 .enc-roll b { font-size: 18px; }
+.enc-name { font-size: 17px; color: var(--dnd-text); margin: 6px 0; letter-spacing: 1px; }
+.enc-name b { color: var(--dnd-gold); }
 .enc-text { font-size: 14px; color: var(--dnd-text); margin: 8px 0; }
 .enc-hint { font-size: 12px; color: var(--dnd-text-dim); border: 1px dashed var(--dnd-line); padding: 4px 8px; border-radius: 3px; display: inline-block; }
 .loot-card { margin-top: 10px; }
@@ -500,6 +503,17 @@
 .loot-roll b { font-size: 18px; }
 .loot-name { font-size: 17px; color: var(--dnd-text); margin: 6px 0; letter-spacing: 1px; }
 .loot-detail { font-size: 13px; color: var(--dnd-text-dim); }
+/* 战利品稀有度标签（颜色随稀有度，从低到高：灰/绿/蓝/紫/金/红） */
+.loot-items { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.loot-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 10px; border-radius: 3px; border: 1px solid; }
+.loot-item i { font-style: normal; font-size: 11px; opacity: .75; }
+.loot-item.r-common { color: #b7bcc4; border-color: #5a5f66; background: rgba(150, 155, 163, .08); }
+.loot-item.r-uncommon { color: #6ee7a0; border-color: #2f9e62; background: rgba(74, 222, 128, .08); }
+.loot-item.r-rare { color: #7cb8f8; border-color: #3b82c4; background: rgba(96, 165, 250, .08); }
+.loot-item.r-very-rare { color: #b9a2f5; border-color: #7c5cd4; background: rgba(167, 139, 250, .08); }
+.loot-item.r-legendary { color: #f7c96a; border-color: #c99a2e; background: rgba(251, 191, 36, .08); }
+.loot-item.r-artifact { color: #f78f7f; border-color: #c94f3b; background: rgba(248, 113, 113, .08); }
+.loot-item.r-varies { color: var(--dnd-text-dim); border-color: var(--dnd-line); }
 
 /* ---------- 分享提示条 ---------- */
 .share-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(212, 175, 55, .12); border: 1px dashed var(--dnd-gold-dim); border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--dnd-text); }
@@ -614,14 +628,38 @@
 }
 
 /* ---------- 职业升级表 ---------- */
-.lv-table-wrap { overflow-x: auto; }
-.lv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.lv-table th, .lv-table td { border: 1px solid var(--dnd-line); padding: 6px 8px; text-align: left; vertical-align: top; }
+.lv-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--dnd-line);
+  border-radius: 4px;
+}
+.lv-table-wrap::-webkit-scrollbar { height: 8px; }
+.lv-table-wrap::-webkit-scrollbar-track { background: var(--dnd-bg-0); }
+.lv-table-wrap::-webkit-scrollbar-thumb { background: var(--dnd-gold-dim); border-radius: 4px; }
+.lv-table { width: 100%; min-width: 680px; border-collapse: collapse; font-size: 13px; }
+.lv-table th, .lv-table td { border: 1px solid var(--dnd-line); padding: 6px 8px; text-align: left; vertical-align: top; white-space: nowrap; }
 .lv-table th { background: var(--dnd-bg-0); color: var(--dnd-gold); font-weight: normal; letter-spacing: 1px; white-space: nowrap; }
+.lv-table td:nth-child(3) { white-space: normal; }
+/* 首列（等级）横向滚动时固定可见 */
+.lv-table th:first-child, .lv-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--dnd-bg-0);
+  box-shadow: 2px 0 0 rgba(0, 0, 0, .3);
+}
+.lv-table td:first-child { background: var(--dnd-bg-1); }
+.lv-table thead th:first-child { z-index: 2; }
+.lv-table tbody tr:hover td:first-child { background: #241b33; }
 .lv-table td.lv-num { text-align: center; white-space: nowrap; }
 .lv-table td.lv-level { color: var(--dnd-gold); font-weight: bold; }
 .lv-table tr.lv-max td { background: rgba(212, 175, 55, .06); }
 .lv-table tbody tr:hover { background: rgba(212, 175, 55, .03); }
+.lv-scroll-hint { display: none; font-size: 12px; color: var(--dnd-text-dim); margin-bottom: 6px; letter-spacing: 1px; }
+@media (max-width: 700px) {
+  .lv-scroll-hint { display: block; }
+}
 .lv-feat { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--dnd-text); border: 1px solid var(--dnd-line); border-radius: 3px; cursor: pointer; }
 .lv-feat:hover { border-color: var(--dnd-gold); color: var(--dnd-gold); }
 .lv-asi { margin-left: 6px; font-size: 12px; color: var(--dnd-gold-dim); }

@@ -96,6 +96,7 @@
 
   function renderTable() {
     var wrap = el('div', 'lv-table-wrap');
+    wrap.appendChild(el('div', 'lv-scroll-hint', '← 左右滑动表格查看全部列 →'));
     var table = el('table', 'lv-table');
     var thead = el('thead');
     var hr = el('tr');

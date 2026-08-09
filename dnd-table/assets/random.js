@@ -77,72 +77,255 @@
     '胆小如鼠，遇到危险先跑', '控制不住脾气，容易动手', '撒谎成性，连自己都骗',
     '贪得无厌，见财起意', '记仇，报复心极强'];
 
-  /* ---------- 随机遭遇表（按地形，d100 区间） ---------- */
+  /* NPC 附加细节：年龄 / 外貌 / 口癖 / 秘密 */
+  var NPC_AGES = ['少年', '青年', '中年', '老年'];
+  var NPC_LOOKS = [
+    '左眼有一道旧伤疤',
+    '一头乱蓬蓬的火红头发',
+    '牙齿泛黄，笑起来缺了一颗',
+    '身材矮壮，手臂布满老茧',
+    '脸上画着褪色的部落图腾',
+    '斗篷下藏着鼓鼓囊囊的钱袋',
+    '右臂是铁制的义肢',
+    '瞳孔颜色异于常人（琥珀色）',
+    '身上总带着一股草药味',
+    '指甲缝里永远洗不干净'
+  ];
+  var NPC_VOICES = [
+    '说话爱引用谚语',
+    '每句话结尾都带「是吧？」',
+    '压低声音说话，像在分享秘密',
+    '语速极快，别人很难插上话',
+    '带着浓重的口音，偶尔蹦出方言',
+    '说到激动处会手舞足蹈',
+    '几乎从不主动开口',
+    '说话时习惯性地后退半步'
+  ];
+  var NPC_SECRETS = [
+    '曾是一名逃兵，家乡已不认他',
+    '暗地里信奉一位被禁的神祇',
+    '偷走了雇主的一件宝物，至今未被发现',
+    '与当地盗贼公会有私下往来',
+    '其实是某个贵族的私生子',
+    '见过不该见的东西，被下过封口咒',
+    '在旧战场上捡到过一枚有魔力的戒指',
+    '每晚都会去同一个坟头祭拜'
+  ];
+
+  /* ---------- 随机遭遇表（按地形，d100 区间） ----------
+   * combat: 怪物 + 随机数量 + 随机行为修饰
+   * event:  事件细节每次随机取一条 */
+  var ENC_FLAVOR = [
+    '正在觅食，还没注意到队伍',
+    '在附近游荡，距离 30 米左右',
+    '正在搬运什么东西，脚步沉重',
+    '似乎刚经历一场战斗，状态不佳（HP 减半）',
+    '警惕地盯着队伍的方向，缓缓靠近',
+    '在远处巡逻，暂时没有发现',
+    '正与另一伙生物对峙，无暇他顾',
+    '在篝火旁休息，武器放在够不着的地方',
+    '被驯兽人驱赶着，暴躁易怒',
+    '在翻找一堆杂物，似乎丢了什么',
+    '朝队伍走来，没有敌意（或许）',
+    '听到动静后停下脚步，侧耳倾听'
+  ];
   var ENCOUNTERS = {
     forest: [
-      { lo: 1, hi: 15, text: '一群哥布林在路旁设伏（Goblin ×3-4）', en: 'goblin' },
-      { lo: 16, hi: 30, text: '一头熊在树丛中翻找蜂巢（Bear）', en: 'brown-bear' },
-      { lo: 31, hi: 45, text: '迷路的商队，货物被泥石流掩埋，求助玩家护送', en: '' },
-      { lo: 46, hi: 60, text: '狼群嚎叫逼近，夜间跟随队伍（Wolf ×2-6）', en: 'wolf' },
-      { lo: 61, hi: 75, text: '发现废弃的猎屋，屋内残留战斗痕迹与一只宝箱', en: '' },
-      { lo: 76, hi: 90, text: '树人拦路，要求回答谜语或献上贡品（Treant）', en: 'treant' },
-      { lo: 91, hi: 100, text: '枭熊袭击营地（Owlbear）', en: 'owlbear' }
+      { lo: 1, hi: 15, kind: 'combat', cn: '哥布林', en: 'goblin', n: [3, 4] },
+      { lo: 16, hi: 30, kind: 'combat', cn: '棕熊', en: 'brown-bear', n: [1, 2] },
+      { lo: 31, hi: 45, kind: 'event', scene: [
+        '迷路的商队：货物被泥石流掩埋，求助玩家护送',
+        '迷路的商队：遭到劫掠，只剩一个重伤的随从',
+        '迷路的商队：多日没吃东西，愿意用货物换食物与指引',
+        '迷路的商队：商人自称运送「药材」，但箱子上有干涸的血迹'
+      ] },
+      { lo: 46, hi: 60, kind: 'combat', cn: '狼群', en: 'wolf', n: [2, 6] },
+      { lo: 61, hi: 75, kind: 'event', scene: [
+        '废弃猎屋：屋内残留战斗痕迹与一只上锁的宝箱',
+        '废弃猎屋：壁炉余烬尚温，屋主刚离开不久',
+        '废弃猎屋：地板下藏着旧账本，记录了一笔可疑交易',
+        '废弃猎屋：墙上刻着发光的符文，散发着微弱魔力'
+      ] },
+      { lo: 76, hi: 90, kind: 'combat', cn: '树人', en: 'treant', n: [1, 1] },
+      { lo: 91, hi: 100, kind: 'combat', cn: '枭熊', en: 'owlbear', n: [1, 1] }
     ],
     dungeon: [
-      { lo: 1, hi: 20, text: '骷髅从墓穴中爬出（Skeleton ×2-4）', en: 'skeleton' },
-      { lo: 21, hi: 40, text: '僵尸缓慢逼近，走廊尽头传来呻吟（Zombie ×2-3）', en: 'zombie' },
-      { lo: 41, hi: 55, text: '触发陷阱：落石/毒针/喷火，需敏捷豁免', en: '' },
-      { lo: 56, hi: 70, text: '食尸鬼从天花板扑下（Ghoul ×2）', en: 'ghoul' },
-      { lo: 71, hi: 85, text: '发现一间密室：祭坛、干涸血迹与一本被撕毁的日志', en: '' },
-      { lo: 86, hi: 100, text: '幽魂现身索命（Wraith）', en: 'wraith' }
+      { lo: 1, hi: 20, kind: 'combat', cn: '骷髅', en: 'skeleton', n: [2, 4] },
+      { lo: 21, hi: 40, kind: 'combat', cn: '僵尸', en: 'zombie', n: [2, 3] },
+      { lo: 41, hi: 55, kind: 'event', scene: [
+        '触发陷阱：落石倾泻而下，需敏捷豁免',
+        '触发陷阱：毒针从墙壁射出，需敏捷豁免',
+        '触发陷阱：喷火装置被踩中，需敏捷豁免',
+        '触发陷阱：地板塌陷，脚下是 3 米深的坑'
+      ] },
+      { lo: 56, hi: 70, kind: 'combat', cn: '食尸鬼', en: 'ghoul', n: [2, 2] },
+      { lo: 71, hi: 85, kind: 'event', scene: [
+        '密室：中央是祭坛，地面有干涸的血迹',
+        '密室：一本被撕毁的日志，最后几页写满诅咒',
+        '密室：一具盘坐的骸骨，怀里抱着一只铜盒',
+        '密室：墙角的暗门通往更深处的通道'
+      ] },
+      { lo: 86, hi: 100, kind: 'combat', cn: '幽魂', en: 'wraith', n: [1, 1] }
     ],
     city: [
-      { lo: 1, hi: 20, text: '地痞流氓勒索过路行人（Thug ×2）', en: 'thug' },
-      { lo: 21, hi: 40, text: '城门口排起长队，卫兵严查可疑物品（Guard）', en: 'guard' },
-      { lo: 41, hi: 55, text: '小偷偷走了玩家钱袋，正在人群中逃窜（Spy）', en: 'spy' },
-      { lo: 56, hi: 70, text: '有人在酒馆散布邪教传言，信众聚集（Cultist ×3）', en: 'cultist' },
-      { lo: 71, hi: 85, text: '巷口发生械斗，两伙佣兵火并，波及路人', en: '' },
-      { lo: 86, hi: 100, text: '卫兵队长请求协助追捕逃犯（Knight）', en: 'knight' }
+      { lo: 1, hi: 20, kind: 'combat', cn: '地痞流氓', en: 'thug', n: [2, 3] },
+      { lo: 21, hi: 40, kind: 'event', scene: [
+        '城门口排起长队，卫兵严查可疑物品',
+        '城门新贴了通缉令，画像看起来很像队伍里的某人',
+        '城门口有人兜售「真品」圣物，价格可疑',
+        '守门卫兵认出了队伍里的逃犯，气氛紧张'
+      ] },
+      { lo: 41, hi: 55, kind: 'combat', cn: '盗贼', en: 'spy', n: [1, 2] },
+      { lo: 56, hi: 70, kind: 'event', scene: [
+        '酒馆里有人在散布邪教传言，信众正在聚集',
+        '酒馆里两个醉汉在赌桌上大打出手，众人围观',
+        '酒馆老板悄悄打听队伍来历，眼神闪烁',
+        '酒馆二楼传来打斗声，有人从窗户摔出来'
+      ] },
+      { lo: 71, hi: 85, kind: 'event', scene: [
+        '巷口械斗：两伙佣兵火并，波及路人',
+        '巷口械斗：一伙佣兵在追打另一伙，场面混乱',
+        '巷口械斗刚结束，赢家正在勒索输家',
+        '巷口械斗惊动卫兵，需要玩家帮忙指认'
+      ] },
+      { lo: 86, hi: 100, kind: 'event', scene: [
+        '卫兵队长请求协助追捕逃犯，许诺报酬',
+        '卫兵队长认出队伍里有通缉犯，准备呼叫支援',
+        '卫兵队长邀请队伍参与今晚的巡逻',
+        '卫兵队长正在盘问一名可疑的盗贼'
+      ] }
     ],
     mountain: [
-      { lo: 1, hi: 20, text: '落石堵塞山路，需要攀爬或绕行', en: '' },
-      { lo: 21, hi: 40, text: '食人魔占据隘口收费（Ogre）', en: 'ogre' },
-      { lo: 41, hi: 60, text: '狮鹫在高处盘旋，似乎守护着某处巢穴（Griffon）', en: 'griffon' },
-      { lo: 61, hi: 80, text: '石巨人在山坡上掷石取乐（Stone Giant）', en: 'stone-giant' },
-      { lo: 81, hi: 100, text: '雷暴突至，山洪倾泻而下，需要躲避', en: '' }
+      { lo: 1, hi: 20, kind: 'event', scene: [
+        '落石堵塞山路，需要攀爬或绕行',
+        '前方塌方，露出一个幽深的洞穴入口',
+        '山体滑坡冲毁栈道，需要另寻他路',
+        '巨石滚落惊起一群乌鸦，叫声在峡谷中回荡'
+      ] },
+      { lo: 21, hi: 40, kind: 'combat', cn: '食人魔', en: 'ogre', n: [1, 2] },
+      { lo: 41, hi: 60, kind: 'combat', cn: '狮鹫', en: 'griffon', n: [1, 1] },
+      { lo: 61, hi: 80, kind: 'combat', cn: '石巨人', en: 'stone-giant', n: [1, 1] },
+      { lo: 81, hi: 100, kind: 'event', scene: [
+        '雷暴突至，山洪倾泻而下，需要寻找高地',
+        '冰雹砸落，需要寻找掩体躲避',
+        '雷暴中，前方山路被闪电劈中燃起火焰',
+        '暴雨冲垮了宿营地，所有物品都被淋透'
+      ] }
     ],
     swamp: [
-      { lo: 1, hi: 25, text: '沼泽毒雾弥漫，需体质豁免否则中毒', en: '' },
-      { lo: 26, hi: 50, text: '巨蚊与吸血蝇群袭扰（Stirge ×3-5）', en: 'stirge' },
-      { lo: 51, hi: 75, text: '食人魔僵尸从泥潭中站起（Ogre Zombie）', en: 'ogre-zombie' },
-      { lo: 76, hi: 100, text: '蜥蜴人巡逻队发现入侵者（Lizardfolk ×3）', en: 'lizardfolk' }
+      { lo: 1, hi: 25, kind: 'event', scene: [
+        '沼泽毒雾弥漫，需体质豁免否则中毒',
+        '雾气中传来低语声，似乎有人被困在深处',
+        '毒雾短暂散去，露出一条岔路和半截路标',
+        '雾中飘着淡绿色磷光，顺着光走可能有收获'
+      ] },
+      { lo: 26, hi: 50, kind: 'combat', cn: '巨蚊群', en: 'stirge', n: [3, 5] },
+      { lo: 51, hi: 75, kind: 'combat', cn: '食人魔僵尸', en: 'ogre-zombie', n: [1, 2] },
+      { lo: 76, hi: 100, kind: 'combat', cn: '蜥蜴人巡逻队', en: 'lizardfolk', n: [3, 4] }
     ],
     coast: [
-      { lo: 1, hi: 25, text: '搁浅的沉船残骸，可能有补给或宝物', en: '' },
-      { lo: 26, hi: 50, text: '海贼船靠岸劫掠（Bandit ×4）', en: 'bandit' },
-      { lo: 51, hi: 75, text: '人鱼在礁石上呼救，周围有鲨鱼出没（Merfolk）', en: 'merfolk' },
-      { lo: 76, hi: 100, text: '海妖之歌响起，船员意志豁免（Harpy）', en: 'harpy' }
+      { lo: 1, hi: 25, kind: 'event', scene: [
+        '搁浅的沉船残骸，可能有补给或宝物',
+        '船骸上有人呼救，被困在倾斜的船舱里',
+        '船骸中传出翻找声——有人正在打捞',
+        '船身倾斜，随时可能滑入深海，时间不多'
+      ] },
+      { lo: 26, hi: 50, kind: 'combat', cn: '海贼', en: 'bandit', n: [4, 5] },
+      { lo: 51, hi: 75, kind: 'event', scene: [
+        '人鱼在礁石上呼救，周围有鲨鱼出没',
+        '礁石上坐着人鱼，低声哼唱着陌生的歌谣',
+        '潮水中困住一条人鱼，她请求帮忙解开渔网',
+        '人鱼警告：今晚这片海域会有风暴'
+      ] },
+      { lo: 76, hi: 100, kind: 'combat', cn: '鹰身女妖', en: 'harpy', n: [2, 2] }
     ],
     desert: [
-      { lo: 1, hi: 25, text: '沙暴将至，寻找掩体否则迷失方向', en: '' },
-      { lo: 26, hi: 50, text: '蝎尾狮从沙丘后跃出（Manticore）', en: 'manticore' },
-      { lo: 51, hi: 75, text: '古代遗迹的机关被触发的守卫苏醒（Gargoyle ×2）', en: 'gargoyle' },
-      { lo: 76, hi: 100, text: '被埋葬的巨虫破沙而出（Purple Worm）——快跑！', en: 'purple-worm' }
+      { lo: 1, hi: 25, kind: 'event', scene: [
+        '沙暴将至，寻找掩体否则迷失方向',
+        '远方升起沙尘柱，可能有人在战斗',
+        '风暴中隐约可见一座废弃的驿站',
+        '沙暴过后，地面露出半截刻字的石碑'
+      ] },
+      { lo: 26, hi: 50, kind: 'combat', cn: '蝎尾狮', en: 'manticore', n: [1, 1] },
+      { lo: 51, hi: 75, kind: 'combat', cn: '石像鬼', en: 'gargoyle', n: [2, 3] },
+      { lo: 76, hi: 100, kind: 'combat', cn: '紫虫', en: 'purple-worm', n: [1, 1] }
     ]
   };
 
   var TERRAIN_KEYS = Object.keys(ENCOUNTERS);
   var TERRAIN_CN = { forest: '森林', dungeon: '地牢', city: '城市', mountain: '山地', swamp: '沼泽', coast: '海岸', desert: '沙漠' };
 
-  /* ---------- d100 战利品表 ---------- */
+  /* ---------- d100 战利品表（detail 为函数，每次掷出结果都不同） ---------- */
+  var RARITY_CN = {
+    Common: '普通', Uncommon: '非普通', Rare: '稀有', 'Very Rare': '极稀有',
+    Legendary: '传说', Artifact: '神器', Varies: '视物品而定'
+  };
+  /* 从 362 件真实魔法物品元数据中按「稀有度权重」抽取：越稀有概率越低 */
+  function magicWeighted(weights) {
+    var M = DnD.MagicMeta || {};
+    var keys = Object.keys(M);
+    var map = [];
+    var total = 0;
+    Object.keys(weights).forEach(function (r) {
+      keys.forEach(function (k) {
+        if (M[k].r === r) { map.push({ k: k, w: weights[r] }); total += weights[r]; }
+      });
+    });
+    if (!map.length) return { name: G.magicItemName(pick(keys)), rarity: '' };
+    var roll = Math.random() * total;
+    for (var i = 0; i < map.length; i++) {
+      roll -= map[i].w;
+      if (roll <= 0) return { name: G.magicItemName(map[i].k), rarity: M[map[i].k].r };
+    }
+    var last = map[map.length - 1];
+    return { name: G.magicItemName(last.k), rarity: M[last.k].r };
+  }
+  var SCROLL_SPELLS = ['燃烧之手', '魔法飞弹', '护盾术', '疗伤术', '侦测魔法', '妖精之火', '油腻术', '雷鸣波', '迷雾步', '灼热射线', '黑暗术', '隐形术', '镜影术', '浮空术', '蛛行术', '灼热金属'];
+  var JEWELS = ['金戒指', '银项链', '宝石吊坠', '蛋白石胸针', '镀金酒杯', '珍珠手链', '祖母绿耳环', '象牙雕像'];
   var LOOT = [
-    { lo: 1, hi: 12, name: '破旧钱袋', detail: '3d20 铜币 + 1d6 银币，缝在夹层里的生锈铁钥匙（可开某扇门）' },
-    { lo: 13, hi: 30, name: '冒险者遗物', detail: '1d4 瓶治疗药水 + 破旧的探险日志（记载了附近一处地点）' },
-    { lo: 31, hi: 50, name: '杂货与补给', detail: '2d6 金币 + 1d4 普通药剂（抗毒/抗火）+ 一副绳索抓钩' },
-    { lo: 51, hi: 70, name: '珍贵首饰', detail: '2d10 金币 + 1d4 件珠宝（各值 2d10 金币）+ 一瓶法力回复药水' },
-    { lo: 71, hi: 85, name: '魔法卷轴', detail: '3d10 金币 + 1d2 张法术卷轴（1-2 环随机法术）+ 一枚护符（抵抗一次伤害）' },
-    { lo: 86, hi: 95, name: '稀有魔法物品', detail: '5d10 金币 + 1d4 瓶强力药水（巨人力量/飞行）+ 一件魔法武器（+1）' },
-    { lo: 96, hi: 100, name: '传奇宝藏', detail: '宝箱内：2d100 金币 + 魔法护甲（+1）+ 一件极稀有物品（如烈焰权杖）——但宝箱被诅咒，开锁需过 DC 20 调查' }
+    { lo: 1, hi: 12, name: '破旧钱袋', detail: function () {
+      return { text: '3d20 铜币 + 1d6 银币，' + pick([
+        '夹层里缝着一把生锈铁钥匙（可开某扇门）',
+        '还有一张皱巴巴的旧悬赏令',
+        '袋底压着半块发霉的干粮'
+      ]) };
+    } },
+    { lo: 13, hi: 30, name: '冒险者遗物', detail: function () {
+      return { text: '1d4 瓶治疗药水 + ' + pick([
+        '一本破旧的探险日志（记载了附近一处地点）',
+        '一封未寄出的家书和一枚刻名的铜币',
+        '一把精致的匕首（魔法武器，+1d6 伤害）'
+      ]) };
+    } },
+    { lo: 31, hi: 50, name: '杂货与补给', detail: function () {
+      return { text: '2d6 金币 + 1d4 瓶' + pick(['抗毒药剂', '抗火药剂', '治疗药水'])
+        + ' + ' + pick(['一副绳索抓钩', '一盏不灭油灯', '10 天份干粮']) };
+    } },
+    { lo: 51, hi: 70, name: '珍贵首饰', detail: function () {
+      return { text: '2d10 金币 + 1d4 件' + pick(JEWELS) + '（各值 2d10 金币）'
+        + ' + 一瓶' + pick(['法力回复药水', '治疗药水']) };
+    } },
+    { lo: 71, hi: 85, name: '魔法卷轴', detail: function () {
+      return { text: '3d10 金币 + 1d' + (Math.random() < 0.5 ? '2' : '3') + ' 张法术卷轴（'
+        + pick(SCROLL_SPELLS) + '等）+ 一枚' + pick(['护符（抵抗一次伤害）', '幸运石（豁免检定 +1）']) };
+    } },
+    /* 高稀有度档：档内也按权重分布，不是每把都出 Rare */
+    { lo: 86, hi: 95, name: '稀有魔法物品', detail: function () {
+      return {
+        text: '5d10 金币 + 1d4 瓶' + pick(['巨人力量药水', '飞行药水', '隐身药水', '治疗药水']),
+        items: [magicWeighted({ Uncommon: 45, Rare: 22, 'Very Rare': 6, Legendary: 1 })]
+      };
+    } },
+    { lo: 96, hi: 100, name: '传奇宝藏', detail: function () {
+      var items = [magicWeighted({ Rare: 30, 'Very Rare': 12, Legendary: 4, Artifact: 1 })];
+      if (Math.random() < 0.6) items.push(magicWeighted({ Uncommon: 35, Rare: 12, 'Very Rare': 4 }));
+      return {
+        text: '宝箱内：2d100 金币' + (Math.random() < 0.35
+          ? '——但宝箱被诅咒，开锁需过 DC 20 调查'
+          : '，运气不错，宝箱没有上锁'),
+        items: items
+      };
+    } }
   ];
 
   /* ---------- 掷表工具 ---------- */
@@ -167,12 +350,16 @@
       name: first + '·' + clan,
       gender: gender,
       race: G.raceName(rk) + ' (' + rk + ')',
+      age: pick(NPC_AGES),
       job: job && job !== 'random' ? job : pick(NPC_JOBS),
       cls: G.className(cl),
+      look: pick(NPC_LOOKS),
+      voice: pick(NPC_VOICES),
       trait: pick(NPC_TRAITS),
       ideal: pick(NPC_IDEALS),
       bond: pick(NPC_BONDS),
-      flaw: pick(NPC_FLAWS)
+      flaw: pick(NPC_FLAWS),
+      secret: pick(NPC_SECRETS)
     };
   }
 
@@ -249,11 +436,14 @@
       out.innerHTML = '';
       var card = el('div', 'dnd-card npc-card');
       card.innerHTML = '<div class="npc-name">' + esc(npc.name) + '</div>'
-        + '<div class="npc-sub">' + npc.gender + ' · ' + esc(npc.race) + ' · ' + esc(npc.job) + ' · 潜在职业 ' + esc(npc.cls) + '</div>'
+        + '<div class="npc-sub">' + npc.gender + ' · ' + esc(npc.race) + ' · ' + npc.age + ' · ' + esc(npc.job) + ' · 潜在职业 ' + esc(npc.cls) + '</div>'
+        + '<div class="npc-line"><span class="npc-tag">外貌</span>' + esc(npc.look) + '</div>'
         + '<div class="npc-line"><span class="npc-tag">性格</span>' + esc(npc.trait) + '</div>'
+        + '<div class="npc-line"><span class="npc-tag">口癖</span>' + esc(npc.voice) + '</div>'
         + '<div class="npc-line"><span class="npc-tag">理想</span>' + esc(npc.ideal) + '</div>'
         + '<div class="npc-line"><span class="npc-tag">羁绊</span>' + esc(npc.bond) + '</div>'
-        + '<div class="npc-line"><span class="npc-tag">缺陷</span>' + esc(npc.flaw) + '</div>';
+        + '<div class="npc-line"><span class="npc-tag">缺陷</span>' + esc(npc.flaw) + '</div>'
+        + '<div class="npc-line npc-secret"><span class="npc-tag">秘密</span>' + esc(npc.secret) + '</div>';
       out.appendChild(card);
     }
     btn.addEventListener('click', doGen);
@@ -283,9 +473,16 @@
       var hit = rollTable(ENCOUNTERS[terSel.value], roll);
       out.innerHTML = '';
       var card = el('div', 'dnd-card enc-card');
-      card.innerHTML = '<div class="enc-roll">' + TERRAIN_CN[terSel.value] + ' · d100 = <b>' + roll + '</b></div>'
-        + '<div class="enc-text">' + esc(hit.text) + '</div>'
-        + (hit.en ? '<div class="enc-hint">怪物：' + esc(hit.en) + '</div>' : '');
+      if (hit.kind === 'combat') {
+        var qty = hit.n[0] + Math.floor(Math.random() * (hit.n[1] - hit.n[0] + 1));
+        card.innerHTML = '<div class="enc-roll">' + TERRAIN_CN[terSel.value] + ' · d100 = <b>' + roll + '</b></div>'
+          + '<div class="enc-name">' + esc(hit.cn) + ' ×<b>' + qty + '</b></div>'
+          + '<div class="enc-text">' + esc(pick(ENC_FLAVOR)) + '</div>'
+          + (hit.en ? '<div class="enc-hint">怪物：' + esc(hit.en) + '</div>' : '');
+      } else {
+        card.innerHTML = '<div class="enc-roll">' + TERRAIN_CN[terSel.value] + ' · d100 = <b>' + roll + '</b></div>'
+          + '<div class="enc-text">' + esc(pick(hit.scene)) + '</div>';
+      }
       out.appendChild(card);
     }
     btn.addEventListener('click', doRoll);
@@ -302,11 +499,19 @@
     function doRoll() {
       var roll = DnD.Dice.rollDie(100);
       var hit = rollTable(LOOT, roll);
+      var res = hit.detail();
       out.innerHTML = '';
       var card = el('div', 'dnd-card loot-card');
-      card.innerHTML = '<div class="loot-roll">d100 = <b>' + roll + '</b></div>'
+      var html = '<div class="loot-roll">d100 = <b>' + roll + '</b></div>'
         + '<div class="loot-name">' + esc(hit.name) + '</div>'
-        + '<div class="loot-detail">' + esc(hit.detail) + '</div>';
+        + '<div class="loot-detail">' + esc(res.text) + '</div>';
+      if (res.items && res.items.length) {
+        html += '<div class="loot-items">' + res.items.map(function (it) {
+          return '<span class="loot-item' + (it.rarity ? ' r-' + it.rarity.toLowerCase().replace(/\s+/g, '-') : '') + '">'
+            + esc(it.name) + (it.rarity ? '<i>' + esc(RARITY_CN[it.rarity] || it.rarity) + '</i>' : '') + '</span>';
+        }).join('') + '</div>';
+      }
+      card.innerHTML = html;
       out.appendChild(card);
     }
     btn.addEventListener('click', doRoll);
