@@ -1,0 +1,91 @@
+---
+layout: page
+title: 跑团桌
+---
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="./assets/dnd.css">
+
+<div id="dnd-app">
+  <header class="dnd-header">
+    <h1 class="dnd-title">跑团桌</h1>
+    <p class="dnd-subtitle">Dungeons &amp; Dragons 5e SRD · 跑团辅助工具</p>
+  </header>
+
+  <nav class="dnd-tabs" id="dnd-tabs">
+    <button type="button" class="dnd-tab-btn active" data-tab="dice">掷骰器</button>
+    <button type="button" class="dnd-tab-btn" data-tab="character">角色卡</button>
+    <button type="button" class="dnd-tab-btn" data-tab="combat">战斗追踪</button>
+    <button type="button" class="dnd-tab-btn" data-tab="random">随机表</button>
+  </nav>
+
+  <!-- ===== Tab: 掷骰器 ===== -->
+  <section class="dnd-pane active" id="pane-dice">
+    <div class="dnd-grid dice-grid">
+      <div class="dnd-card">
+        <h2 class="dnd-card-title">骰子面板</h2>
+        <div class="dice-panel" id="dice-panel"></div>
+        <div id="dice-roll-result"></div>
+      </div>
+
+      <div class="dnd-card">
+        <h2 class="dnd-card-title">表达式掷骰</h2>
+        <div class="dnd-field-row">
+          <input type="text" id="dice-expr" class="dnd-input" placeholder="例：2d6+3 / 4d6k3 / d20+5" autocomplete="off">
+          <button type="button" class="dnd-btn dnd-btn-gold" id="dice-roll-btn">掷出</button>
+        </div>
+        <div class="dnd-field-row" style="margin-bottom:0">
+          <button type="button" class="dnd-btn dnd-btn-sm" id="dice-adv">优势 · 取高</button>
+          <button type="button" class="dnd-btn dnd-btn-sm" id="dice-dis">劣势 · 取低</button>
+          <button type="button" class="dnd-btn dnd-btn-sm" id="dice-crit">暴击 · 双骰</button>
+        </div>
+        <div id="expr-result"></div>
+      </div>
+
+      <div class="dnd-card">
+        <h2 class="dnd-card-title">批量先攻</h2>
+        <p class="dnd-hint">每行一个：名字 + 敏捷调整值</p>
+        <textarea id="init-list" class="dnd-input dnd-textarea" placeholder="战士 +2&#10;哥布林 +1&#10;盗贼 3"></textarea>
+        <div class="dnd-field-row" style="margin-top:10px;margin-bottom:0">
+          <button type="button" class="dnd-btn dnd-btn-gold" id="init-roll-btn">掷先攻</button>
+        </div>
+        <div id="init-result"></div>
+      </div>
+
+      <div class="dnd-card">
+        <h2 class="dnd-card-title">历史记录</h2>
+        <ul class="dice-history" id="dice-history"></ul>
+        <button type="button" class="dnd-btn dnd-btn-sm" id="dice-clear-history">清空记录</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Tab: 角色卡 ===== -->
+  <section class="dnd-pane" id="pane-character">
+    <div class="dnd-placeholder" id="character-root">
+      <p class="dnd-placeholder-text">角色卡模块 · 开发中</p>
+    </div>
+  </section>
+
+  <!-- ===== Tab: 战斗追踪 ===== -->
+  <section class="dnd-pane" id="pane-combat">
+    <div class="dnd-placeholder" id="combat-root">
+      <p class="dnd-placeholder-text">战斗追踪模块 · 开发中</p>
+    </div>
+  </section>
+
+  <!-- ===== Tab: 随机表 ===== -->
+  <section class="dnd-pane" id="pane-random">
+    <div class="dnd-placeholder" id="random-root">
+      <p class="dnd-placeholder-text">随机表模块 · 开发中</p>
+    </div>
+  </section>
+</div>
+
+<script src="./assets/glossary.js"></script>
+<script src="./assets/data.js"></script>
+<script src="./assets/dice.js"></script>
+<script src="./assets/character.js"></script>
+<script src="./assets/combat.js"></script>
+<script src="./assets/random.js"></script>
+<script src="./assets/app.js"></script>

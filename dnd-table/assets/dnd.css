@@ -1,0 +1,588 @@
+/* =========================================================
+ * 跑团桌 · 魔幻主题 (dnd.css)
+ * 深色魔法氛围 + 羊皮纸骰点 + 金色点缀
+ * ========================================================= */
+
+#dnd-app {
+  --dnd-gold: #d4af37;
+  --dnd-gold-dim: #a3822a;
+  --dnd-gold-glow: rgba(212, 175, 55, 0.45);
+  --dnd-bg-0: #14101d;
+  --dnd-bg-1: #1c1628;
+  --dnd-panel: #241c33;
+  --dnd-panel-2: #2b2140;
+  --dnd-line: #3a2f52;
+  --dnd-parch: #f2e6c6;
+  --dnd-parch-2: #e9dbb2;
+  --dnd-ink: #2b2118;
+  --dnd-text: #e9e2cf;
+  --dnd-text-dim: #a396b8;
+  --dnd-red: #c0392b;
+  --dnd-green: #3f9a4a;
+  font-family: Georgia, 'Palatino Linotype', 'Book Antiqua', serif;
+  color: var(--dnd-text);
+  line-height: 1.6;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(212, 175, 55, .25) 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 20%, rgba(255, 255, 255, .12) 50%, transparent 51%),
+    radial-gradient(1px 1px at 40% 80%, rgba(212, 175, 55, .18) 50%, transparent 51%),
+    radial-gradient(1px 1px at 90% 60%, rgba(255, 255, 255, .10) 50%, transparent 51%),
+    linear-gradient(180deg, var(--dnd-bg-1), var(--dnd-bg-0));
+  border: 1px solid var(--dnd-line);
+  border-radius: 6px;
+  padding: 18px 20px 22px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+}
+
+/* ---------- 头部 ---------- */
+.dnd-header { text-align: center; padding: 8px 0 4px; }
+.dnd-title {
+  margin: 0;
+  font-size: 34px;
+  font-weight: normal;
+  letter-spacing: 6px;
+  color: var(--dnd-gold);
+  text-shadow: 0 0 14px var(--dnd-gold-glow);
+}
+.dnd-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--dnd-text-dim);
+  letter-spacing: 2px;
+}
+
+/* ---------- Tab 导航 ---------- */
+.dnd-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 18px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--dnd-line);
+}
+.dnd-tab-btn {
+  background: transparent;
+  border: 1px solid var(--dnd-line);
+  color: var(--dnd-text-dim);
+  padding: 7px 22px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: 2px;
+  border-radius: 3px;
+  transition: all .25s ease;
+}
+.dnd-tab-btn:hover { color: var(--dnd-gold); border-color: var(--dnd-gold-dim); }
+.dnd-tab-btn.active {
+  color: #1c1628;
+  background: linear-gradient(180deg, #e6c868, var(--dnd-gold));
+  border-color: var(--dnd-gold);
+  box-shadow: 0 0 12px var(--dnd-gold-glow);
+}
+
+/* ---------- 面板 ---------- */
+.dnd-pane { display: none; }
+.dnd-pane.active { display: block; animation: dnd-fade .3s ease; }
+@keyframes dnd-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.dnd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+/* ---------- 卡片 ---------- */
+.dnd-card {
+  background: linear-gradient(160deg, var(--dnd-panel), var(--dnd-bg-1));
+  border: 1px solid var(--dnd-line);
+  border-radius: 4px;
+  padding: 14px 16px 16px;
+  position: relative;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+/* 角落装饰 */
+.dnd-card::before,
+.dnd-card::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--dnd-gold-dim);
+  border-style: solid;
+}
+.dnd-card::before { top: 4px; left: 4px; border-width: 1px 0 0 1px; }
+.dnd-card::after  { bottom: 4px; right: 4px; border-width: 0 1px 1px 0; }
+
+.dnd-card-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: normal;
+  letter-spacing: 3px;
+  color: var(--dnd-gold);
+  border-bottom: 1px dashed var(--dnd-line);
+  padding-bottom: 8px;
+  text-align: center;
+}
+
+/* ---------- 按钮 ---------- */
+.dnd-btn {
+  background: transparent;
+  border: 1px solid var(--dnd-gold-dim);
+  color: var(--dnd-gold);
+  padding: 8px 18px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 1px;
+  border-radius: 3px;
+  transition: all .2s ease;
+}
+.dnd-btn:hover {
+  background: rgba(212, 175, 55, .12);
+  box-shadow: 0 0 10px var(--dnd-gold-glow);
+}
+.dnd-btn-gold {
+  background: linear-gradient(180deg, #e6c868, var(--dnd-gold));
+  color: #241c10;
+  border-color: var(--dnd-gold);
+  font-weight: bold;
+}
+.dnd-btn-gold:hover {
+  background: linear-gradient(180deg, #f0d47a, #dcb83f);
+  box-shadow: 0 0 14px var(--dnd-gold-glow);
+}
+.dnd-btn-sm { padding: 5px 12px; font-size: 13px; }
+
+/* ---------- 输入 ---------- */
+.dnd-input {
+  background: var(--dnd-bg-0);
+  border: 1px solid var(--dnd-line);
+  color: var(--dnd-text);
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 3px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+.dnd-input:focus {
+  border-color: var(--dnd-gold-dim);
+  box-shadow: 0 0 8px var(--dnd-gold-glow);
+}
+.dnd-textarea { min-height: 96px; resize: vertical; }
+.dnd-field-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.dnd-field-row .dnd-input { flex: 1; }
+.dnd-hint { margin: 0 0 8px; font-size: 12px; color: var(--dnd-text-dim); }
+
+/* ---------- 骰子面板 ---------- */
+.dice-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.dice-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--dnd-panel-2), var(--dnd-bg-0));
+  border: 2px solid var(--dnd-gold-dim);
+  color: var(--dnd-gold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dice-btn:hover {
+  border-color: var(--dnd-gold);
+  box-shadow: 0 0 12px var(--dnd-gold-glow);
+  transform: translateY(-2px);
+}
+.dice-btn:active { transform: scale(.95); }
+.dice-btn-d20 { border-color: var(--dnd-red); color: #e07870; }
+.dice-btn-d20:hover {
+  border-color: #e05040;
+  box-shadow: 0 0 12px rgba(192, 57, 43, .5);
+}
+.dice-btn-label { font-size: 15px; letter-spacing: 1px; }
+
+/* ---------- 掷骰结果 ---------- */
+.dice-result-card { margin-top: 4px; }
+.dice-result-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.dice-result-label { color: var(--dnd-gold); font-size: 13px; letter-spacing: 1px; }
+.dice-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+.dice-chip {
+  display: inline-block;
+  min-width: 28px;
+  height: 28px;
+  line-height: 26px;
+  text-align: center;
+  padding: 0 6px;
+  border-radius: 3px;
+  background: var(--dnd-parch);
+  color: var(--dnd-ink);
+  border: 1px solid var(--dnd-parch-2);
+  font-size: 13px;
+}
+.dice-chip-faces {
+  background: var(--dnd-panel-2);
+  color: var(--dnd-gold);
+  border-color: var(--dnd-gold-dim);
+  font-size: 12px;
+}
+.dice-chip-drop { opacity: .4; text-decoration: line-through; }
+.dice-chip-raw { background: transparent; border-style: dashed; color: var(--dnd-text-dim); }
+.dice-group-sum { margin-left: auto; color: var(--dnd-gold); font-size: 14px; }
+.dice-adv-tag {
+  color: var(--dnd-gold);
+  font-size: 12px;
+  border: 1px dashed var(--dnd-gold-dim);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.dice-raw { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 8px 34px; }
+.dice-total {
+  text-align: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--dnd-line);
+}
+.dice-total-label { font-size: 12px; color: var(--dnd-text-dim); letter-spacing: 3px; margin-right: 10px; }
+.dice-total-num {
+  font-size: 40px;
+  color: var(--dnd-gold);
+  text-shadow: 0 0 16px var(--dnd-gold-glow);
+}
+.dice-error { color: #e07870; font-size: 13px; margin: 8px 0; }
+
+/* ---------- 批量先攻 ---------- */
+.init-result-card { margin-top: 4px; }
+.init-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--dnd-line);
+  font-size: 14px;
+}
+.init-row:last-child { border-bottom: none; }
+.init-rank {
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--dnd-gold);
+  color: #241c10;
+  font-size: 12px;
+}
+.init-name { font-weight: bold; color: var(--dnd-text); }
+.init-detail { color: var(--dnd-text-dim); font-size: 12px; }
+.init-total { margin-left: auto; font-size: 18px; color: var(--dnd-gold); }
+
+/* ---------- 历史记录 ---------- */
+.dice-history {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.dice-history-empty {
+  color: var(--dnd-text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 10px 0;
+}
+.dice-history li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--dnd-line);
+  font-size: 13px;
+}
+.dice-history-time { color: var(--dnd-text-dim); font-size: 11px; font-family: Consolas, monospace; }
+.dice-history-label { color: var(--dnd-gold); white-space: nowrap; }
+.dice-history-detail {
+  color: var(--dnd-text-dim);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dice-history-total { font-size: 16px; color: var(--dnd-text); font-weight: bold; }
+
+/* ---------- 占位 ---------- */
+.dnd-placeholder {
+  border: 1px dashed var(--dnd-line);
+  border-radius: 4px;
+  padding: 60px 20px;
+  text-align: center;
+}
+.dnd-placeholder-text { color: var(--dnd-text-dim); font-size: 14px; letter-spacing: 3px; }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 640px) {
+  .dnd-tabs { flex-wrap: wrap; }
+  .dnd-tab-btn { padding: 6px 14px; font-size: 14px; }
+  #dnd-app { padding: 12px 12px 16px; }
+  .race-grid, .class-grid, .skill-grid { grid-template-columns: repeat(2, 1fr); }
+  .sheet-abil-grid { grid-template-columns: repeat(3, 1fr); }
+  .sheet-skills { grid-template-columns: 1fr; }
+}
+
+/* ---------- 角色卡：列表 ---------- */
+.dnd-btn-danger { border-color: #7a2a24; color: #e07870; }
+.dnd-btn-danger:hover { background: rgba(192, 57, 43, .15); box-shadow: 0 0 10px rgba(192, 57, 43, .35); }
+.char-slot-head { display: flex; align-items: baseline; justify-content: space-between; }
+.char-slot-name { font-size: 17px; color: var(--dnd-gold); letter-spacing: 1px; }
+.char-slot-lv { color: var(--dnd-text-dim); font-size: 13px; }
+.char-slot-sub { color: var(--dnd-text-dim); font-size: 13px; margin: 2px 0 10px; }
+.char-slot-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.char-slot-stats span {
+  background: var(--dnd-bg-0);
+  border: 1px solid var(--dnd-line);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--dnd-text);
+}
+.char-slot-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.char-new-card { display: flex; align-items: center; justify-content: center; min-height: 130px; }
+.char-new-btn { font-size: 16px; padding: 12px 30px; }
+.char-import { margin-top: 14px; }
+
+/* ---------- 返回链接 ---------- */
+.dnd-back { color: var(--dnd-gold); text-decoration: none; font-size: 14px; letter-spacing: 1px; }
+.dnd-back:hover { text-shadow: 0 0 8px var(--dnd-gold-glow); }
+
+/* ---------- 角色卡视图 ---------- */
+.sheet-card { margin-bottom: 12px; }
+.sheet-head { text-align: center; padding-bottom: 12px; border-bottom: 1px dashed var(--dnd-line); margin-bottom: 12px; }
+.sheet-name { font-size: 26px; color: var(--dnd-gold); letter-spacing: 3px; }
+.sheet-classline { color: var(--dnd-text); margin-top: 4px; letter-spacing: 1px; }
+.sheet-meta { color: var(--dnd-text-dim); font-size: 12px; margin-top: 2px; }
+.sheet-core { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+.sheet-stat-box { text-align: center; background: var(--dnd-bg-0); border: 1px solid var(--dnd-line); border-radius: 4px; padding: 8px 16px; min-width: 70px; }
+.sheet-stat-label { display: block; font-size: 12px; color: var(--dnd-text-dim); letter-spacing: 2px; }
+.sheet-stat-val { font-size: 24px; color: var(--dnd-gold); }
+.sheet-abil-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; }
+.sheet-abil { text-align: center; background: var(--dnd-bg-0); border: 1px solid var(--dnd-line); border-radius: 4px; padding: 8px 4px; }
+.sheet-abil-name { font-size: 12px; color: var(--dnd-text-dim); }
+.sheet-abil-mod { font-size: 20px; color: var(--dnd-gold); }
+.sheet-abil-score { font-size: 12px; color: var(--dnd-text); position: relative; }
+.sheet-abil-bonus { color: var(--dnd-green); font-size: 10px; margin-left: 2px; }
+.sheet-section { margin-bottom: 14px; }
+.sheet-section-title {
+  font-size: 14px;
+  font-weight: normal;
+  color: var(--dnd-gold);
+  letter-spacing: 2px;
+  border-bottom: 1px dashed var(--dnd-line);
+  padding-bottom: 6px;
+  margin: 0 0 8px;
+}
+.sheet-skills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 18px; }
+.sheet-skill { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 0; color: var(--dnd-text-dim); }
+.sheet-skill.trained { color: var(--dnd-text); }
+.sheet-skill-dot { color: var(--dnd-gold); font-size: 10px; }
+.sheet-skill-name { flex: 1; }
+.sheet-skill-mod { font-family: Consolas, monospace; }
+.sheet-eq-row { display: flex; gap: 10px; font-size: 13px; padding: 3px 0; }
+.sheet-eq-name { color: var(--dnd-text); min-width: 90px; }
+.sheet-eq-sub { color: var(--dnd-text-dim); font-size: 12px; }
+.sheet-notes { font-size: 13px; color: var(--dnd-text-dim); white-space: pre-wrap; }
+.sheet-ops { display: flex; gap: 8px; }
+
+/* ---------- 向导 ---------- */
+.wizard-steps { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+.wizard-step { padding: 5px 14px; border: 1px solid var(--dnd-line); border-radius: 20px; font-size: 13px; color: var(--dnd-text-dim); letter-spacing: 1px; }
+.wizard-step.active { color: #1c1628; background: linear-gradient(180deg, #e6c868, var(--dnd-gold)); border-color: var(--dnd-gold); }
+.wizard-step.done { color: var(--dnd-gold); border-color: var(--dnd-gold-dim); }
+.wizard-body { display: flex; flex-direction: column; gap: 12px; }
+.wizard-nav { display: flex; justify-content: space-between; }
+.dnd-label { color: var(--dnd-text-dim); font-size: 13px; min-width: 64px; line-height: 36px; }
+
+/* ---------- 种族选择 ---------- */
+.race-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.race-item {
+  background: var(--dnd-bg-0);
+  border: 1px solid var(--dnd-line);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  font-family: inherit;
+}
+.race-item:hover { border-color: var(--dnd-gold-dim); }
+.race-item.selected { border-color: var(--dnd-gold); box-shadow: 0 0 10px var(--dnd-gold-glow); }
+.race-cn { display: block; color: var(--dnd-text); font-size: 15px; }
+.race-en { display: block; color: var(--dnd-text-dim); font-size: 11px; }
+.race-bonus { display: block; color: var(--dnd-gold-dim); font-size: 11px; margin-top: 4px; }
+.race-info { display: flex; gap: 10px; flex-wrap: wrap; padding: 8px 0 0; }
+.race-info-item { font-size: 12px; color: var(--dnd-text-dim); border: 1px dashed var(--dnd-line); border-radius: 3px; padding: 3px 8px; }
+
+/* ---------- 属性 ---------- */
+.alloc-modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.alloc-modes .dnd-btn.active { color: #1c1628; background: linear-gradient(180deg, #e6c868, var(--dnd-gold)); border-color: var(--dnd-gold); }
+.ability-board { margin-bottom: 10px; }
+.ability-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--dnd-line); }
+.ability-name { flex: 1; font-size: 14px; color: var(--dnd-text); }
+.ability-mod { width: 44px; text-align: center; color: var(--dnd-gold); font-size: 18px; font-family: Consolas, monospace; }
+.ability-btns { display: flex; align-items: center; gap: 8px; }
+.ability-btns .dnd-btn { padding: 2px 10px; }
+.ability-score { font-size: 16px; color: var(--dnd-text); min-width: 22px; text-align: center; }
+.ability-racebonus { color: var(--dnd-green); font-size: 12px; }
+.arr-pool { margin-bottom: 10px; }
+.arr-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.buy-points { margin: 8px 0 0; }
+.manual-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex: 1; }
+.manual-item { font-size: 13px; color: var(--dnd-text-dim); display: flex; align-items: center; gap: 6px; }
+.manual-num { width: 64px; padding: 4px 6px; }
+
+/* ---------- 职业选择 ---------- */
+.class-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.class-item {
+  background: var(--dnd-bg-0);
+  border: 1px solid var(--dnd-line);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  font-family: inherit;
+}
+.class-item:hover { border-color: var(--dnd-gold-dim); }
+.class-item.selected { border-color: var(--dnd-gold); box-shadow: 0 0 10px var(--dnd-gold-glow); }
+.class-cn { display: block; color: var(--dnd-text); font-size: 15px; }
+.class-en { display: block; color: var(--dnd-text-dim); font-size: 11px; }
+.class-die { display: block; color: var(--dnd-gold-dim); font-size: 11px; margin-top: 4px; }
+.level-row { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.dnd-range { flex: 1; accent-color: var(--dnd-gold); }
+.level-val { color: var(--dnd-gold); font-size: 20px; min-width: 28px; text-align: center; }
+.skill-pick { margin-top: 8px; }
+.skill-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.skill-item {
+  background: var(--dnd-bg-0);
+  border: 1px solid var(--dnd-line);
+  border-radius: 3px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--dnd-text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.skill-item:hover { border-color: var(--dnd-gold-dim); }
+.skill-item.selected { color: var(--dnd-text); border-color: var(--dnd-gold); }
+.skill-dot { color: var(--dnd-gold); font-size: 10px; }
+.skill-abil { margin-left: auto; font-size: 11px; color: var(--dnd-text-dim); }
+.class-preview { margin-top: 10px; }
+
+/* ---------- 装备编辑 ---------- */
+.eq-edit-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }
+.eq-edit-row .eq-name { flex: 2; }
+.eq-edit-row .eq-dice { flex: 1; min-width: 70px; }
+.eq-edit-row .eq-abil { flex: 1; min-width: 70px; }
+.eq-edit-row .eq-del { flex: none; }
+.armor-box .dnd-field-row label { min-width: 76px; }
+
+/* ---------- 战斗追踪 ---------- */
+.cb-toolbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.cb-name-input { flex: 1; min-width: 160px; }
+.cb-turn-label { color: var(--dnd-gold); font-size: 14px; letter-spacing: 1px; white-space: nowrap; }
+.cb-focus-toggle { display: flex; align-items: center; color: var(--dnd-text-dim); font-size: 13px; cursor: pointer; }
+.cb-focus-toggle input { accent-color: var(--dnd-gold); }
+.cb-add-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.cb-add-tabs .dnd-btn.active { color: #1c1628; background: linear-gradient(180deg, #e6c868, var(--dnd-gold)); border-color: var(--dnd-gold); }
+.cb-pc-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; max-height: 200px; overflow-y: auto; }
+.cb-pc-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dnd-text); cursor: pointer; }
+.cb-pc-item input { accent-color: var(--dnd-gold); }
+.cb-monster-results { margin-top: 8px; max-height: 260px; overflow-y: auto; }
+.cb-monster-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed var(--dnd-line); }
+.cb-monster-name { font-size: 13px; color: var(--dnd-text); }
+.cb-monster-name i { color: var(--dnd-text-dim); font-size: 12px; }
+.cb-list { margin-top: 14px; }
+.cb-rows { display: flex; flex-direction: column; gap: 10px; }
+.cb-row { background: var(--dnd-bg-0); border: 1px solid var(--dnd-line); border-radius: 4px; padding: 10px 12px; transition: border-color .2s, box-shadow .2s; }
+.cb-row.current { border-color: var(--dnd-gold); box-shadow: 0 0 10px var(--dnd-gold-glow); }
+.cb-row.dead { opacity: .55; }
+.cb-head { display: flex; align-items: center; gap: 10px; }
+.cb-order { width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--dnd-gold); color: #241c10; font-size: 12px; }
+.cb-row.current .cb-order { background: var(--dnd-red); color: #fff; }
+.cb-name { flex: 1; font-size: 15px; color: var(--dnd-text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cb-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; }
+.cb-badge-pc { background: rgba(63, 154, 74, .25); color: var(--dnd-green); border: 1px solid var(--dnd-green); }
+.cb-badge-monster { background: rgba(192, 57, 43, .2); color: #e07870; border: 1px solid var(--dnd-red); }
+.cb-badge-custom { background: rgba(163, 130, 42, .2); color: var(--dnd-gold-dim); border: 1px solid var(--dnd-gold-dim); }
+.cb-badge-dead { background: rgba(0, 0, 0, .4); color: #999; border: 1px solid #555; }
+.cb-badge-stable { background: rgba(63, 154, 74, .15); color: var(--dnd-green); border: 1px dashed var(--dnd-green); }
+.cb-init { display: flex; align-items: center; gap: 6px; }
+.cb-init-label { color: var(--dnd-text-dim); font-size: 12px; }
+.cb-init-input { width: 52px; background: var(--dnd-panel); border: 1px solid var(--dnd-line); color: var(--dnd-gold); border-radius: 3px; padding: 3px 6px; text-align: center; font-size: 14px; }
+.cb-stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 6px 0 4px; font-size: 12px; color: var(--dnd-text-dim); }
+.cb-hp b { color: var(--dnd-text); font-size: 14px; }
+.cb-temp { color: var(--dnd-green); font-style: normal; }
+.cb-hpbar { height: 6px; background: var(--dnd-panel); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.cb-hpbar-fill { height: 100%; background: linear-gradient(90deg, #3f9a4a, #7ecb84); border-radius: 3px; transition: width .3s; }
+.cb-hpbar-fill.low { background: linear-gradient(90deg, #c0392b, #e07870); }
+.cb-ops { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cb-op-input { width: 64px; background: var(--dnd-panel); border: 1px solid var(--dnd-line); color: var(--dnd-text); border-radius: 3px; padding: 4px 6px; }
+.cb-btn-dmg { border-color: var(--dnd-red); color: #e07870; }
+.cb-btn-dmg:hover { background: rgba(192, 57, 43, .15); }
+.cb-btn-heal { border-color: var(--dnd-green); color: #8fd99a; }
+.cb-btn-heal:hover { background: rgba(63, 154, 74, .15); }
+.cb-cond-select { background: var(--dnd-panel); border: 1px solid var(--dnd-line); color: var(--dnd-text); border-radius: 3px; padding: 4px 6px; font-size: 12px; }
+.cb-conds { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.cb-cond-chip { background: rgba(212, 175, 55, .12); border: 1px dashed var(--dnd-gold-dim); color: var(--dnd-gold); font-size: 12px; padding: 2px 8px; border-radius: 10px; cursor: pointer; }
+.cb-death { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--dnd-red); }
+.cb-death-label { color: var(--dnd-red); font-size: 12px; letter-spacing: 1px; }
+.cb-death-count { color: var(--dnd-text-dim); font-size: 12px; }
+.cb-focus-msg { margin-top: 8px; font-size: 13px; padding: 6px 10px; border-radius: 3px; }
+.cb-focus-msg.ok { background: rgba(63, 154, 74, .12); border: 1px solid var(--dnd-green); color: #8fd99a; }
+.cb-focus-msg.fail { background: rgba(192, 57, 43, .12); border: 1px solid var(--dnd-red); color: #e07870; }
+/* XP 结算弹层 */
+.cb-xp-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; z-index: 999; }
+.cb-xp-panel { min-width: 300px; }
+.cb-xp-line { font-size: 14px; color: var(--dnd-text); margin: 6px 0; }
+.cb-xp-gold { color: var(--dnd-gold); font-size: 18px; }
+
+/* ---------- 随机表 ---------- */
+.rand-body { }
+.npc-card { margin-top: 10px; }
+.npc-name { font-size: 22px; color: var(--dnd-gold); letter-spacing: 2px; text-align: center; }
+.npc-sub { text-align: center; color: var(--dnd-text-dim); font-size: 13px; margin: 4px 0 12px; }
+.npc-line { font-size: 13px; color: var(--dnd-text); padding: 4px 0; display: flex; gap: 8px; align-items: baseline; }
+.npc-tag { color: var(--dnd-gold); font-size: 12px; border: 1px solid var(--dnd-gold-dim); border-radius: 3px; padding: 0 6px; height: 18px; line-height: 16px; white-space: nowrap; flex: none; }
+.enc-card { margin-top: 10px; }
+.enc-roll { color: var(--dnd-gold); font-size: 13px; letter-spacing: 1px; }
+.enc-roll b { font-size: 18px; }
+.enc-text { font-size: 14px; color: var(--dnd-text); margin: 8px 0; }
+.enc-hint { font-size: 12px; color: var(--dnd-text-dim); border: 1px dashed var(--dnd-line); padding: 4px 8px; border-radius: 3px; display: inline-block; }
+.loot-card { margin-top: 10px; }
+.loot-roll { color: var(--dnd-gold); font-size: 13px; }
+.loot-roll b { font-size: 18px; }
+.loot-name { font-size: 17px; color: var(--dnd-text); margin: 6px 0; letter-spacing: 1px; }
+.loot-detail { font-size: 13px; color: var(--dnd-text-dim); }
+
+/* ---------- 分享提示条 ---------- */
+.share-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(212, 175, 55, .12); border: 1px dashed var(--dnd-gold-dim); border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--dnd-text); }
+.share-bar b { color: var(--dnd-gold); }

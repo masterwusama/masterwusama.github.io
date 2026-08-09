@@ -122,6 +122,7 @@ menu:
   #about: /about/
   stocks: /stock-data/
   cook: /fridge-cook/
+  dnd: /dnd-table/
   #sitemap: /sitemap.xml
   #commonweal: /404.html
 
@@ -140,6 +141,7 @@ menu_icons:
   schedule: calendar
   stocks: line-chart
   cook: cutlery
+  dnd: magic
   sitemap: sitemap
   commonweal: heartbeat
 
