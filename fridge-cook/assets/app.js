@@ -30,7 +30,7 @@
   /* ==================== 全局状态 ==================== */
 
   var DB = { meta: null, recipes: [], alias: {}, index: {} };  // 菜谱库
-  var state = Store.load();                                    // 用户状态
+  var state = Store.state();                                    // 用户状态（内部引用，修改即同步到存储）
   var sel = { tools: null, difficulty: 0, maxTime: 0, sort: 'fridge', search: '', cat: '' };
   var ingredientsIndex = []; // 全部食材标准名（联想用）
 
@@ -249,6 +249,9 @@
 
       var ev = evaluate(r, fridgeSet, urgentSet);
       if (ev.tier === 3) return; // 凑不出的不进主列表
+      // 交集门槛：与冰箱食材毫无交集（含替代命中）的菜不推荐，
+      // 避免"输入土豆却推荐糖拌番茄"这类噪音
+      if (!ev.used.length && !ev.altUsed.length) return;
       rows.push(ev);
     });
 
@@ -374,7 +377,7 @@
       fbTitle.className = 'fc-fb-title';
       fbTitle.textContent = '直接照这个做（通用方案）';
       out.appendChild(fbTitle);
-      fallback.forEach(function (r) { out.appendChild(renderResultCard({ r: r, tier: 1, used: r.main.slice() }, {})); });
+      fallback.forEach(function (r) { out.appendChild(renderResultCard({ r: r, tier: 1, used: r.main.slice(), mainMiss: [], minorMiss: [], altUsed: [], urgentUsed: [] }, {})); });
     }
     if (!rows.length && !fallback.length) {
       out.innerHTML = '<div class="fc-empty">这些食材凑不出一顿正经饭，建议：点外卖 / 补买点主食（米、面、鸡蛋）</div>';
@@ -393,10 +396,10 @@
     var usedHtml = ev.used.map(function (u) {
       return '<span class="fc-ing fc-ing-used">' + esc(u) + '</span>';
     }).join('');
-    var missHtml = ev.mainMiss.concat(ev.minorMiss).map(function (u) {
+    var missHtml = (ev.mainMiss || []).concat(ev.minorMiss || []).map(function (u) {
       return '<span class="fc-ing fc-ing-miss">缺 ' + esc(u) + '</span>';
     }).join('');
-    var altHtml = ev.altUsed.map(function (a) {
+    var altHtml = (ev.altUsed || []).map(function (a) {
       return '<span class="fc-ing fc-ing-alt">' + esc(a) + '</span>';
     }).join('');
     var eatenTag = eatenIdx && eatenIdx[r.id] ? '<span class="fc-eaten-tag">最近做过</span>' : '';
@@ -585,7 +588,7 @@
     var reader = new FileReader();
     reader.onload = function () {
       if (Store.importJson(reader.result)) {
-        state = Store.load();
+        state = Store.state();
         renderFridge();
         renderMatch();
         alert('导入成功');
@@ -636,7 +639,7 @@
       var b = document.createElement('button');
       b.className = 'fc-fopt' + (sel.sort === s.v ? ' is-active' : '');
       b.textContent = s.t;
-      b.addEventListener('click', function () { sel.sort = s.v; Store.update({ prefs: Object.assign({}, state.prefs, { sort: s.v }) }, 300); renderFilters(); renderMatch(); });
+      b.addEventListener('click', function () { sel.sort = s.v; state.prefs = Object.assign({}, state.prefs, { sort: s.v }); Store.update({}, 300); renderFilters(); renderMatch(); });
       sb.appendChild(b);
     });
   }
@@ -707,7 +710,7 @@
     $('fc-reset').addEventListener('click', function () {
       if (confirm('确定清空本机的冰箱清单和所有设置吗？')) {
         Store.reset();
-        state = Store.load();
+        state = Store.state();
         renderFridge();
         renderMatch();
       }
