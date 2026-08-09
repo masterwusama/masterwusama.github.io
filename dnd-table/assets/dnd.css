@@ -612,3 +612,80 @@
   .lib-list { width: 100%; max-height: 280px; }
   .lib-info-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- 职业升级表 ---------- */
+.lv-table-wrap { overflow-x: auto; }
+.lv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lv-table th, .lv-table td { border: 1px solid var(--dnd-line); padding: 6px 8px; text-align: left; vertical-align: top; }
+.lv-table th { background: var(--dnd-bg-0); color: var(--dnd-gold); font-weight: normal; letter-spacing: 1px; white-space: nowrap; }
+.lv-table td.lv-num { text-align: center; white-space: nowrap; }
+.lv-table td.lv-level { color: var(--dnd-gold); font-weight: bold; }
+.lv-table tr.lv-max td { background: rgba(212, 175, 55, .06); }
+.lv-table tbody tr:hover { background: rgba(212, 175, 55, .03); }
+.lv-feat { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--dnd-text); border: 1px solid var(--dnd-line); border-radius: 3px; cursor: pointer; }
+.lv-feat:hover { border-color: var(--dnd-gold); color: var(--dnd-gold); }
+.lv-asi { margin-left: 6px; font-size: 12px; color: var(--dnd-gold-dim); }
+.lv-feat-detail { margin-top: 12px; border: 1px dashed var(--dnd-line); border-radius: 4px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.lv-feat-head { color: var(--dnd-gold); font-size: 15px; letter-spacing: 1px; }
+.lv-feat-en { color: var(--dnd-text-dim); font-size: 12px; }
+
+/* ---------- 遭遇计算器 ---------- */
+.enc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px; }
+.enc-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.enc-row { display: flex; align-items: center; gap: 8px; }
+.enc-row-label { flex: none; font-size: 13px; color: var(--dnd-text-dim); min-width: 56px; }
+.enc-lv { width: 110px; }
+.enc-cr { flex: 1; min-width: 150px; }
+.enc-qty { width: 64px; }
+.enc-rm { margin-left: auto; }
+.enc-thresholds { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; border-top: 1px dashed var(--dnd-line); padding-top: 8px; }
+.enc-th { font-size: 13px; }
+.enc-th span { margin-right: 6px; }
+.enc-easy { color: #7bc97b; }
+.enc-medium { color: #e6c868; }
+.enc-hard { color: #e8955e; }
+.enc-deadly { color: #e06c6c; }
+.enc-day { margin-top: 6px; }
+.enc-result { margin-top: 10px; border-top: 1px dashed var(--dnd-line); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.enc-math { font-size: 13px; color: var(--dnd-text); }
+.enc-diff { font-size: 18px; letter-spacing: 2px; }
+.enc-diff-0 { color: var(--dnd-text-dim); }
+.enc-diff-1 { color: #7bc97b; }
+.enc-diff-2 { color: #e6c868; }
+.enc-diff-3 { color: #e8955e; }
+.enc-diff-4 { color: #e06c6c; }
+.enc-bar { height: 8px; background: var(--dnd-bg-0); border: 1px solid var(--dnd-line); border-radius: 4px; overflow: hidden; }
+.enc-bar-fill { height: 100%; }
+.enc-bar-0 { background: var(--dnd-text-dim); }
+.enc-bar-1 { background: #7bc97b; }
+.enc-bar-2 { background: #e6c868; }
+.enc-bar-3 { background: #e8955e; }
+.enc-bar-4 { background: #e06c6c; }
+.enc-marks { display: flex; justify-content: space-between; font-size: 11px; color: var(--dnd-text-dim); }
+.enc-rules { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--dnd-text-dim); }
+
+/* ---------- 魔法物品 ---------- */
+.mi-gen-result { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.mi-gen-name { font-size: 16px; color: var(--dnd-gold); }
+.mi-gen-en { color: var(--dnd-text-dim); font-size: 12px; }
+.mi-gen-tag { font-size: 12px; border: 1px solid var(--dnd-line); border-radius: 3px; padding: 1px 8px; color: var(--dnd-text-dim); }
+.mi-history { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+/* ---------- 专长速查 ---------- */
+.feat-list { display: flex; flex-direction: column; gap: 6px; }
+.feat-item { border: 1px solid var(--dnd-line); border-radius: 4px; }
+.feat-item.open { border-color: rgba(212, 175, 55, .4); }
+.feat-head { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: var(--dnd-text); }
+.feat-head:hover { background: rgba(212, 175, 55, .06); }
+.feat-cn { font-size: 14px; }
+.feat-en { font-size: 12px; color: var(--dnd-text-dim); }
+.feat-cat { margin-left: auto; font-size: 11px; color: var(--dnd-gold-dim); border: 1px solid var(--dnd-line); border-radius: 3px; padding: 0 6px; }
+.feat-arrow { color: var(--dnd-gold); }
+.feat-body { padding: 0 12px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--dnd-line); padding-top: 8px; }
+.feat-gain { margin: 0; font-size: 13px; line-height: 1.7; color: var(--dnd-text); }
+
+/* ---------- 窄屏适配 ---------- */
+@media (max-width: 860px) {
+  .enc-grid { grid-template-columns: 1fr; }
+  .lv-table { font-size: 12px; }
+}

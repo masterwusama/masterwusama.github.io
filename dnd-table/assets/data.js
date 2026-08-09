@@ -92,6 +92,13 @@
     getSpells: function () { return getList('spells'); },
     getSpell: function (index) { return get('/spells/' + index); },
 
+    getEquipment: function () { return getList('equipment'); },
+    getEquipmentItem: function (index) { return get('/equipment/' + index); },
+    getMagicItems: function () { return getList('magic-items'); },
+    getMagicItem: function (index) { return get('/magic-items/' + index); },
+    getClassLevels: function (index) { return get('/classes/' + index + '/levels'); },
+    getFeature: function (index) { return get('/features/' + index); },
+
     /* 本地模糊搜索怪物（基于已缓存索引） */
     searchMonsters: function (keyword) {
       var kw = String(keyword || '').trim().toLowerCase();

@@ -27,6 +27,10 @@
     if (DnD.RandomUI) DnD.RandomUI.init();
     if (DnD.SpellUI) DnD.SpellUI.init();
     if (DnD.MonsterUI) DnD.MonsterUI.init();
+    if (DnD.EquipmentUI) DnD.EquipmentUI.init();
+    if (DnD.LevelsUI) DnD.LevelsUI.init();
+    if (DnD.EncounterUI) DnD.EncounterUI.init();
+    if (DnD.MagicUI) DnD.MagicUI.init();
   }
 
   document.addEventListener('DOMContentLoaded', function () {
