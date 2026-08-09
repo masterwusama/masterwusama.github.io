@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 · 感知检定失败</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% -10%, #241b36 0%, #171222 55%, #100c1a 100%);
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+      color: #e8e2d4;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* 星空背景 */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 12% 22%, rgba(255, 235, 180, .7), transparent 60%),
+        radial-gradient(1px 1px at 34% 64%, rgba(255, 235, 180, .5), transparent 60%),
+        radial-gradient(2px 2px at 58% 12%, rgba(255, 235, 180, .65), transparent 60%),
+        radial-gradient(1px 1px at 71% 42%, rgba(255, 235, 180, .45), transparent 60%),
+        radial-gradient(1.5px 1.5px at 86% 76%, rgba(255, 235, 180, .55), transparent 60%),
+        radial-gradient(1px 1px at 44% 88%, rgba(255, 235, 180, .4), transparent 60%),
+        radial-gradient(1px 1px at 92% 24%, rgba(255, 235, 180, .35), transparent 60%),
+        radial-gradient(1.5px 1.5px at 8% 80%, rgba(255, 235, 180, .5), transparent 60%);
+      pointer-events: none;
+    }
+    .wrap { text-align: center; max-width: 620px; position: relative; }
+
+    /* ---- d20 骰面 ---- */
+    .d20 {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 32%, #2a2038 0%, #1d1529 70%);
+      border: 3px solid #d4af37;
+      box-shadow:
+        0 0 0 6px rgba(212, 175, 55, .12),
+        0 0 34px rgba(212, 175, 55, .35),
+        inset 0 0 24px rgba(0, 0, 0, .55);
+    }
+    .d20.crit { box-shadow: 0 0 0 6px rgba(255, 215, 120, .25), 0 0 54px rgba(255, 200, 90, .7), inset 0 0 24px rgba(0,0,0,.55); border-color: #ffd77a; }
+    .d20.fail { box-shadow: 0 0 0 6px rgba(224, 108, 108, .2), 0 0 44px rgba(224, 108, 108, .55), inset 0 0 24px rgba(0,0,0,.55); border-color: #e06c6c; }
+    .d20-num {
+      font-size: 64px;
+      font-weight: 800;
+      color: #d4af37;
+      line-height: 1;
+      font-family: Georgia, "Times New Roman", serif;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
+      user-select: none;
+    }
+    /* 骰面四周小符文点 */
+    .d20::before, .d20::after {
+      content: "✦";
+      position: absolute;
+      font-size: 13px;
+      color: rgba(212, 175, 55, .55);
+    }
+    .d20::before { top: 14px; left: 22px; }
+    .d20::after { bottom: 12px; right: 24px; }
+    .roll-tag {
+      margin-top: 18px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: #8a8299;
+    }
+    .roll-tag b { color: #d4af37; font-weight: 600; }
+
+    /* ---- 404 ---- */
+    .code {
+      margin-top: 22px;
+      font-size: 96px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 6px;
+      background: linear-gradient(180deg, #e8c96a 0%, #d4af37 55%, #8a7430 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 4px 14px rgba(212, 175, 55, .25));
+    }
+    .msg { margin-top: 18px; font-size: 21px; font-weight: 600; color: #f0ead8; }
+    .msg b { color: #d4af37; }
+    .sub { margin-top: 10px; font-size: 14px; color: #8a8299; line-height: 1.8; }
+    .path {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #a89fb5;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(212, 175, 55, .25);
+      border-radius: 6px;
+      display: inline-block;
+      padding: 6px 14px;
+      max-width: 100%;
+      word-break: break-all;
+    }
+    .path code { color: #d4af37; }
+
+    .actions { margin-top: 30px; display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .actions a, .actions button {
+      text-decoration: none;
+      padding: 10px 24px;
+      border-radius: 4px;
+      font-size: 14px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .2s;
+      border: 1.5px solid #d4af37;
+      background: transparent;
+      color: #d4af37;
+      font-family: inherit;
+    }
+    .actions a:hover, .actions button:hover {
+      background: rgba(212, 175, 55, .12);
+      transform: translateY(-2px);
+    }
+    .actions .primary {
+      background: linear-gradient(180deg, #e6c868, #d4af37);
+      color: #1c1628;
+      border-color: #d4af37;
+      font-weight: 600;
+    }
+    .actions .primary:hover { background: linear-gradient(180deg, #f0d47c, #e0ba4a); }
+    .actions button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .foot { margin-top: 28px; font-size: 12px; color: #56506b; letter-spacing: 2px; }
+    .foot b { color: #8a7430; }
+
+    /* 掷骰时的摆动 */
+    .d20.rolling { animation: wobble .35s ease-in-out infinite; }
+    @keyframes wobble {
+      0%, 100% { transform: rotate(-8deg) scale(1); }
+      50% { transform: rotate(8deg) scale(1.04); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 0 6px rgba(255, 215, 120, .25), 0 0 54px rgba(255, 200, 90, .7), inset 0 0 24px rgba(0,0,0,.55); }
+      50% { box-shadow: 0 0 0 10px rgba(255, 215, 120, .35), 0 0 80px rgba(255, 200, 90, .9), inset 0 0 24px rgba(0,0,0,.55); }
+    }
+    .d20.crit { animation: glowPulse 1.4s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="d20" id="d20">
+      <div class="d20-num" id="roll">?</div>
+    </div>
+    <p class="roll-tag"><b>感知（搜索）</b>检定</p>
+
+    <h1 class="code">404</h1>
+    <p class="msg" id="msg">这个页面不在你的视线范围内</p>
+    <p class="sub" id="sub">你翻遍了背包，查遍了法术书，它依然不见踪影……</p>
+    <p class="path">你找的是：<code id="path"></code></p>
+
+    <div class="actions">
+      <button type="button" id="reroll">再掷一次 d20</button>
+      <a class="primary" href="/">回首页</a>
+      <a href="/dnd-table/">去跑团桌</a>
+    </div>
+
+    <p class="foot">— 冒险者，掷骰决定你的命运 —</p>
+  </div>
+
+  <script>
+    var d20 = document.getElementById('d20');
+    var num = document.getElementById('roll');
+    var msg = document.getElementById('msg');
+    var sub = document.getElementById('sub');
+    var rerollBtn = document.getElementById('reroll');
+    var rolling = false;
+
+    /* 原始路径：由 404.html 随机入口带 ?from= 参数传入 */
+    var p = new URLSearchParams(location.search).get('from');
+    document.getElementById('path').textContent = p || (location.pathname + location.search);
+
+    /* 各档位文案（骰出结果后随机取一组） */
+    var TEXTS = {
+      1: [
+        ['自然 1 · 检定大失败', '你一头撞在门上，页面彻底消失了。也许它从未存在过。'],
+        ['自然 1 · 大失败', '骰子滚进下水道，页面也随之蒸发。今天不适合冒险。']
+      ],
+      20: [
+        ['自然 20 · 大成功', '你找到了……呃，这里确实什么都没有。但至少检定成功了！'],
+        ['自然 20 · 传奇成功', '连神都为你喝彩，可惜不存在的页面依然不存在。']
+      ],
+      low: [
+        ['检定失败（' + 'N' + '）', '你四处张望，只看到一片迷雾。这个页面大概躲进了别的次元。'],
+        ['检定失败（' + 'N' + '）', '你把油灯举过头顶，除了灰尘什么也没发现。']
+      ],
+      mid: [
+        ['检定平平（' + 'N' + '）', '你仔细搜索了每一个角落，但这页面像是从未被写下过。'],
+        ['检定平平（' + 'N' + '）', '线索指向了……死胡同。或许地址被抄错了。']
+      ],
+      high: [
+        ['检定成功（' + 'N' + '）', '你几乎要找到了！可惜最后还是差了一点点。'],
+        ['检定成功（' + 'N' + '）', '直觉告诉你这里曾经有个页面，但现在已经不在了。']
+      ]
+    };
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    function textsOf(n) {
+      var slot;
+      if (n === 1) slot = TEXTS[1];
+      else if (n === 20) slot = TEXTS[20];
+      else if (n <= 6) slot = TEXTS.low;
+      else if (n <= 14) slot = TEXTS.mid;
+      else slot = TEXTS.high;
+      var t = pick(slot);
+      return [t[0].replace('N', n), t[1]];
+    }
+
+    function roll() {
+      if (rolling) return;
+      rolling = true;
+      rerollBtn.disabled = true;
+      d20.className = 'd20 rolling';
+      var final = 1 + Math.floor(Math.random() * 20);
+      var step = 0;
+      var timer;
+      function tick() {
+        step++;
+        num.textContent = 1 + Math.floor(Math.random() * 20);
+        if (step < 26) {
+          timer = setTimeout(tick, 28 + step * 7); /* 逐渐减速 */
+        } else {
+          finish(final);
+        }
+      }
+      function finish(n) {
+        num.textContent = n;
+        d20.className = 'd20' + (n === 20 ? ' crit' : (n === 1 ? ' fail' : ''));
+        var t = textsOf(n);
+        msg.textContent = t[0].replace('（N）', '（' + n + '）');
+        sub.textContent = t[1];
+        rerollBtn.disabled = false;
+        rolling = false;
+      }
+      timer = setTimeout(tick, 40);
+    }
+
+    rerollBtn.addEventListener('click', roll);
+    roll();
+  </script>
+</body>
+</html>
