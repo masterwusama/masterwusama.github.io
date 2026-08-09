@@ -1,7 +1,7 @@
 /* =========================================================
  * 跑团桌 · 怪物图鉴模块 (monsters.js)
  * 怪物清单（搜索/译名）+ 怪物详细介绍（dnd5eapi）
- * 属性/AC/HP/速度/抗性/特性/动作；描述为 SRD 英文原文
+ * 属性/AC/HP/速度/抗性/特性/动作；名称为中文译名，描述为 SRD 英文原文
  * ========================================================= */
 (function (global) {
   'use strict';
@@ -256,6 +256,17 @@
     renderFeats(box, '特性', d.special_abilities);
     renderFeats(box, '动作', d.actions);
     renderFeats(box, '传奇动作', d.legendary_actions);
+
+    /* 中文完整版外链（灰机 wiki 龙与地下城 TRPG，搜索页保证不落空） */
+    var linkBox = el('div', 'lib-links');
+    var a = document.createElement('a');
+    a.className = 'dnd-btn dnd-btn-sm lib-link';
+    a.href = 'https://dnd.huijiwiki.com/index.php?search=' + encodeURIComponent(cn);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '查看中文完整版（灰机 wiki）';
+    linkBox.appendChild(a);
+    box.appendChild(linkBox);
   }
 
   /* ---------- 初始化 ---------- */

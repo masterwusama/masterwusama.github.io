@@ -1,7 +1,7 @@
 /* =========================================================
  * 跑团桌 · 魔法书模块 (spells.js)
  * 法术清单（0-9 环分组 / 搜索）+ 法术详细介绍（dnd5eapi）
- * 法术名与描述为 SRD 英文原文；字段名与学派为中文
+ * 法术名为中文译名；描述为 SRD 英文原文；字段名与学派为中文
  * ========================================================= */
 (function (global) {
   'use strict';
@@ -38,7 +38,10 @@
     var kw = keyword.trim().toLowerCase();
     return list.filter(function (s) {
       if (levelFilter !== null && s.level !== levelFilter) return false;
-      if (kw && s.name.toLowerCase().indexOf(kw) === -1) return false;
+      if (kw) {
+        var cn = G.spellName(s.index);
+        if (s.name.toLowerCase().indexOf(kw) === -1 && cn.toLowerCase().indexOf(kw) === -1) return false;
+      }
       return true;
     });
   }
@@ -69,7 +72,7 @@
     var search = el('input');
     search.type = 'text';
     search.className = 'dnd-input lib-search';
-    search.placeholder = '搜索法术名（英文）…';
+    search.placeholder = '搜索法术名（中文或英文）…';
     search.value = keyword;
     search.addEventListener('input', function () { keyword = this.value; render(); });
     bar.appendChild(search);
@@ -89,7 +92,9 @@
     Object.keys(groups).sort(function (a, b) { return a - b; }).forEach(function (lv) {
       side.appendChild(el('div', 'lib-group', levelText(Number(lv)) + ' · ' + groups[lv].length + ' 个'));
       groups[lv].forEach(function (s) {
-        var item = el('button', 'lib-item' + (detailIndex === s.index ? ' active' : ''), esc(s.name));
+        var cn = G.spellName(s.index);
+        var item = el('button', 'lib-item' + (detailIndex === s.index ? ' active' : ''),
+          esc(cn) + (cn !== s.name ? ' <i>' + esc(s.name) + '</i>' : ''));
         item.addEventListener('click', function () { openDetail(s.index); });
         side.appendChild(item);
       });
@@ -148,9 +153,11 @@
   function renderDetailInto(box, d) {
     box.innerHTML = '';
     var school = d.school && G.schoolName(d.school.index);
+    var cn = G.spellName(d.index);
     var head = el('div', 'lib-detail-head');
-    head.innerHTML = '<div class="lib-detail-name">' + esc(d.name) + '</div>'
-      + '<div class="lib-detail-sub">' + levelText(d.level) + (school ? ' · ' + school + '学派' : '') + '</div>';
+    head.innerHTML = '<div class="lib-detail-name">' + esc(cn) + '</div>'
+      + '<div class="lib-detail-sub">' + (cn !== d.name ? esc(d.name) + ' · ' : '')
+      + levelText(d.level) + (school ? ' · ' + school + '学派' : '') + '</div>';
     box.appendChild(head);
 
     /* 信息网格 */
@@ -195,6 +202,17 @@
       box.appendChild(el('div', 'lib-classes',
         '可用职业：' + d.classes.map(function (c) { return G.className(c.index); }).join('、')));
     }
+
+    /* 中文完整版外链（灰机 wiki 龙与地下城 TRPG） */
+    var linkBox = el('div', 'lib-links');
+    var a = document.createElement('a');
+    a.className = 'dnd-btn dnd-btn-sm lib-link';
+    a.href = 'https://dnd.huijiwiki.com/wiki/法术/' + encodeURIComponent(cn);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '查看中文完整版（灰机 wiki）';
+    linkBox.appendChild(a);
+    box.appendChild(linkBox);
   }
 
   /* ---------- 初始化 ---------- */
