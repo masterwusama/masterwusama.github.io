@@ -1,7 +1,7 @@
 {
  "code": "601333",
  "name": "广深铁路",
- "updated_at": "2026-08-09T11:09:51+08:00",
+ "updated_at": "2026-08-09T17:54:16+08:00",
  "info": {},
  "indicators": [
   {
@@ -6771,7 +6771,195 @@
   "turnover_rate": 0.0096,
   "time": "2026-08-07T16:14:51+08:00"
  },
- "dividends": [],
+ "dividends": [
+  {
+   "year": "2025年报",
+   "type": "年度分红",
+   "announce_date": "2026-06-18",
+   "record_date": "2026-06-25",
+   "ex_date": "2026-06-26",
+   "pay_date": "2026-06-26",
+   "bonus_per_10": 0.9,
+   "transfer_per_10": null,
+   "description": "10派0.9元(含税)"
+  },
+  {
+   "year": "2024年报",
+   "type": "年度分红",
+   "announce_date": "2025-08-08",
+   "record_date": "2025-08-14",
+   "ex_date": "2025-08-15",
+   "pay_date": "2025-08-15",
+   "bonus_per_10": 0.7,
+   "transfer_per_10": null,
+   "description": "10派0.7元(含税)"
+  },
+  {
+   "year": "2023年报",
+   "type": "年度分红",
+   "announce_date": "2024-08-09",
+   "record_date": "2024-08-15",
+   "ex_date": "2024-08-16",
+   "pay_date": "2024-08-16",
+   "bonus_per_10": 0.7,
+   "transfer_per_10": null,
+   "description": "10派0.7元(含税)"
+  },
+  {
+   "year": "2019年报",
+   "type": "年度分红",
+   "announce_date": "2020-08-07",
+   "record_date": "2020-08-13",
+   "ex_date": "2020-08-14",
+   "pay_date": "2020-08-14",
+   "bonus_per_10": 0.6,
+   "transfer_per_10": null,
+   "description": "10派0.6元(含税)"
+  },
+  {
+   "year": "2018年报",
+   "type": "年度分红",
+   "announce_date": "2019-08-06",
+   "record_date": "2019-08-09",
+   "ex_date": "2019-08-12",
+   "pay_date": "2019-08-12",
+   "bonus_per_10": 0.6,
+   "transfer_per_10": null,
+   "description": "10派0.6元(含税)"
+  },
+  {
+   "year": "2017年报",
+   "type": "年度分红",
+   "announce_date": "2018-07-27",
+   "record_date": "2018-08-02",
+   "ex_date": "2018-08-03",
+   "pay_date": "2018-08-03",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元(含税)"
+  },
+  {
+   "year": "2016年报",
+   "type": "年度分红",
+   "announce_date": "2017-08-08",
+   "record_date": "2017-08-11",
+   "ex_date": "2017-08-14",
+   "pay_date": "2017-08-14",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元(含税)"
+  },
+  {
+   "year": "2015年报",
+   "type": "年度分红",
+   "announce_date": "2016-07-19",
+   "record_date": "2016-07-22",
+   "ex_date": "2016-07-25",
+   "pay_date": "2016-07-25",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元(含税)"
+  },
+  {
+   "year": "2014年报",
+   "type": "年度分红",
+   "announce_date": "2015-07-17",
+   "record_date": "2015-07-24",
+   "ex_date": "2015-07-27",
+   "pay_date": "2015-07-27",
+   "bonus_per_10": 0.5,
+   "transfer_per_10": null,
+   "description": "10派0.5元(含税)"
+  },
+  {
+   "year": "2013年报",
+   "type": "年度分红",
+   "announce_date": "2014-07-22",
+   "record_date": "2014-07-25",
+   "ex_date": "2014-07-28",
+   "pay_date": "2014-07-28",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元(含税)"
+  },
+  {
+   "year": "2012年报",
+   "type": "年度分红",
+   "announce_date": "2013-07-09",
+   "record_date": "2013-07-15",
+   "ex_date": "2013-07-16",
+   "pay_date": "2013-07-22",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元(含税)"
+  },
+  {
+   "year": "2011年报",
+   "type": "年度分红",
+   "announce_date": "2012-07-06",
+   "record_date": "2012-07-11",
+   "ex_date": "2012-07-12",
+   "pay_date": "2012-07-20",
+   "bonus_per_10": 1.0,
+   "transfer_per_10": null,
+   "description": "10派1元(含税)"
+  },
+  {
+   "year": "2010年报",
+   "type": "年度分红",
+   "announce_date": "2011-06-17",
+   "record_date": "2011-06-22",
+   "ex_date": "2011-06-23",
+   "pay_date": "2011-06-30",
+   "bonus_per_10": 0.9,
+   "transfer_per_10": null,
+   "description": "10派0.9元(含税)"
+  },
+  {
+   "year": "2009年报",
+   "type": "年度分红",
+   "announce_date": "2010-07-07",
+   "record_date": "2010-07-12",
+   "ex_date": "2010-07-13",
+   "pay_date": "2010-07-21",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元（含税）"
+  },
+  {
+   "year": "2008年报",
+   "type": "年度分红",
+   "announce_date": "2009-07-02",
+   "record_date": "2009-07-08",
+   "ex_date": "2009-07-09",
+   "pay_date": "2009-07-24",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元（含税）"
+  },
+  {
+   "year": "2007年报",
+   "type": "年度分红",
+   "announce_date": "2008-07-11",
+   "record_date": "2008-07-16",
+   "ex_date": "2008-07-17",
+   "pay_date": "2008-07-25",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元（含税）"
+  },
+  {
+   "year": "2006年报",
+   "type": "年度分红",
+   "announce_date": "2007-07-13",
+   "record_date": "2007-07-18",
+   "ex_date": "2007-07-19",
+   "pay_date": "2007-07-27",
+   "bonus_per_10": 0.8,
+   "transfer_per_10": null,
+   "description": "10派0.8元（含税）"
+  }
+ ],
  "reports": [
   {
    "title": "广深铁路2026年第一季度报告",
@@ -6870,7 +7058,5 @@
    "audit_opinion": null
   }
  ],
- "errors": [
-  "dividends: Expecting value: line 1 column 1 (char 0)"
- ]
+ "errors": null
 }

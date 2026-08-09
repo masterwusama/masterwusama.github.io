@@ -1,7 +1,7 @@
 {
  "code": "300750",
  "name": "宁德时代",
- "updated_at": "2026-08-09T11:13:15+08:00",
+ "updated_at": "2026-08-09T17:56:38+08:00",
  "info": {},
  "indicators": [
   {
@@ -6771,7 +6771,151 @@
   "turnover_rate": 0.006,
   "time": "2026-08-07T16:14:18+08:00"
  },
- "dividends": [],
+ "dividends": [
+  {
+   "year": "2026半年报",
+   "type": "中期分红",
+   "announce_date": "2026-08-04",
+   "record_date": "2026-08-07",
+   "ex_date": "2026-08-10",
+   "pay_date": "2026-08-10",
+   "bonus_per_10": 14.11,
+   "transfer_per_10": null,
+   "description": "10派14.11元(含税)"
+  },
+  {
+   "year": "2025年报",
+   "type": "年度分红",
+   "announce_date": "2026-04-15",
+   "record_date": "2026-04-21",
+   "ex_date": "2026-04-22",
+   "pay_date": "2026-04-22",
+   "bonus_per_10": 21.78,
+   "transfer_per_10": null,
+   "description": "10派21.78元(含税)"
+  },
+  {
+   "year": "2025年报",
+   "type": "特别分红",
+   "announce_date": "2026-04-15",
+   "record_date": "2026-04-21",
+   "ex_date": "2026-04-22",
+   "pay_date": "2026-04-22",
+   "bonus_per_10": 47.79,
+   "transfer_per_10": null,
+   "description": "10派47.79元(含税)"
+  },
+  {
+   "year": "2025半年报",
+   "type": "中期分红",
+   "announce_date": "2025-08-13",
+   "record_date": "2025-08-19",
+   "ex_date": "2025-08-20",
+   "pay_date": "2025-08-20",
+   "bonus_per_10": 10.07,
+   "transfer_per_10": null,
+   "description": "10派10.07元(含税)"
+  },
+  {
+   "year": "2024年报",
+   "type": "年度分红",
+   "announce_date": "2025-04-15",
+   "record_date": "2025-04-21",
+   "ex_date": "2025-04-22",
+   "pay_date": "2025-04-22",
+   "bonus_per_10": 45.53,
+   "transfer_per_10": null,
+   "description": "10派45.53元(含税)"
+  },
+  {
+   "year": "2024年报",
+   "type": "特别分红",
+   "announce_date": "2025-01-17",
+   "record_date": "2025-01-23",
+   "ex_date": "2025-01-24",
+   "pay_date": "2025-01-24",
+   "bonus_per_10": 12.3,
+   "transfer_per_10": null,
+   "description": "10派12.3元(含税)"
+  },
+  {
+   "year": "2023年报",
+   "type": "年度分红",
+   "announce_date": "2024-04-23",
+   "record_date": "2024-04-29",
+   "ex_date": "2024-04-30",
+   "pay_date": "2024-04-30",
+   "bonus_per_10": 20.11,
+   "transfer_per_10": null,
+   "description": "10派20.11元(含税)"
+  },
+  {
+   "year": "2023年报",
+   "type": "特别分红",
+   "announce_date": "2024-04-23",
+   "record_date": "2024-04-29",
+   "ex_date": "2024-04-30",
+   "pay_date": "2024-04-30",
+   "bonus_per_10": 30.17,
+   "transfer_per_10": null,
+   "description": "10派30.17元(含税)"
+  },
+  {
+   "year": "2022年报",
+   "type": "年度分红",
+   "announce_date": "2023-04-18",
+   "record_date": "2023-04-25",
+   "ex_date": "2023-04-26",
+   "pay_date": "2023-04-26",
+   "bonus_per_10": 25.2,
+   "transfer_per_10": 8.0,
+   "description": "10转增8股派25.2元(含税)"
+  },
+  {
+   "year": "2022半年报",
+   "type": "中期分红",
+   "announce_date": "2022-09-21",
+   "record_date": "2022-09-27",
+   "ex_date": "2022-09-28",
+   "pay_date": "2022-09-28",
+   "bonus_per_10": 6.528,
+   "transfer_per_10": null,
+   "description": "10派6.528元(含税)"
+  },
+  {
+   "year": "2020年报",
+   "type": "年度分红",
+   "announce_date": "2021-06-28",
+   "record_date": "2021-07-02",
+   "ex_date": "2021-07-05",
+   "pay_date": "2021-07-05",
+   "bonus_per_10": 2.4005,
+   "transfer_per_10": null,
+   "description": "10派2.40048元(含税)"
+  },
+  {
+   "year": "2019年报",
+   "type": "年度分红",
+   "announce_date": "2020-05-28",
+   "record_date": "2020-06-03",
+   "ex_date": "2020-06-04",
+   "pay_date": "2020-06-04",
+   "bonus_per_10": 2.2013,
+   "transfer_per_10": null,
+   "description": "10派2.201281元(含税)"
+  },
+  {
+   "year": "2018年报",
+   "type": "年度分红",
+   "announce_date": "2019-07-16",
+   "record_date": "2019-07-19",
+   "ex_date": "2019-07-22",
+   "pay_date": "2019-07-22",
+   "bonus_per_10": 1.4204,
+   "transfer_per_10": null,
+   "description": "10派1.42037元(含税)"
+  }
+ ],
  "reports": [
   {
    "title": "2026年半年度报告",
@@ -6870,7 +7014,5 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1218095874&orgId=GD165627&announcementTime=2023-10-20"
   }
  ],
- "errors": [
-  "dividends: Expecting value: line 1 column 1 (char 0)"
- ]
+ "errors": null
 }
