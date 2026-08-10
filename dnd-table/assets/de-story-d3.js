@@ -65,7 +65,7 @@
           '[疑神疑鬼] 他们不是来帮忙的。他们是来收尸的——收案子的尸，或者收你的。'
         ],
         choices: [
-          { text: '「你们来得正好——这案子今晚就要见分晓了。」', goto: 'd3_jean2' },
+          { text: '「你们来得正好——这案子今晚就要见分晓了。」', effect: { name: '哈利·杜博阿' }, goto: 'd3_jean2' },
           { text: '「有人知道我把警徽丢哪儿了吗？」', goto: 'd3_jean_badge' },
           { text: '「我想放一盘磁带——大厅的音响能用吗？」', goto: 'd3_tape_play' },
           { text: '「我不干了。辞职。」', effect: { flag: 'quit_case' }, goto: 'd3_jean_quit' }

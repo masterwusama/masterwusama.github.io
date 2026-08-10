@@ -124,7 +124,7 @@
           '笔记本里还夹着一张纸条：昨晚的前台收据。房费 20 元已付，酒钱三瓶未付。'
         ],
         choices: [
-          { text: '收起笔记本', effect: { item: '笔记本', flag: 'read_note' }, goto: 'room_after_note' },
+          { text: '收起笔记本', effect: { item: '笔记本', flag: 'read_note', name: '哈利·杜博阿' }, goto: 'room_after_note' },
           { text: '「金·曷城……金·曷城。」默念搭档的名字', effect: { flag: 'know_kim_name' }, goto: 'room_after_note' }
         ]
       },
@@ -623,7 +623,7 @@
         ],
         choices: [
           { text: '「叫我*警官*就好。」', goto: 'kim_talk' },
-          { text: '「哈利·杜博阿。41 分局。……大概。」（握手）', effect: { flag: 'kim_handshake' }, goto: 'kim_talk' },
+          { text: '「哈利·杜博阿。41 分局。……大概。」（握手）', effect: { flag: 'kim_handshake', name: '哈利·杜博阿' }, goto: 'kim_talk' },
           { text: '（不跟他握手，直接说）「你是我的搭档？」', check: { skill: '同舟共济', dc: 7 }, success: 'kim_talk', fail: 'kim_talk' }
         ]
       },

@@ -75,7 +75,7 @@
   function newState(name) {
     var s = {
       v: 1,
-      name: (typeof name === 'string' && name) ? name : '哈利·杜博阿',
+      name: (typeof name === 'string' && name) ? name : '？？？',  /* 失忆开局：名字未知，待剧本解锁 */
       skills: {},
       hp: 20, hpMax: 20,
       morale: 20, moraleMax: 20,
@@ -152,6 +152,7 @@
     }
     if (ef.skillup) applySkillEffects(ef.skillup);
     if (ef.thought) unlockThought(ef.thought);
+    if (ef.name) state.name = ef.name;  /* 解锁玩家名字（失忆开局：翻笔记本/自报姓名/被同事点名） */
   }
 
   function unlockThought(name) {
@@ -457,7 +458,7 @@
         var parsed = null;
         try { parsed = raw ? JSON.parse(raw) : null; } catch (e) { parsed = null; }
         var info = parsed
-          ? ((typeof parsed.name === 'string' && parsed.name) ? parsed.name : '哈利·杜博阿') + ' · 第' + parsed.day + '天 ' + parsed.hour + '时'
+          ? ((typeof parsed.name === 'string' && parsed.name) ? parsed.name : '？？？') + ' · 第' + parsed.day + '天 ' + parsed.hour + '时'
           : '空';
         line.innerHTML = '<span>槽位 ' + slot + '：' + esc(info) + '</span>'
           + '<button type="button" class="dnd-btn dnd-btn-sm" data-a="save">存</button>'
@@ -486,7 +487,7 @@
     var raw = localStorage.getItem(SAVE_KEY + slot);
     if (!raw) return;
     try { state = JSON.parse(raw); } catch (e) { return; }
-    if (typeof state.name !== 'string' || !state.name) state.name = '哈利·杜博阿';
+    if (typeof state.name !== 'string' || !state.name) state.name = '？？？';
     node = state.lastNode ? findNode(state.lastNode) : null;
     if (!node) node = findNode(startSceneId());
   }
@@ -519,14 +520,14 @@
   function renderWelcome() {
     var box = el('div', 'de-welcome');
     box.innerHTML = '<div class="de-welcome-badge">🎲</div>'
-      + '<div class="de-welcome-title">瑞瓦肖·迷案录</div>'
+      + '<div class="de-welcome-title">瑞瓦肖 · 极乐迪斯科</div>'
       + '<div class="de-welcome-sub">一款极乐迪斯科风格的文字冒险 · 基于 D&D 5e 骰子引擎</div>'
       + '<div class="de-welcome-desc">'
-      + '<p>你叫哈利·杜博阿。你是一名警探。你正宿醉在一家旅店的房间里，而瑞瓦肖的码头，有一具吊在树上的尸体等你三天了。</p>'
+      + '<p>你在褴褛飞旋旅店的房间里醒来：宿醉、头疼，脑子里像被人擦掉了一块。你叫什么名字？你是什么人？——想不起来。雾里的码头上，有一具尸体吊在树上，等你三天了。</p>'
       + '<p>· 24 项技能检定 · 思维内阁 · HP/士气双槽生存 · 多结局</p>'
       + '</div>'
       + '<div class="de-welcome-actions">'
-      + '<button type="button" class="dnd-btn dnd-btn-gold" id="de-welcome-start">开始新的调查</button>'
+      + '<button type="button" class="dnd-btn dnd-btn-gold" id="de-welcome-start">睁开眼睛</button>'
       + '<button type="button" class="dnd-btn" id="de-welcome-load">读取存档</button>'
       + '</div>';
     box.querySelector('#de-welcome-start').addEventListener('click', function () { startNew(); });
