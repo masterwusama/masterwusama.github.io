@@ -1,7 +1,7 @@
 {
  "code": "002027",
  "name": "分众传媒",
- "updated_at": "2026-08-10T01:38:37+08:00",
+ "updated_at": "2026-08-10T11:15:22+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "分众传媒",
-  "price": 5.14,
-  "change_pct": 0.0,
-  "pe_ttm": 20.62,
-  "pb": 5.84,
-  "market_cap": 74233000000.0,
-  "float_market_cap": 74233000000.0,
-  "turnover_rate": 0.0108,
-  "time": "2026-08-07T16:14:42+08:00"
+  "price": 5.23,
+  "change_pct": 0.0175,
+  "pe_ttm": 20.98,
+  "pb": 5.95,
+  "market_cap": 75533000000.0,
+  "float_market_cap": 75533000000.0,
+  "turnover_rate": 0.0053,
+  "time": "2026-08-10T11:15:33+08:00"
  },
  "dividends": [
   {
@@ -7058,15 +7058,6 @@
    "date": "2023-10-25",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-10-25/1218133551.PDF",
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002027&announcementId=1218133551&orgId=gssz0002027&announcementTime=2023-10-25"
-  },
-  {
-   "title": "2023年半年度报告",
-   "category": "半年报",
-   "date": "2023-08-10",
-   "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-08-10/1217500363.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002027&announcementId=1217500363&orgId=gssz0002027&announcementTime=2023-08-10",
-   "audit_firm": null,
-   "audit_opinion": null
   }
  ],
  "errors": null
