@@ -1,7 +1,7 @@
 {
  "code": "002594",
  "name": "比亚迪",
- "updated_at": "2026-08-11T18:09:16+08:00",
+ "updated_at": "2026-08-12T02:04:37+08:00",
  "info": {},
  "indicators": [
   {
@@ -6907,6 +6907,13 @@
  ],
  "reports": [
   {
+   "title": "2026年一季度报告",
+   "category": "一季报",
+   "date": "2026-04-29",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-04-29/1225233071.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002594&announcementId=1225233071&orgId=gshk0001211&announcementTime=2026-04-29"
+  },
+  {
    "title": "2025年年度报告",
    "category": "年报",
    "date": "2026-03-28",
@@ -6932,6 +6939,13 @@
    "audit_opinion": null
   },
   {
+   "title": "2025年一季度报告",
+   "category": "一季报",
+   "date": "2025-04-26",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-04-26/1223309368.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002594&announcementId=1223309368&orgId=gshk0001211&announcementTime=2025-04-26"
+  },
+  {
    "title": "2024年年度报告",
    "category": "年报",
    "date": "2025-03-25",
@@ -6955,6 +6969,13 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002594&announcementId=1221030552&orgId=gshk0001211&announcementTime=2024-08-29",
    "audit_firm": null,
    "audit_opinion": null
+  },
+  {
+   "title": "2024年一季度报告",
+   "category": "一季报",
+   "date": "2024-04-30",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-04-30/1219909910.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002594&announcementId=1219909910&orgId=gshk0001211&announcementTime=2024-04-30"
   },
   {
    "title": "2023年年度报告",
