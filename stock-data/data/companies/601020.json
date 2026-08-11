@@ -1,7 +1,7 @@
 {
  "code": "601020",
  "name": "华钰矿业",
- "updated_at": "2026-08-11T11:09:46+08:00",
+ "updated_at": "2026-08-11T18:08:45+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "华钰矿业",
-  "price": 23.18,
-  "change_pct": -0.0039,
-  "pe_ttm": 22.21,
-  "pb": 4.49,
-  "market_cap": 19007000000.0,
-  "float_market_cap": 19007000000.0,
-  "turnover_rate": 0.0513,
-  "time": "2026-08-11T11:09:53+08:00"
+  "price": 22.66,
+  "change_pct": -0.0262,
+  "pe_ttm": 21.72,
+  "pb": 4.39,
+  "market_cap": 18580000000.0,
+  "float_market_cap": 18580000000.0,
+  "turnover_rate": 0.073,
+  "time": "2026-08-11T16:14:32+08:00"
  },
  "dividends": [
   {
@@ -6872,6 +6872,13 @@
    "audit_opinion": "标准无保留意见"
   },
   {
+   "title": "西藏华钰矿业股份有限公司2026年第一季度报告",
+   "category": "一季报",
+   "date": "2026-04-29",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-04-29/1225229380.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1225229380&orgId=9900029826&announcementTime=2026-04-29"
+  },
+  {
    "title": "西藏华钰矿业股份有限公司2025年第三季度报告",
    "category": "三季报",
    "date": "2025-10-29",
@@ -6897,6 +6904,13 @@
    "audit_opinion": "标准无保留意见"
   },
   {
+   "title": "西藏华钰矿业股份有限公司2025年第一季度报告",
+   "category": "一季报",
+   "date": "2025-04-29",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-04-29/1223384260.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1223384260&orgId=9900029826&announcementTime=2025-04-29"
+  },
+  {
    "title": "华钰矿业2024年第三季度报告",
    "category": "三季报",
    "date": "2024-10-29",
@@ -6920,6 +6934,13 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1219877774&orgId=9900029826&announcementTime=2024-04-27",
    "audit_firm": "立信会计师事务所（特殊普通合伙）",
    "audit_opinion": "标准无保留意见"
+  },
+  {
+   "title": "西藏华钰矿业股份有限公司2024年一季度报告",
+   "category": "一季报",
+   "date": "2024-04-27",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-04-27/1219877758.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1219877758&orgId=9900029826&announcementTime=2024-04-27"
   },
   {
    "title": "西藏华钰矿业股份有限公司2023年第三季度报告",

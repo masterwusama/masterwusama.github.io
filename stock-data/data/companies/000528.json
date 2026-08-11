@@ -1,7 +1,7 @@
 {
  "code": "000528",
  "name": "柳工",
- "updated_at": "2026-08-11T11:12:23+08:00",
+ "updated_at": "2026-08-11T18:16:03+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "柳    工",
-  "price": 8.35,
-  "change_pct": -0.0118,
-  "pe_ttm": 10.92,
-  "pb": 0.93,
-  "market_cap": 17016000000.0,
-  "float_market_cap": 16992000000.0,
-  "turnover_rate": 0.007,
-  "time": "2026-08-11T11:12:33+08:00"
+  "price": 8.2,
+  "change_pct": -0.0296,
+  "pe_ttm": 10.72,
+  "pb": 0.91,
+  "market_cap": 16710000000.0,
+  "float_market_cap": 16687000000.0,
+  "turnover_rate": 0.0199,
+  "time": "2026-08-11T16:14:30+08:00"
  },
  "dividends": [
   {
