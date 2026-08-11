@@ -52,7 +52,7 @@
           '[五感发达] 听觉敏锐——你听到叮叮当当的声音！钥匙在你的裤裆口袋里叮当作响。'
         ],
         choices: [
-          { text: '穿上它，取出裤袋里的东西', effect: { item: '喇叭裤', flag: 'pants_on' }, goto: 'room_key' },
+          { text: '穿上它，取出裤袋里的东西', effect: { item: '喇叭裤', flag: 'pants_on', equip: '喇叭裤' }, goto: 'room_key' },
           { text: '先不穿，把钥匙掏出来', goto: 'room_key' }
         ]
       },
@@ -75,7 +75,7 @@
           '[同舟共济] 白色矩形——RCM 卤素水印。你以前见过。你天天都该见到它。'
         ],
         choices: [
-          { text: '穿上这件短上衣', effect: { item: '迪斯科短上衣', flag: 'vest_on' }, goto: 'start' },
+          { text: '穿上这件短上衣', effect: { item: '迪斯科短上衣', flag: 'vest_on', equip: '迪斯科短上衣' }, goto: 'start' },
           { text: '先放着', goto: 'start' }
         ]
       },
@@ -100,7 +100,7 @@
           '[见微知著] 它的大小正好与窗户破洞吻合——还有你的脚。如果扔得特别用力，也能产生足够的重量。'
         ],
         choices: [
-          { text: '穿上它（左脚）', effect: { item: '绿鞋（左脚）', flag: 'left_shoe' }, goto: 'start' },
+          { text: '穿上它（左脚）', effect: { item: '绿鞋（左脚）', flag: 'left_shoe', equip: '绿鞋（左脚）' }, goto: 'start' },
           { text: '先拿着', effect: { item: '绿鞋（左脚）' }, goto: 'start' }
         ]
       },
@@ -222,7 +222,7 @@
           '[循循善诱] -1 讨厌的气味。'
         ],
         choices: [
-          { text: '穿上它', effect: { item: '白色绸缎衬衫', flag: 'shirt_on' }, goto: 'start' },
+          { text: '穿上它', effect: { item: '白色绸缎衬衫', flag: 'shirt_on', equip: '白色绸缎衬衫' }, goto: 'start' },
           { text: '先放着', goto: 'start' }
         ]
       },
@@ -314,7 +314,7 @@
           '任务完成：找到另一只鞋'
         ],
         choices: [
-          { text: '穿上这只鞋（任务完成：找到另一只鞋）', effect: { item: '绿蛇皮鞋', unflag: 'task_shoe' }, goto: 'balcony_done' },
+          { text: '穿上这只鞋（任务完成：找到另一只鞋）', effect: { item: '绿蛇皮鞋', unflag: 'task_shoe', equip: '绿蛇皮鞋' }, goto: 'balcony_done' },
           { text: '只是拿在手里', effect: { item: '绿蛇皮鞋', unflag: 'task_shoe' }, goto: 'balcony_done' }
         ]
       },
@@ -1465,7 +1465,7 @@
           '解锁思维：费尔韦瑟T-500'
         ],
         choices: [
-          { text: '（获得护胫+思维）大厨退场，回房间睡觉', effect: { lose: '有腐肉的费尔韦瑟T-500 靴子', item: '费尔韦瑟T-500 护胫', thought: '费尔韦瑟T-500', flag: 'shins_worn', skillup: { '争强好胜': 2, '从容自若': -1 } }, goto: 'night_room' }
+          { text: '（获得护胫+思维）大厨退场，回房间睡觉', effect: { lose: '有腐肉的费尔韦瑟T-500 靴子', item: '费尔韦瑟T-500 护胫', thought: '费尔韦瑟T-500', flag: 'shins_worn', skillup: { '争强好胜': 2, '从容自若': -1 }, equip: '费尔韦瑟T-500 护胫' }, goto: 'night_room' }
         ]
       },
 

@@ -886,3 +886,33 @@
   .de-text, .de-para, .de-dialog { font-size: 14px; }
   .de-node-title { font-size: 16px; }
 }
+
+/* ---- 装备栏 ---- */
+.de-equip { border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 10px 12px; background: rgba(0,0,0,.22); }
+.de-equip-title { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #8a7ba5; margin-bottom: 6px; }
+.de-equip-row { display: flex; align-items: center; gap: 10px; padding: 4px 2px; font-size: 13px; border-bottom: 1px dashed rgba(255,255,255,.06); }
+.de-equip-row:last-child { border-bottom: none; }
+.de-equip-slot { width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 6px; background: rgba(255,255,255,.08); color: #e8c877; font-size: 12px; font-weight: 700; flex: none; }
+.de-equip-name { flex: 1; color: #e2d8ee; }
+
+/* ---- 物品卡增强 ---- */
+.de-item-meta { float: right; font-size: 11px; font-weight: 400; color: #8a7ba5; }
+.de-item-fx { font-size: 12px; color: #6ee7a0; margin: 4px 0 0; }
+.de-item-btn { margin-top: 8px; margin-right: 6px; }
+.de-item-btn.is-worn { opacity: .55; }
+
+/* ---- 属性栏 ---- */
+.de-attr-group { border: 1px solid rgba(255,255,255,.12); border-left-width: 4px; border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,.03); }
+.de-attr-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 800; letter-spacing: 2px; margin-bottom: 4px; }
+.de-attr-head b { font-size: 20px; color: #f0e6c8; }
+.de-attr-skill { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; font-size: 13px; border-top: 1px dashed rgba(255,255,255,.05); }
+.de-attr-skill span { flex: 1; color: #e2d8ee; }
+.de-attr-skill b { min-width: 20px; text-align: right; color: #f0e6c8; font-size: 14px; }
+.de-attr-skill i { font-style: normal; font-size: 11px; color: #8a7ba5; }
+
+/* ---- 属性分配 ---- */
+.de-alloc-row { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-bottom: 1px dashed rgba(255,255,255,.08); flex-wrap: wrap; }
+.de-alloc-name { width: 52px; font-weight: 800; font-size: 15px; letter-spacing: 2px; }
+.de-alloc-val { min-width: 24px; text-align: center; font-size: 18px; color: #f0e6c8; }
+.de-alloc-skills { flex: 1; min-width: 220px; font-size: 11px; color: #8a7ba5; line-height: 1.5; }
+.de-alloc-left { font-size: 14px; font-weight: 700; color: #e8c877; margin: 10px 0 4px; }

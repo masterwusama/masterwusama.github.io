@@ -56,10 +56,31 @@
     }
     return '#d4af37';
   }
+  function skillInfo(name) {
+    for (var i = 0; i < DE.skills.length; i++) if (DE.skills[i].name === name) return DE.skills[i];
+    return null;
+  }
+  /* 属性值（技能基础值 = 所属属性） */
+  function attrVal(group) { return (state.attrs || {})[group] || 1; }
+  /* 装备加成（穿在身上的服装 bonus 之和） */
+  function gearBonus(name) {
+    var b = 0;
+    var eq = state.equip || {};
+    for (var k in eq) {
+      if (!eq[k]) continue;
+      var info = itemInfo(eq[k]);
+      if (info && info.bonus && info.bonus[name]) b += info.bonus[name];
+    }
+    return b;
+  }
+  /* 醉酒惩罚 */
+  function drunkPenalty() {
+    if (state.drunk >= 8) return -2;
+    if (state.drunk >= 5) return -1;
+    return 0;
+  }
   function skillVal(name) {
-    var v = (state.skills || {})[name] || 0;
-    if (state.drunk >= 5) v -= 1;   /* 醉酒 >4 全技能 -1 */
-    if (state.drunk >= 8) v -= 1;
+    var v = attrVal((skillInfo(name) || {}).group) + gearBonus(name) + ((state.skills || {})[name] || 0) + drunkPenalty();
     return v;
   }
   function itemInfo(name) {
@@ -72,11 +93,15 @@
   }
 
   /* ---------- 新游戏 ---------- */
-  function newState(name) {
+  /* 属性驱动：4 组属性（智力/精神/体格/运动）决定组内 6 技能的基础值。
+     开局 12 点分配（每属性至少 1、至多 6），state.skills 仅存额外点（skillup/思维）。 */
+  function newState(attrs, name) {
     var s = {
-      v: 1,
+      v: 2,
       name: (typeof name === 'string' && name) ? name : '？？？',  /* 失忆开局：名字未知，待剧本解锁 */
+      attrs: attrs || { 智力: 1, 精神: 1, 体格: 1, 运动: 1 },
       skills: {},
+      equip: { 颈: null, 衣: null, 裤: null, 脚: null, 手: null },
       hp: 20, hpMax: 20,
       morale: 20, moraleMax: 20,
       drunk: 0,
@@ -88,12 +113,21 @@
       history: [],
       ending: null
     };
-    DE.skills.forEach(function (sk) { s.skills[sk.name] = sk.base || 1; });
     return s;
   }
 
-  function startNew(name) {
-    state = newState(name);
+  /* 旧存档兼容：补齐 attrs / equip / skills 字段 */
+  function normalizeState(s) {
+    if (!s) return s;
+    if (!s.attrs) s.attrs = { 智力: 2, 精神: 2, 体格: 2, 运动: 2 };
+    if (!s.equip) s.equip = { 颈: null, 衣: null, 裤: null, 脚: null, 手: null };
+    if (!s.skills) s.skills = {};
+    return s;
+  }
+
+  function startNew(attrs, name) {
+    if (!attrs) { showAlloc(); return; }   /* 无分配数据 → 打开属性分配弹层 */
+    state = newState(attrs, name);
     gotoId(startSceneId());
   }
 
@@ -125,11 +159,14 @@
   }
 
   /* ---------- 效果 ---------- */
+  /* 额外点可为负（思维副作用/换装惩罚），下限 = 抵消该技能属性值（总值不为负） */
   function applySkillEffects(ef) {
     if (!ef) return;
     Object.keys(ef).forEach(function (k) {
+      var info = skillInfo(k);
+      var floor = info ? -attrVal(info.group) : -99;
       var v = (state.skills[k] || 0) + ef[k];
-      state.skills[k] = v < 0 ? 0 : v;
+      state.skills[k] = v < floor ? floor : v;
     });
   }
   function applyEffect(ef) {
@@ -140,6 +177,10 @@
     if (ef.time) advanceTime(ef.time);
     if (ef.drunk) { state.drunk += ef.drunk; if (state.drunk < 0) state.drunk = 0; if (state.drunk > 10) state.drunk = 10; }
     if (ef.item) { if (state.items.indexOf(ef.item) === -1) state.items.push(ef.item); }
+    if (ef.equip) {
+      var eqInfo = itemInfo(ef.equip);
+      if (eqInfo && eqInfo.slot) state.equip[eqInfo.slot] = ef.equip;  /* 剧本自动穿上（物品仍在背包） */
+    }
     if (ef.lose) {
       var i = state.items.indexOf(ef.lose);
       if (i > -1) state.items.splice(i, 1);
@@ -197,12 +238,23 @@
   }
 
   /* ---------- 检定 ---------- */
+  /* 技能值分解：属性(基础) + 装备 + 额外点 + 醉酒惩罚 */
+  function checkParts(skill) {
+    var info = skillInfo(skill);
+    return {
+      attr: info ? attrVal(info.group) : 0,
+      gear: gearBonus(skill),
+      extra: (state.skills || {})[skill] || 0,
+      drunk: drunkPenalty()
+    };
+  }
   function doCheck(check, okCb, failCb) {
-    var base = skillVal(check.skill);
+    var p = checkParts(check.skill);
+    var base = p.attr + p.gear + p.extra + p.drunk;
     var roll = DnD.Dice.rollDie(20);
     var total = roll + base;
     var ok = total >= check.dc;
-    renderCheck(check.skill, roll, base, total, check.dc, ok);
+    renderCheck(check.skill, roll, p, total, check.dc, ok);
     setTimeout(function () {
       pushLog((ok ? '✓ ' : '✗ ') + check.skill + '检定 ' + total + '/' + check.dc + (ok ? ' 成功' : ' 失败'));
       if (ok) okCb(); else failCb();
@@ -330,7 +382,7 @@
         if (!condOk(c.cond)) return;
         var b = el('button', 'de-choice' + (c.check ? ' has-check' : ''), esc(c.text));
         if (c.check) {
-          var tip = el('span', 'de-check-tip', esc(c.check.skill) + '·DC ' + c.check.dc);
+          var tip = el('span', 'de-check-tip', esc(c.check.skill) + ' · DC ' + c.check.dc + ' · 当前 ' + skillVal(c.check.skill));
           b.appendChild(tip);
         }
         b.addEventListener('click', function () { pickChoice(c); });
@@ -356,11 +408,13 @@
       + '<span class="de-st-money" title="货币">¢ ' + state.money + '</span>'
       + (state.drunk > 0 ? '<span class="de-st-drunk">🍺 ' + state.drunk + '</span>' : '')
       + '<span class="de-st-btns">'
+      + '<button type="button" class="de-st-btn" id="de-btn-attr">属性</button>'
       + '<button type="button" class="de-st-btn" id="de-btn-bag">背包</button>'
       + '<button type="button" class="de-st-btn" id="de-btn-think">思维</button>'
       + '<button type="button" class="de-st-btn" id="de-btn-log">日志</button>'
       + '<button type="button" class="de-st-btn" id="de-btn-save">存档</button>'
       + '</span>';
+    bar.querySelector('#de-btn-attr').addEventListener('click', openAttrs);
     bar.querySelector('#de-btn-bag').addEventListener('click', openBag);
     bar.querySelector('#de-btn-think').addEventListener('click', openThoughts);
     bar.querySelector('#de-btn-log').addEventListener('click', openLog);
@@ -380,13 +434,18 @@
   }
 
   /* ---------- 检定弹层 ---------- */
-  function renderCheck(skill, roll, base, total, dc, ok) {
+  function renderCheck(skill, roll, p, total, dc, ok) {
     var mask = el('div', 'de-mask');
     mask.addEventListener('click', function () { mask.remove(); });
     var box = el('div', 'de-check-pop');
     box.style.borderColor = skillColor(skill);
+    var parts = 'd20 = <b>' + roll + '</b>';
+    if (p.attr) parts += ' + ' + p.attr + ' <i>属性</i>';
+    if (p.gear) parts += ' + ' + p.gear + ' <i>装备</i>';
+    if (p.extra) parts += (p.extra > 0 ? ' + ' : ' ') + p.extra + ' <i>其他</i>';
+    if (p.drunk) parts += ' <i>' + p.drunk + ' 醉酒</i>';
     box.innerHTML = '<div class="de-check-skill" style="color:' + skillColor(skill) + '">' + esc(skill) + '</div>'
-      + '<div class="de-check-dice">d20 = <b>' + roll + '</b>' + (base ? ' + ' + base : '') + '</div>'
+      + '<div class="de-check-dice">' + parts + '</div>'
       + '<div class="de-check-total">' + total + ' <i>/ DC ' + dc + '</i></div>'
       + '<div class="de-check-result ' + (ok ? 'ok' : 'no') + '">' + (ok ? '检定成功' : '检定失败') + '</div>';
     mask.appendChild(box);
@@ -394,20 +453,146 @@
     setTimeout(function () { mask.remove(); }, 1500);
   }
 
-  /* ---------- 背包 ---------- */
+  /* ---------- 背包 / 装备 ---------- */
+  var EQUIP_SLOTS = ['颈', '衣', '裤', '脚', '手'];
   function openBag() {
-    var m = modal('背包');
+    var m = modal('背包 · 装备');
+    /* 装备栏 */
+    var eq = el('div', 'de-equip');
+    eq.appendChild(el('div', 'de-equip-title', '装备栏'));
+    EQUIP_SLOTS.forEach(function (slot) {
+      var name = (state.equip || {})[slot];
+      var row = el('div', 'de-equip-row');
+      row.innerHTML = '<span class="de-equip-slot">' + slot + '</span>'
+        + '<span class="de-equip-name">' + (name ? esc(name) : '空') + '</span>';
+      if (name) {
+        var btn = el('button', 'dnd-btn dnd-btn-sm', '脱下');
+        btn.addEventListener('click', function () { unequip(slot); m.close(); openBag(); });
+        row.appendChild(btn);
+      }
+      eq.appendChild(row);
+    });
+    m.body.appendChild(eq);
+    /* 物品列表 */
     if (!state.items.length) {
       m.body.appendChild(el('p', 'dnd-hint', '空空如也。'));
     } else {
       state.items.forEach(function (n) {
         var info = itemInfo(n);
         var card = el('div', 'de-item-card');
-        card.innerHTML = '<div class="de-item-name">' + esc(n) + '</div>'
+        var meta = info ? (info.type || '') + (info.slot ? ' · ' + info.slot + '槽' : '') : '';
+        card.innerHTML = '<div class="de-item-name">' + esc(n)
+          + (meta ? '<span class="de-item-meta">' + esc(meta) + '</span>' : '') + '</div>'
           + '<div class="de-item-desc">' + esc(info ? info.desc : '') + '</div>';
+        if (info && info.bonus) {
+          card.appendChild(el('div', 'de-item-fx', '加成：' + Object.keys(info.bonus).map(function (k) {
+            return k + (info.bonus[k] > 0 ? '+' : '') + info.bonus[k];
+          }).join('，')));
+        }
+        if (info && info.slot) {
+          var worn = (state.equip || {})[info.slot] === n;
+          var wbtn = el('button', 'dnd-btn dnd-btn-sm de-item-btn', worn ? '已装备' : '穿上');
+          if (worn) { wbtn.disabled = true; wbtn.className += ' is-worn'; }
+          else { wbtn.addEventListener('click', function () { equip(info.slot, n); m.close(); openBag(); }); }
+          card.appendChild(wbtn);
+        }
+        if (info && info.use) {
+          var ubtn = el('button', 'dnd-btn dnd-btn-sm de-item-btn', '使用');
+          ubtn.addEventListener('click', function () { useItem(n); });
+          card.appendChild(ubtn);
+        }
         m.body.appendChild(card);
       });
     }
+  }
+
+  function equip(slot, itemName) {
+    state.equip[slot] = itemName;   /* 物品始终留在背包，装备栏为独立状态指示 */
+    pushLog('装备了『' + itemName + '』');
+    render();
+  }
+
+  function unequip(slot) {
+    var eq = state.equip;
+    if (eq[slot]) {
+      pushLog('脱下了『' + eq[slot] + '』');
+      eq[slot] = null;
+      render();
+    }
+  }
+
+  function useItem(name) {
+    var info = itemInfo(name);
+    if (!info || !info.use) return;
+    applyEffect(info.use);
+    var i = state.items.indexOf(name);
+    if (i > -1) state.items.splice(i, 1);
+    pushLog('使用了『' + name + '』');
+    if (checkDeath()) return;
+    render();
+    openBag();
+  }
+
+  /* ---------- 属性栏 ---------- */
+  function openAttrs() {
+    var m = modal('属性 · 技能');
+    ['智力', '精神', '体格', '运动'].forEach(function (g) {
+      var gEl = el('div', 'de-attr-group');
+      gEl.style.borderColor = DE.groups[g] || '#d4af37';
+      var head = el('div', 'de-attr-head');
+      head.innerHTML = '<span style="color:' + (DE.groups[g] || '#d4af37') + '">' + g + '</span><b>' + attrVal(g) + '</b>';
+      gEl.appendChild(head);
+      DE.skills.forEach(function (sk) {
+        if (sk.group !== g) return;
+        var p = checkParts(sk.name);
+        var row = el('div', 'de-attr-skill');
+        var parts = '属性 ' + p.attr;
+        if (p.gear) parts += ' · 装备 +' + p.gear;
+        if (p.extra) parts += ' · 其他 ' + (p.extra > 0 ? '+' : '') + p.extra;
+        if (p.drunk) parts += ' · 醉酒 ' + p.drunk;
+        row.innerHTML = '<span>' + esc(sk.name) + '</span><b>' + (p.attr + p.gear + p.extra + p.drunk) + '</b><i>' + esc(parts) + '</i>';
+        gEl.appendChild(row);
+      });
+      m.body.appendChild(gEl);
+    });
+    m.body.appendChild(el('p', 'de-save-tip', '技能值 = 属性 + 装备加成 + 思维/技能点 + 醉酒惩罚。检定掷 d20 + 技能值，≥ DC 即成功。'));
+  }
+
+  /* ---------- 属性分配（新游戏） ---------- */
+  var ALLOC_TOTAL = 12, ALLOC_MIN = 1, ALLOC_MAX = 6;
+  function showAlloc() {
+    var m = modal('构建你的警探 · 属性分配');
+    var pts = { 智力: 1, 精神: 1, 体格: 1, 运动: 1 };
+    var left = ALLOC_TOTAL - 4;
+    var leftEl = el('div', 'de-alloc-left', '剩余点数：' + left);
+    var okBtn = el('button', 'dnd-btn dnd-btn-gold', '开始调查');
+    okBtn.disabled = true;
+    ['智力', '精神', '体格', '运动'].forEach(function (g) {
+      var row = el('div', 'de-alloc-row');
+      var nameEl = el('span', 'de-alloc-name', g);
+      nameEl.style.color = DE.groups[g] || '#d4af37';
+      var valEl = el('b', 'de-alloc-val', String(pts[g]));
+      var minus = el('button', 'dnd-btn dnd-btn-sm', '−');
+      var plus = el('button', 'dnd-btn dnd-btn-sm', '+');
+      var skEl = el('span', 'de-alloc-skills', DE.skills.filter(function (s) { return s.group === g; })
+        .map(function (s) { return s.name; }).join(' · '));
+      row.appendChild(nameEl); row.appendChild(minus); row.appendChild(valEl); row.appendChild(plus); row.appendChild(skEl);
+      m.body.appendChild(row);
+      var refresh = function () {
+        valEl.textContent = pts[g];
+        minus.disabled = pts[g] <= ALLOC_MIN;
+        plus.disabled = pts[g] >= ALLOC_MAX || left <= 0;
+        okBtn.disabled = left > 0;
+        leftEl.textContent = '剩余点数：' + left;
+      };
+      minus.addEventListener('click', function () { if (pts[g] > ALLOC_MIN) { pts[g]--; left++; refresh(); } });
+      plus.addEventListener('click', function () { if (pts[g] < ALLOC_MAX && left > 0) { pts[g]++; left--; refresh(); } });
+      refresh();
+    });
+    okBtn.addEventListener('click', function () { m.close(); startNew(pts); });
+    m.body.appendChild(leftEl);
+    m.body.appendChild(okBtn);
+    m.body.appendChild(el('p', 'de-save-tip', '4 项属性决定 24 项技能的等级（技能值 = 属性）。共 12 点，每项至少 1、至多 6。'));
   }
 
   /* ---------- 思维内阁 ---------- */
@@ -487,6 +672,7 @@
     var raw = localStorage.getItem(SAVE_KEY + slot);
     if (!raw) return;
     try { state = JSON.parse(raw); } catch (e) { return; }
+    state = normalizeState(state);
     if (typeof state.name !== 'string' || !state.name) state.name = '？？？';
     node = state.lastNode ? findNode(state.lastNode) : null;
     if (!node) node = findNode(startSceneId());
@@ -546,16 +732,20 @@
   }
   
   /* ---------- 状态栏 ---------- */
+  var curModal = null;   /* 当前打开的弹层（新弹层打开前自动关闭旧弹层，避免叠加） */
   function modal(title) {
+    if (curModal) curModal.close();
     var mask = el('div', 'de-mask');
     var box = el('div', 'de-modal');
     box.innerHTML = '<div class="de-modal-head">' + esc(title) + '<span class="de-modal-x">✕</span></div>'
       + '<div class="de-modal-body"></div>';
     var body = box.querySelector('.de-modal-body');
-    box.querySelector('.de-modal-x').addEventListener('click', function () { mask.remove(); });
+    var ret = { box: box, body: body, close: function () { mask.remove(); if (curModal === ret) curModal = null; } };
+    box.querySelector('.de-modal-x').addEventListener('click', function () { ret.close(); });
     mask.appendChild(box);
     document.body.appendChild(mask);
-    return { box: box, body: body, close: function () { mask.remove(); } };
+    curModal = ret;
+    return ret;
   }
 
   /* ---------- 初始化 ---------- */
@@ -572,7 +762,7 @@
     /* 自动存档恢复 */
     var auto = localStorage.getItem(SAVE_KEY + 'auto');
     if (auto && JSON.parse(auto).ending == null) {
-      state = JSON.parse(auto);
+      state = normalizeState(JSON.parse(auto));
       node = findNode(state.lastNode);
       if (!node) node = findNode(startSceneId());
       render();
