@@ -493,6 +493,15 @@
   }
 
   /* ---------- 结局 ---------- */
+  function renderError(msg) {
+    console.error('[DE] ' + msg);
+    if (root) {
+      var b = el('div', 'de-error', msg);
+      b.style.cssText = 'padding:12px;color:#f55;border:1px solid #f55;margin:8px;font-family:monospace;';
+      root.appendChild(b);
+    }
+  }
+
   function endGame(id, title, text, lows) {
     state.ending = id;
     renderEndingModal(title);
@@ -510,6 +519,7 @@
       + '<button type="button" class="dnd-btn dnd-btn-gold" id="de-end-restart">重新开始</button>';
     m.body.querySelector('#de-end-restart').addEventListener('click', function () {
       localStorage.removeItem(SAVE_KEY + 'auto');
+      m.close();
       startNew();
     });
   }
@@ -554,11 +564,17 @@
     if (!root) return;
     root.innerHTML = '';
 
+    /* 剧本装配：de-story-d1~d4.js 按加载顺序注册，合并为 DE_SCRIPTS */
+    if (!DnD.DE_SCRIPTS) {
+      DnD.DE_SCRIPTS = [DnD.DE_DAY1, DnD.DE_DAY2, DnD.DE_DAY3, DnD.DE_DAY4].filter(Boolean);
+    }
+
     /* 自动存档恢复 */
     var auto = localStorage.getItem(SAVE_KEY + 'auto');
     if (auto && JSON.parse(auto).ending == null) {
       state = JSON.parse(auto);
-      node = findNode(startSceneId());
+      node = findNode(state.lastNode);
+      if (!node) node = findNode(startSceneId());
       render();
       return;
     }
