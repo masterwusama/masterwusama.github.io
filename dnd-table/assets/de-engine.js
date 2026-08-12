@@ -254,6 +254,8 @@
     var roll = DnD.Dice.rollDie(20);
     var total = roll + base;
     var ok = total >= check.dc;
+    /* 检定失败可携带 fail_flag：剧本用它锁定后续分支（cond: '!flag:xxx'），失败即错过 */
+    if (!ok && check.fail_flag) state.flags[check.fail_flag] = true;
     renderCheck(check.skill, roll, p, total, check.dc, ok);
     setTimeout(function () {
       pushLog((ok ? '✓ ' : '✗ ') + check.skill + '检定 ' + total + '/' + check.dc + (ok ? ' 成功' : ' 失败'));

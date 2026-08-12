@@ -717,7 +717,7 @@
         ],
         choices: [
           { text: '拿起药丸', goto: 'docker_pills' },
-          { text: '检查他安全扣上的塑料卡', goto: 'docker_card' },
+          { text: '检查他安全扣上的塑料卡', cond: '!flag:docker_busted', goto: 'docker_card' },
           { text: '试着把他弄醒', goto: 'docker_wake' },
           { text: '回到大厅', goto: 'lobby' }
         ]
@@ -729,7 +729,7 @@
           '睡着的码头工人— 这个男人不会介意的。你可能比他更需要这东西。'
         ],
         choices: [
-          { text: '（获得镁片）检查他安全扣上的塑料卡', effect: { item: '镁片', flag: 'docker_pills' }, goto: 'docker_card' },
+          { text: '（获得镁片）检查他安全扣上的塑料卡', cond: '!flag:docker_busted', effect: { item: '镁片', flag: 'docker_pills' }, goto: 'docker_card' },
           { text: '（获得镁片）回到大厅', effect: { item: '镁片', flag: 'docker_pills' }, goto: 'lobby' }
         ]
       },
@@ -740,7 +740,7 @@
           '你— 偷走码头工人的身份证。'
         ],
         choices: [
-          { text: '偷走轮班卡', check: { skill: '能工巧匠', dc: 10 }, success: 'docker_steal', fail: 'docker_alarm' },
+          { text: '偷走轮班卡', check: { skill: '能工巧匠', dc: 10, fail_flag: 'docker_busted' }, success: 'docker_steal', fail: 'docker_alarm' },
           { text: '不碰它。回到大厅', goto: 'lobby' }
         ]
       },
@@ -762,7 +762,8 @@
         title: '褴褛飞旋 · 被发现了',
         text: [
           '能工巧匠【失败】— 你笨手笨脚地摆弄着安全扣的弹簧塞，但是完全不起作用……上面悬挂的东西拒绝放松，发出的叮当声更响了。',
-          '加尔特，餐厅经理— 「别再*乱动*他了，警官！」柜台后面的餐厅经理大叫起来。「我要为这些白痴和他们的*东西*负责。甚至是睡着的时候……」'
+          '加尔特，餐厅经理— 「别再*乱动*他了，警官！」柜台后面的餐厅经理大叫起来。「我要为这些白痴和他们的*东西*负责。甚至是睡着的时候……」',
+          '加尔特，餐厅经理— 他的目光像钉子一样钉在你背上，直到你走出他的视线。只要他还盯着，你就再没有机会碰那个安全扣了。'
         ],
         choices: [
           { text: '「什么，不，我没有……我只是想看看他是不是还好。」', goto: 'lobby' }
@@ -1083,7 +1084,7 @@
           '吊人— 一条货物绑带将他的脖子扭到了异常的角度。尸体僵硬，散发着一股令人无法忍受的腐臭。'
         ],
         choices: [
-          { text: '分析泥地里的足迹', goto: 'footprints' },
+          { text: '分析泥地里的足迹', cond: '!flag:footprints_failed', goto: 'footprints' },
           { text: '靠近尸体，仔细检查', goto: 'corpse' },
           { text: '跟栅栏那边的孩子们聊聊', goto: 'kuno' },
           { text: '查看垃圾箱', goto: 'trash' },
@@ -1103,7 +1104,7 @@
           '你— 清点出确切的数字。'
         ],
         choices: [
-          { text: '逐一清点足迹', check: { skill: '见微知著', dc: 12 }, success: 'footprints_ok', fail: 'footprints_fail' },
+          { text: '逐一清点足迹', check: { skill: '见微知著', dc: 12, fail_flag: 'footprints_failed' }, success: 'footprints_ok', fail: 'footprints_fail' },
           { text: '「我什么都没看出来。」', goto: 'footprints_fail' }
         ]
       },
@@ -1136,7 +1137,8 @@
         text: [
           '见微知著【失败】— 你以为自己是什么，超人警探吗？你还没从宿醉里恢复过来呢，这些只是泥里的凹陷而已。目前根本看不出个所以然。',
           '你— 「这个看起来*非常*重要。都是犯罪现场留下的足迹。但我什么都看不出来，警督！」',
-          '金·曷城— 「别丧气——我也做不到。我们可以稍后再来看看。」'
+          '金·曷城— 「别丧气——我也做不到。我们可以稍后再来看看。」',
+          '你— 但你知道，等太阳再晒一会儿，这些印记就会像融化的蜡烛一样塌下去。有些窗口，一旦错过就再也打不开了。'
         ],
         choices: [
           { text: '「忍气吞声，以后再说。」', goto: 'backyard' }

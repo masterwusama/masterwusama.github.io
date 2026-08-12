@@ -380,7 +380,7 @@
         ],
         choices: [
           { text: '「我为什么不直接逮捕你呢？」（走近提图斯）', goto: 'titus_arrest' },
-          { text: '「这里是谁说了算？你，还是她？」', check: { skill: '争强好胜', dc: 11 }, success: 'titus_boss_win', fail: 'titus_boss_lose' },
+          { text: '「这里是谁说了算？你，还是她？」', check: { skill: '争强好胜', dc: 11, fail_flag: 'boss_lost' }, success: 'titus_boss_win', fail: 'titus_boss_lose' },
           { text: '「你们是七个杀手，不是兄弟。」', goto: 'titus_moral' }
         ]
       },
@@ -452,8 +452,7 @@
           '[同舟共济] 他在给你台阶下。别把这一局变成全面冲突——案子还没结束。'
         ],
         choices: [
-          { text: '「好吧。今天到此为止。」', goto: 'titus_leave' },
-          { text: '「最后一个问题——他强暴了谁？」', goto: 'titus_rape' }
+          { text: '「好吧。今天到此为止。」', goto: 'titus_leave' }
         ]
       },
       'titus_moral': {
