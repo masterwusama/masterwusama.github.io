@@ -1,7 +1,7 @@
 {
  "code": "601020",
  "name": "华钰矿业",
- "updated_at": "2026-08-12T11:41:04+08:00",
+ "updated_at": "2026-08-12T18:17:23+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "华钰矿业",
-  "price": 22.87,
-  "change_pct": 0.0093,
-  "pe_ttm": 21.92,
-  "pb": 4.43,
-  "market_cap": 18753000000.0,
-  "float_market_cap": 18753000000.0,
-  "turnover_rate": 0.0293,
-  "time": "2026-08-12T11:41:11+08:00"
+  "price": 22.8,
+  "change_pct": 0.0062,
+  "pe_ttm": 21.85,
+  "pb": 4.41,
+  "market_cap": 18695000000.0,
+  "float_market_cap": 18695000000.0,
+  "turnover_rate": 0.0422,
+  "time": "2026-08-12T16:14:41+08:00"
  },
  "dividends": [
   {

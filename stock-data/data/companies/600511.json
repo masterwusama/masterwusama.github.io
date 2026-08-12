@@ -1,7 +1,7 @@
 {
  "code": "600511",
  "name": "国药股份",
- "updated_at": "2026-08-12T11:43:51+08:00",
+ "updated_at": "2026-08-12T18:20:18+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "国药股份",
-  "price": 27.4,
-  "change_pct": -0.0029,
-  "pe_ttm": 10.28,
+  "price": 27.35,
+  "change_pct": -0.0047,
+  "pe_ttm": 10.26,
   "pb": 1.12,
-  "market_cap": 20673000000.0,
-  "float_market_cap": 15162000000.0,
-  "turnover_rate": 0.005,
-  "time": "2026-08-12T11:43:54+08:00"
+  "market_cap": 20636000000.0,
+  "float_market_cap": 15134000000.0,
+  "turnover_rate": 0.0076,
+  "time": "2026-08-12T16:14:54+08:00"
  },
  "dividends": [
   {

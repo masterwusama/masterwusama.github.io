@@ -1,7 +1,7 @@
 {
  "code": "300750",
  "name": "宁德时代",
- "updated_at": "2026-08-12T11:44:20+08:00",
+ "updated_at": "2026-08-12T18:20:50+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "宁德时代",
-  "price": 388.11,
-  "change_pct": -0.0059,
-  "pe_ttm": 21.13,
-  "pb": 4.82,
-  "market_cap": 1795651000000.0,
-  "float_market_cap": 1653380000000.0,
-  "turnover_rate": 0.0022,
-  "time": "2026-08-12T11:43:54+08:00"
+  "price": 393.93,
+  "change_pct": 0.009,
+  "pe_ttm": 21.44,
+  "pb": 4.89,
+  "market_cap": 1822578000000.0,
+  "float_market_cap": 1678174000000.0,
+  "turnover_rate": 0.0048,
+  "time": "2026-08-12T16:14:54+08:00"
  },
  "dividends": [
   {
