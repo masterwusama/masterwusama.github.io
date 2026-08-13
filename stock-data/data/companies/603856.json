@@ -1,7 +1,7 @@
 {
  "code": "603856",
  "name": "东宏股份",
- "updated_at": "2026-08-13T02:01:56+08:00",
+ "updated_at": "2026-08-13T11:31:47+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "东宏股份",
-  "price": 11.34,
-  "change_pct": -0.0035,
-  "pe_ttm": 12.74,
+  "price": 11.28,
+  "change_pct": -0.0053,
+  "pe_ttm": 12.67,
   "pb": 1.17,
-  "market_cap": 3199000000.0,
-  "float_market_cap": 3199000000.0,
-  "turnover_rate": 0.0089,
-  "time": "2026-08-12T16:14:48+08:00"
+  "market_cap": 3182000000.0,
+  "float_market_cap": 3182000000.0,
+  "turnover_rate": 0.0052,
+  "time": "2026-08-13T11:38:06+08:00"
  },
  "dividends": [
   {

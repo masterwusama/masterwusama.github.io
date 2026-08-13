@@ -1,7 +1,7 @@
 {
  "code": "603599",
  "name": "广信股份",
- "updated_at": "2026-08-13T02:00:57+08:00",
+ "updated_at": "2026-08-13T11:30:41+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "广信股份",
-  "price": 10.17,
-  "change_pct": -0.0059,
-  "pe_ttm": 14.17,
-  "pb": 0.92,
-  "market_cap": 9257000000.0,
-  "float_market_cap": 9257000000.0,
-  "turnover_rate": 0.0108,
-  "time": "2026-08-12T16:14:31+08:00"
+  "price": 9.97,
+  "change_pct": -0.0197,
+  "pe_ttm": 13.89,
+  "pb": 0.91,
+  "market_cap": 9075000000.0,
+  "float_market_cap": 9075000000.0,
+  "turnover_rate": 0.0103,
+  "time": "2026-08-13T11:30:46+08:00"
  },
  "dividends": [
   {
