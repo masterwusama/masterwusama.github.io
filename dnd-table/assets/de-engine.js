@@ -229,7 +229,7 @@
     if (c.indexOf('skill:') === 0) {
       var m = c.slice(6).match(/^(.+?)(>=|<=|>|<)(\d+)$/);
       if (m) {
-        var v = state.skills[m[1]] || 0;
+        var v = skillVal(m[1]);   /* 条件对照技能总值（属性+装备+额外点+醉酒），而非仅额外点 */
         var n = Number(m[3]);
         return m[2] === '>=' ? v >= n : m[2] === '<=' ? v <= n : m[2] === '>' ? v > n : v < n;
       }
@@ -678,6 +678,7 @@
     if (typeof state.name !== 'string' || !state.name) state.name = '？？？';
     node = state.lastNode ? findNode(state.lastNode) : null;
     if (!node) node = findNode(startSceneId());
+    localStorage.setItem(SAVE_KEY + 'auto', JSON.stringify(state));   /* 读档后同步自动存档，刷新不丢进度 */
   }
 
   /* ---------- 结局 ---------- */
@@ -761,9 +762,13 @@
       DnD.DE_SCRIPTS = [DnD.DE_DAY1, DnD.DE_DAY2, DnD.DE_DAY3, DnD.DE_DAY4].filter(Boolean);
     }
 
-    /* 自动存档恢复 */
-    var auto = localStorage.getItem(SAVE_KEY + 'auto');
-    if (auto && JSON.parse(auto).ending == null) {
+    /* 自动存档恢复（损坏数据容错） */
+    var auto = null;
+    try {
+      var raw = localStorage.getItem(SAVE_KEY + 'auto');
+      auto = raw ? JSON.parse(raw) : null;
+    } catch (e) { auto = null; }
+    if (auto && auto.ending == null) {
       state = normalizeState(JSON.parse(auto));
       node = findNode(state.lastNode);
       if (!node) node = findNode(startSceneId());
