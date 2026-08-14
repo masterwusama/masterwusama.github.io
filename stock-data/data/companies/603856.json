@@ -1,7 +1,7 @@
 {
  "code": "603856",
  "name": "东宏股份",
- "updated_at": "2026-08-14T18:14:23+08:00",
+ "updated_at": "2026-08-15T01:58:59+08:00",
  "info": {},
  "indicators": [
   {
@@ -6771,118 +6771,7 @@
   "turnover_rate": 0.0074,
   "time": "2026-08-14T16:14:58+08:00"
  },
- "dividends": [
-  {
-   "year": "2025年报",
-   "type": "年度分红",
-   "announce_date": "2026-06-03",
-   "record_date": "2026-06-09",
-   "ex_date": "2026-06-10",
-   "pay_date": "2026-06-10",
-   "bonus_per_10": 2.31,
-   "transfer_per_10": null,
-   "description": "10派2.31元(含税)"
-  },
-  {
-   "year": "2025半年报",
-   "type": "中期分红",
-   "announce_date": "2025-09-24",
-   "record_date": "2025-09-29",
-   "ex_date": "2025-09-30",
-   "pay_date": "2025-09-30",
-   "bonus_per_10": 0.37,
-   "transfer_per_10": null,
-   "description": "10派0.37元(含税)"
-  },
-  {
-   "year": "2024年报",
-   "type": "年度分红",
-   "announce_date": "2025-06-14",
-   "record_date": "2025-06-19",
-   "ex_date": "2025-06-20",
-   "pay_date": "2025-06-20",
-   "bonus_per_10": 1.8,
-   "transfer_per_10": null,
-   "description": "10派1.8元(含税)"
-  },
-  {
-   "year": "2023年报",
-   "type": "年度分红",
-   "announce_date": "2024-07-04",
-   "record_date": "2024-07-10",
-   "ex_date": "2024-07-11",
-   "pay_date": "2024-07-11",
-   "bonus_per_10": 1.89,
-   "transfer_per_10": null,
-   "description": "10派1.89元(含税)"
-  },
-  {
-   "year": "2022年报",
-   "type": "年度分红",
-   "announce_date": "2023-04-04",
-   "record_date": "2023-04-10",
-   "ex_date": "2023-04-11",
-   "pay_date": "2023-04-11",
-   "bonus_per_10": 1.74,
-   "transfer_per_10": null,
-   "description": "10派1.74元(含税)"
-  },
-  {
-   "year": "2021年报",
-   "type": "年度分红",
-   "announce_date": "2022-06-28",
-   "record_date": "2022-07-04",
-   "ex_date": "2022-07-05",
-   "pay_date": "2022-07-05",
-   "bonus_per_10": 1.55,
-   "transfer_per_10": null,
-   "description": "10派1.55元(含税)"
-  },
-  {
-   "year": "2020年报",
-   "type": "年度分红",
-   "announce_date": "2021-05-13",
-   "record_date": "2021-05-19",
-   "ex_date": "2021-05-20",
-   "pay_date": "2021-05-20",
-   "bonus_per_10": 3.7066,
-   "transfer_per_10": null,
-   "description": "10派3.7066元(含税)"
-  },
-  {
-   "year": "2019年报",
-   "type": "年度分红",
-   "announce_date": "2020-05-08",
-   "record_date": "2020-05-14",
-   "ex_date": "2020-05-15",
-   "pay_date": "2020-05-15",
-   "bonus_per_10": 2.36,
-   "transfer_per_10": null,
-   "description": "10派2.36元(含税)"
-  },
-  {
-   "year": "2018年报",
-   "type": "年度分红",
-   "announce_date": "2019-04-30",
-   "record_date": "2019-05-09",
-   "ex_date": "2019-05-10",
-   "pay_date": "2019-05-10",
-   "bonus_per_10": 1.81,
-   "transfer_per_10": null,
-   "description": "10派1.81元(含税)"
-  },
-  {
-   "year": "2017年报",
-   "type": "年度分红",
-   "announce_date": "2018-06-15",
-   "record_date": "2018-06-21",
-   "ex_date": "2018-06-22",
-   "pay_date": "2018-06-22",
-   "bonus_per_10": 1.85,
-   "transfer_per_10": 3.0,
-   "description": "10转增3股派1.85元(含税)"
-  }
- ],
+ "dividends": [],
  "reports": [
   {
    "title": "东宏股份2025年年度报告",
@@ -6981,5 +6870,7 @@
    "audit_opinion": null
   }
  ],
- "errors": null
+ "errors": [
+  "dividends: Expecting value: line 1 column 1 (char 0)"
+ ]
 }

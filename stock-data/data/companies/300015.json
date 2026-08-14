@@ -1,7 +1,7 @@
 {
  "code": "300015",
  "name": "爱尔眼科",
- "updated_at": "2026-08-14T18:19:28+08:00",
+ "updated_at": "2026-08-15T02:04:27+08:00",
  "info": {},
  "indicators": [
   {
@@ -7000,6 +7000,13 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300015&announcementId=1225174517&orgId=9900008390&announcementTime=2026-04-24"
   },
   {
+   "title": "2025年三季度报告",
+   "category": "三季报",
+   "date": "2025-10-28",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-10-28/1224745937.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300015&announcementId=1224745937&orgId=9900008390&announcementTime=2025-10-28"
+  },
+  {
    "title": "2025年半年度报告",
    "category": "半年报",
    "date": "2025-08-27",
@@ -7025,6 +7032,13 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300015&announcementId=1223271218&orgId=9900008390&announcementTime=2025-04-25"
   },
   {
+   "title": "2024年三季度报告",
+   "category": "三季报",
+   "date": "2024-10-31",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-10-31/1221572655.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300015&announcementId=1221572655&orgId=9900008390&announcementTime=2024-10-31"
+  },
+  {
    "title": "2024年半年度报告",
    "category": "半年报",
    "date": "2024-08-24",
@@ -7048,6 +7062,13 @@
    "date": "2024-04-26",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-04-26/1219826393.PDF",
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300015&announcementId=1219826393&orgId=9900008390&announcementTime=2024-04-26"
+  },
+  {
+   "title": "2023年三季度报告",
+   "category": "三季报",
+   "date": "2023-10-26",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-10-26/1218150748.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300015&announcementId=1218150748&orgId=9900008390&announcementTime=2023-10-26"
   },
   {
    "title": "2023年半年度报告",
