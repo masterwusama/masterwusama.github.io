@@ -1,7 +1,7 @@
 {
  "code": "002027",
  "name": "分众传媒",
- "updated_at": "2026-08-14T11:27:28+08:00",
+ "updated_at": "2026-08-14T18:12:50+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "分众传媒",
-  "price": 5.07,
-  "change_pct": -0.0287,
-  "pe_ttm": 20.34,
-  "pb": 5.76,
-  "market_cap": 73222000000.0,
-  "float_market_cap": 73222000000.0,
-  "turnover_rate": 0.0082,
-  "time": "2026-08-14T11:27:39+08:00"
+  "price": 5.08,
+  "change_pct": -0.0268,
+  "pe_ttm": 20.38,
+  "pb": 5.78,
+  "market_cap": 73366000000.0,
+  "float_market_cap": 73366000000.0,
+  "turnover_rate": 0.0131,
+  "time": "2026-08-14T16:14:30+08:00"
  },
  "dividends": [
   {
