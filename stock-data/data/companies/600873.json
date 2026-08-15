@@ -1,7 +1,7 @@
 {
  "code": "600873",
  "name": "梅花生物",
- "updated_at": "2026-08-15T02:01:20+08:00",
+ "updated_at": "2026-08-15T10:20:15+08:00",
  "info": {},
  "indicators": [
   {
@@ -7005,6 +7005,15 @@
   }
  ],
  "reports": [
+  {
+   "title": "梅花生物2026年半年度报告",
+   "category": "半年报",
+   "date": "2026-08-15",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-08-15/1225475421.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600873&announcementId=1225475421&orgId=gssh0600873&announcementTime=2026-08-15",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
   {
    "title": "梅花生物2025年年度报告（英文版）",
    "category": "年报",
