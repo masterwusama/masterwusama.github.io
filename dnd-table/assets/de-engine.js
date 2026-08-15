@@ -99,6 +99,8 @@
     var s = {
       v: 2,
       name: (typeof name === 'string' && name) ? name : '？？？',  /* 失忆开局：名字未知，待剧本解锁 */
+      job: '？？？',  /* 失忆开局：身份未知（金确认公民武装后解锁） */
+      place: '？？？',  /* 失忆开局：地名未知（走廊日历解锁） */
       attrs: attrs || { 智力: 1, 精神: 1, 体格: 1, 运动: 1 },
       skills: {},
       equip: { 颈: null, 衣: null, 裤: null, 脚: null, 手: null },
@@ -122,6 +124,8 @@
     if (!s.attrs) s.attrs = { 智力: 2, 精神: 2, 体格: 2, 运动: 2 };
     if (!s.equip) s.equip = { 颈: null, 衣: null, 裤: null, 脚: null, 手: null };
     if (!s.skills) s.skills = {};
+    if (!s.job) s.job = '？？？';
+    if (!s.place) s.place = '？？？';
     return s;
   }
 
@@ -194,6 +198,8 @@
     if (ef.skillup) applySkillEffects(ef.skillup);
     if (ef.thought) unlockThought(ef.thought);
     if (ef.name) state.name = ef.name;  /* 解锁玩家名字（失忆开局：翻笔记本/自报姓名/被同事点名） */
+    if (ef.job) state.job = ef.job;  /* 解锁身份（金确认公民武装身份） */
+    if (ef.place) state.place = ef.place;  /* 解锁地名（走廊日历） */
   }
 
   function unlockThought(name) {
@@ -248,6 +254,20 @@
       drunk: drunkPenalty()
     };
   }
+
+  /* ---------- 被动检定 ---------- */
+  /* [技能] 叙述段与 pcheck 选项共用：渲染节点时掷一次，同节点同技能共享结果（装备/想法变化后重新渲染会重掷） */
+  var PASSIVE_DC = 12;   /* 被动检定统一难度 */
+  function passiveResult(skill) {
+    if (state.passive && state.passive[skill]) return state.passive[skill];
+    var p = checkParts(skill);
+    var base = p.attr + p.gear + p.extra + p.drunk;
+    var roll = DnD.Dice.rollDie(20);
+    var r = { skill: skill, roll: roll, parts: p, base: base, total: roll + base, dc: PASSIVE_DC, ok: roll + base >= PASSIVE_DC };
+    if (!state.passive) state.passive = {};
+    state.passive[skill] = r;
+    return r;
+  }
   function doCheck(check, okCb, failCb) {
     var p = checkParts(check.skill);
     var base = p.attr + p.gear + p.extra + p.drunk;
@@ -289,6 +309,8 @@
     if (ef.item) parts.push('获得『' + ef.item + '』');
     if (ef.lose) parts.push('失去『' + ef.lose + '』');
     if (ef.time) parts.push('时间 +' + ef.time + ' 小时');
+    if (ef.job) parts.push('身份解锁：' + ef.job);
+    if (ef.place) parts.push('地名解锁：' + ef.place);
     return parts.length ? parts.join('，') : '';
   }
 
@@ -304,6 +326,7 @@
     if (checkDeath()) return;
     if (n.ending) { state.ending = n.title; render(); renderEndingModal(n.title); return; }
     pushScene(n);
+    localStorage.setItem(SAVE_KEY + 'auto', JSON.stringify(state));   /* 每步自动存档：刷新页面可继续 */
     render();
   }
 
@@ -347,9 +370,22 @@
       var m = p.match(/^\[([^\]]+)\]\s*(.*)$/);
       var paraEl;
       if (m && skillColor(m[1]) !== '#d4af37') {
-        paraEl = el('p', 'de-skill-line');
-        paraEl.style.color = skillColor(m[1]);
-        paraEl.innerHTML = '<span class="de-skill-tag">' + esc(m[1]) + '</span> ' + esc(m[2]);
+        /* 被动检定：技能叙述段掷被动检定，通过才揭示内容；失败留一条检定记录不显示内容。
+           【成功】【失败】为主动检定结果段，原样展示不重掷 */
+        if (m[2].indexOf('【') === 0) {
+          paraEl = el('p', 'de-skill-line');
+          paraEl.style.color = skillColor(m[1]);
+          paraEl.innerHTML = '<span class="de-skill-tag">' + esc(m[1]) + '</span> ' + esc(m[2]);
+        } else {
+          var pr = passiveResult(m[1]);
+          if (pr.ok) {
+            paraEl = el('p', 'de-skill-line');
+            paraEl.style.color = skillColor(m[1]);
+            paraEl.innerHTML = '<span class="de-skill-tag">' + esc(m[1]) + '</span> ' + esc(m[2]);
+          } else {
+            paraEl = el('p', 'de-passive-fail', '✗ ' + esc(m[1]) + ' 被动检定失败 · d20 ' + pr.roll + ' + ' + pr.base + ' = ' + pr.total + ' / DC ' + pr.dc);
+          }
+        }
       } else if (p.indexOf('「') === 0 || p.indexOf('『') === 0) {
         paraEl = el('p', 'de-dialog');
         paraEl.textContent = p;
@@ -365,7 +401,9 @@
   function render() {
     if (!root) return;
     root.innerHTML = '';
-    if (!state || !node) { renderWelcome(); return; }
+    if (!state) { renderWelcome(); return; }
+    state.passive = {};   /* 渲染即重掷被动检定（同节点同技能共享一次结果） */
+    if (!node) { renderWelcome(); return; }
     root.appendChild(renderStatus());
     if (state.ending) { renderEndingInto(root, state.ending); return; }
     if (node) {
@@ -382,6 +420,7 @@
       var choices = el('div', 'de-choices');
       (node.choices || []).forEach(function (c) {
         if (!condOk(c.cond)) return;
+        if (c.pcheck && !passiveResult(c.pcheck).ok) return;   /* 被动检定选项：检定未过不出现（失败信息已在文本流留痕） */
         var b = el('button', 'de-choice' + (c.check ? ' has-check' : ''), esc(c.text));
         if (c.check) {
           var tip = el('span', 'de-check-tip', esc(c.check.skill) + ' · DC ' + c.check.dc + ' · 当前 ' + skillVal(c.check.skill));
@@ -404,6 +443,7 @@
     var hpPct = Math.max(0, Math.min(100, state.hp / state.hpMax * 100));
     var moPct = Math.max(0, Math.min(100, state.morale / state.moraleMax * 100));
     bar.innerHTML = '<span class="de-st-name">' + esc(state.name) + '</span>'
+      + '<span class="de-st-id" title="身份 · 地点">' + esc(state.job || '？？？') + ' · ' + esc(state.place || '？？？') + '</span>'
       + '<span class="de-st-hp" title="生命值">❤ ' + state.hp + '/' + state.hpMax + '</span>'
       + '<span class="de-st-mo" title="士气">◈ ' + state.morale + '/' + state.moraleMax + '</span>'
       + '<span class="de-st-time">' + timeStr() + '</span>'
@@ -719,7 +759,7 @@
   function renderWelcome() {
     var box = el('div', 'de-welcome');
     box.innerHTML = '<div class="de-welcome-badge">🎲</div>'
-      + '<div class="de-welcome-title">瑞瓦肖 · 极乐迪斯科</div>'
+      + '<div class="de-welcome-title">极乐迪斯科</div>'
       + '<div class="de-welcome-sub">一款极乐迪斯科风格的文字冒险 · 基于 D&D 5e 骰子引擎</div>'
       + '<div class="de-welcome-desc">'
       + '<p>你在褴褛飞旋旅店的房间里醒来：宿醉、头疼，脑子里像被人擦掉了一块。你叫什么名字？你是什么人？——想不起来。雾里的码头上，有一具尸体吊在树上，等你三天了。</p>'

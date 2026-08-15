@@ -762,6 +762,7 @@
   font-size: 13px;
 }
 .de-st-name { font-weight: 700; color: #f0e6c8; margin-right: auto; }
+.de-st-id { color: #8f8a7a; font-size: 12px; letter-spacing: 1px; }
 .de-st-hp { color: #e0706a; font-weight: 600; }
 .de-st-mo { color: #8fb7f0; font-weight: 600; }
 .de-st-time { color: #cdbfe0; }
@@ -790,6 +791,11 @@
   display: inline-block; padding: 1px 8px; margin-right: 4px;
   font-size: 12px; font-style: normal; font-weight: 700; letter-spacing: 1px;
   background: rgba(0, 0, 0, .35); border: 1px solid currentColor; border-radius: 4px;
+}
+/* 被动检定失败记录（技能叙述未揭示时留在文本流中的一行） */
+.de-passive-fail {
+  margin: 0; font-size: 12.5px; line-height: 1.9;
+  color: #6f6a5c; font-style: italic; letter-spacing: .5px;
 }
 
 /* ---- 选项 ---- */
