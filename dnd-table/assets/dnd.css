@@ -808,6 +808,12 @@
 .de-choice:hover { background: rgba(232, 200, 119, .12); border-color: #e8c877; transform: translateX(3px); }
 .de-choice.has-check { border-left: 3px solid #d9a441; }
 .de-check-tip { float: right; font-size: 11px; color: #d9a441; margin-left: 12px; font-weight: 600; }
+/* 已完成（检定成功/入口检定全完成）：灰显不可选，保留可见避免无出口 */
+.de-choice.is-done {
+  opacity: .4; cursor: not-allowed;
+  background: rgba(255, 255, 255, .03); border-color: rgba(255, 255, 255, .06);
+}
+.de-choice.is-done:hover { transform: none; background: rgba(255, 255, 255, .03); border-color: rgba(255, 255, 255, .06); }
 
 /* ---- 侧栏 ---- */
 .de-side { display: none; }

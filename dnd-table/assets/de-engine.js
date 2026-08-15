@@ -112,6 +112,8 @@
       items: [],
       thoughts: {},   /* name -> {stage:'locked'|'doing'|'done', need, prog} */
       flags: {},
+      passive: {},   /* 被动检定结果（skill -> {roll,base,total,dc,ok}）：首次检定后永久沿用，不重复掷 */
+      checksDone: {},   /* 已成功的主动检定（nodeId#skill -> true）：回到本节点不再显示该选项 */
       history: [],
       ending: null
     };
@@ -126,6 +128,8 @@
     if (!s.skills) s.skills = {};
     if (!s.job) s.job = '？？？';
     if (!s.place) s.place = '？？？';
+    if (!s.passive) s.passive = {};
+    if (!s.checksDone) s.checksDone = {};
     return s;
   }
 
@@ -256,7 +260,7 @@
   }
 
   /* ---------- 被动检定 ---------- */
-  /* [技能] 叙述段与 pcheck 选项共用：渲染节点时掷一次，同节点同技能共享结果（装备/想法变化后重新渲染会重掷） */
+  /* [技能] 叙述段与 pcheck 选项共用：首次检定结果存入 state.passive 永久沿用（读档保留，装备/属性变化不重掷） */
   var PASSIVE_DC = 12;   /* 被动检定统一难度 */
   function passiveResult(skill) {
     if (state.passive && state.passive[skill]) return state.passive[skill];
@@ -266,6 +270,7 @@
     var r = { skill: skill, roll: roll, parts: p, base: base, total: roll + base, dc: PASSIVE_DC, ok: roll + base >= PASSIVE_DC };
     if (!state.passive) state.passive = {};
     state.passive[skill] = r;
+    localStorage.setItem(SAVE_KEY + 'auto', JSON.stringify(state));   /* 首次掷骰结果即时落盘：当前节点刷新不重掷 */
     return r;
   }
   function doCheck(check, okCb, failCb) {
@@ -293,7 +298,12 @@
       if (checkDeath()) return;
     }
     if (c.check) {
-      doCheck(c.check, function () { busy = false; gotoId(c.success); }, function () { busy = false; gotoId(c.fail); });
+      doCheck(c.check, function () {
+        busy = false;
+        if (!state.checksDone) state.checksDone = {};
+        state.checksDone[(state.lastNode || '') + '#' + c.check.skill] = true;   /* 检定成功即锁定：回到本节点该选项不再显示 */
+        gotoId(c.success);
+      }, function () { busy = false; gotoId(c.fail); });
     } else {
       busy = false;
       gotoId(c.goto);
@@ -398,11 +408,21 @@
   }
 
   /* ---------- 渲染 ---------- */
+  /* 入口选项锁定：目标节点内所有主动检定均已成功 → 隐藏入口（回到初始状态不再重复检定） */
+  function entryLocked(c) {
+    if (!c.goto) return false;
+    var t = findNode(c.goto);
+    if (!t || !t.choices || !t.choices.length) return false;
+    var checks = t.choices.filter(function (x) { return x.check; });
+    if (!checks.length) return false;
+    var done = state.checksDone || {};
+    return checks.every(function (x) { return done[c.goto + '#' + x.check.skill]; });
+  }
+
   function render() {
     if (!root) return;
     root.innerHTML = '';
     if (!state) { renderWelcome(); return; }
-    state.passive = {};   /* 渲染即重掷被动检定（同节点同技能共享一次结果） */
     if (!node) { renderWelcome(); return; }
     root.appendChild(renderStatus());
     if (state.ending) { renderEndingInto(root, state.ending); return; }
@@ -421,12 +441,16 @@
       (node.choices || []).forEach(function (c) {
         if (!condOk(c.cond)) return;
         if (c.pcheck && !passiveResult(c.pcheck).ok) return;   /* 被动检定选项：检定未过不出现（失败信息已在文本流留痕） */
-        var b = el('button', 'de-choice' + (c.check ? ' has-check' : ''), esc(c.text));
-        if (c.check) {
+        var done = (c.check && state.checksDone && state.checksDone[(state.lastNode || '') + '#' + c.check.skill])
+          || entryLocked(c);   /* 已检定成功 / 目标节点的检定已全部成功：选项灰显禁用，不可再选 */
+        var b = el('button', 'de-choice' + (c.check ? ' has-check' : '') + (done ? ' is-done' : ''), esc(c.text));
+        if (done) {
+          b.disabled = true;   /* 完成态：灰显不可点（不隐藏，避免无出口卡死） */
+        } else if (c.check) {
           var tip = el('span', 'de-check-tip', esc(c.check.skill) + ' · DC ' + c.check.dc + ' · 当前 ' + skillVal(c.check.skill));
           b.appendChild(tip);
         }
-        b.addEventListener('click', function () { pickChoice(c); });
+        if (!done) b.addEventListener('click', function () { pickChoice(c); });
         choices.appendChild(b);
       });
       if (!node.choices || !node.choices.length) {
@@ -809,7 +833,7 @@
       auto = raw ? JSON.parse(raw) : null;
     } catch (e) { auto = null; }
     if (auto && auto.ending == null) {
-      state = normalizeState(JSON.parse(auto));
+      state = normalizeState(auto);
       node = findNode(state.lastNode);
       if (!node) node = findNode(startSceneId());
       render();
