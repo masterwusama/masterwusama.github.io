@@ -98,11 +98,11 @@
     renderFrame(Math.max(0, Math.min(1, acc / STEP)));
   }
 
-  // 窗口缩放适配：Canvas 逻辑分辨率固定 1280×960，CSS 等比缩放 + 黑边
+  // 窗口缩放适配：Canvas 逻辑分辨率固定 800×608（25×19 tile），CSS 等比缩放 + 黑边
   function fitCanvas() {
-    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 960);
-    canvas.style.width = Math.floor(1280 * s) + 'px';
-    canvas.style.height = Math.floor(960 * s) + 'px';
+    var s = Math.min(window.innerWidth / 800, window.innerHeight / 608);
+    canvas.style.width = Math.floor(800 * s) + 'px';
+    canvas.style.height = Math.floor(608 * s) + 'px';
   }
 
   G.core = {
