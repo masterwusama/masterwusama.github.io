@@ -1,7 +1,7 @@
 {
  "code": "601020",
  "name": "华钰矿业",
- "updated_at": "2026-08-16T17:37:40+08:00",
+ "updated_at": "2026-08-17T01:28:26+08:00",
  "info": {},
  "indicators": [
   {
@@ -6771,7 +6771,96 @@
   "turnover_rate": 0.0263,
   "time": "2026-08-14T16:14:55+08:00"
  },
- "dividends": [],
+ "dividends": [
+  {
+   "year": "2025年报",
+   "type": "年度分红",
+   "announce_date": "2026-07-06",
+   "record_date": "2026-07-09",
+   "ex_date": "2026-07-10",
+   "pay_date": "2026-07-10",
+   "bonus_per_10": 0.79,
+   "transfer_per_10": null,
+   "description": "10派0.79元(含税)"
+  },
+  {
+   "year": "2024年报",
+   "type": "年度分红",
+   "announce_date": "2025-05-29",
+   "record_date": "2025-06-04",
+   "ex_date": "2025-06-05",
+   "pay_date": "2025-06-05",
+   "bonus_per_10": 0.4,
+   "transfer_per_10": null,
+   "description": "10派0.4元(含税)"
+  },
+  {
+   "year": "2023年报",
+   "type": "年度分红",
+   "announce_date": "2024-08-14",
+   "record_date": "2024-08-20",
+   "ex_date": "2024-08-21",
+   "pay_date": "2024-08-21",
+   "bonus_per_10": 0.2784,
+   "transfer_per_10": null,
+   "description": "10派0.2784元(含税)"
+  },
+  {
+   "year": "2022年报",
+   "type": "年度分红",
+   "announce_date": "2023-06-09",
+   "record_date": "2023-06-15",
+   "ex_date": "2023-06-16",
+   "pay_date": null,
+   "bonus_per_10": null,
+   "transfer_per_10": 4.0,
+   "description": "10转增4股"
+  },
+  {
+   "year": "2018年报",
+   "type": "年度分红",
+   "announce_date": "2019-05-24",
+   "record_date": "2019-05-29",
+   "ex_date": "2019-05-30",
+   "pay_date": "2019-05-30",
+   "bonus_per_10": 0.9,
+   "transfer_per_10": null,
+   "description": "10派0.9元(含税)"
+  },
+  {
+   "year": "2017年报",
+   "type": "年度分红",
+   "announce_date": "2018-06-26",
+   "record_date": "2018-07-03",
+   "ex_date": "2018-07-04",
+   "pay_date": "2018-07-04",
+   "bonus_per_10": 1.2,
+   "transfer_per_10": null,
+   "description": "10派1.2元(含税)"
+  },
+  {
+   "year": "2016年报",
+   "type": "年度分红",
+   "announce_date": "2017-05-19",
+   "record_date": "2017-05-25",
+   "ex_date": "2017-05-26",
+   "pay_date": "2017-05-26",
+   "bonus_per_10": 1.2,
+   "transfer_per_10": null,
+   "description": "10派1.2元(含税)"
+  },
+  {
+   "year": "2015年报",
+   "type": "年度分红",
+   "announce_date": "2016-05-16",
+   "record_date": "2016-05-19",
+   "ex_date": "2016-05-20",
+   "pay_date": "2016-05-20",
+   "bonus_per_10": 1.0,
+   "transfer_per_10": null,
+   "description": "10派1元(含税)"
+  }
+ ],
  "reports": [
   {
    "title": "西藏华钰矿业股份有限公司2025年年度报告",
@@ -6870,7 +6959,5 @@
    "audit_opinion": null
   }
  ],
- "errors": [
-  "dividends: Expecting value: line 1 column 1 (char 0)"
- ]
+ "errors": null
 }
