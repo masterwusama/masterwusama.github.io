@@ -21,6 +21,9 @@ stock-data/_dump_out.txt
 stock-data/_test_annual.pdf
 stock-data/assets/echarts.min.js
 
-# D&D ����ð�տ����زģ���Ȩ�ı��������ֿ⣩
+# D&D 文字冒险素材与未授权文本（不入库）
 dnd-table/de-src/
 dnd-table/_gist*.json
+
+# rpg 本地工具（地图生成器/校验器，不入库）
+rpg/tools/
