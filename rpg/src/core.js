@@ -112,8 +112,13 @@
   G.boot = function (canvasEl) {
     canvas = canvasEl;
     G.Renderer.init(canvas);
+    G.Input.bindTouch(canvas);
     fitCanvas();
     window.addEventListener('resize', fitCanvas);
+    // 手机横竖屏旋转：等旋转动画结束后重新适配
+    window.addEventListener('orientationchange', function () {
+      setTimeout(fitCanvas, 120);
+    });
 
     scene.enter('prologue', 10, 60); // 初始落点：镇口河畔
     last = performance.now();

@@ -147,6 +147,7 @@
 
     if (showGrid) drawGrid(map, camera, offX, offY, x0, y0, x1, y1);
     drawDebug(map, player, camera, x0, y0, x1, y1, offX, offY);
+    drawStick();
   }
 
   // F1 调试网格：画可见区 tile 边界 + 出口标记
@@ -176,6 +177,30 @@
     }
   }
 
+  // 虚拟摇杆：触摸设备显示左下角半透明提示圈；激活时在手指处绘制摇杆
+  function drawStick() {
+    var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    var s = G.Input.stick();
+    if (!s.active) {
+      if (!isTouch) return;
+      var px = 84, py = G.Camera.VIEW_H - 84;
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px, py, 40, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py, 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('拖动移动', px - 32, py + 58);
+      return;
+    }
+    var R = 64;
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(s.ox, s.oy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath(); ctx.arc(s.ox + s.dx * (R - 22), s.oy + s.dy * (R - 22), 22, 0, Math.PI * 2); ctx.fill();
+  }
+
   // 调试 HUD：验证"移动后范围地图同步跟随"（tile 坐标 / 摄像机 / 可视范围）
   function drawDebug(map, player, camera, x0, y0, x1, y1, offX, offY) {
     ctx.fillStyle = 'rgba(0,0,0,0.62)';
@@ -193,10 +218,13 @@
     for (var i = 0; i < lines.length; i++) {
       ctx.fillText(lines[i], 16, 26 + i * 18);
     }
-    // 操作提示
+    // 操作提示（触摸设备显示触摸操作）
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.font = '12px sans-serif';
-    ctx.fillText('WASD/方向键 移动 · F1 网格 · 右端缺口可切图', 16, camera.VIEW_H - 14);
+    var tip = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0))
+      ? '拖动屏幕移动 · 右端缺口可切图'
+      : 'WASD/方向键 移动 · F1 网格 · 右端缺口可切图';
+    ctx.fillText(tip, 16, camera.VIEW_H - 14);
   }
 
   G.Renderer = {
