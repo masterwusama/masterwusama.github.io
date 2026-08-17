@@ -1,7 +1,7 @@
 {
  "code": "600873",
  "name": "梅花生物",
- "updated_at": "2026-08-17T10:26:37+08:00",
+ "updated_at": "2026-08-17T17:55:53+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "梅花生物",
-  "price": 7.89,
-  "change_pct": -0.0075,
-  "pe_ttm": 10.17,
+  "price": 7.9,
+  "change_pct": -0.0063,
+  "pe_ttm": 10.19,
   "pb": 1.41,
-  "market_cap": 22125000000.0,
-  "float_market_cap": 22125000000.0,
-  "turnover_rate": 0.0053,
-  "time": "2026-08-17T10:26:49+08:00"
+  "market_cap": 22154000000.0,
+  "float_market_cap": 22154000000.0,
+  "turnover_rate": 0.0115,
+  "time": "2026-08-17T16:14:37+08:00"
  },
  "dividends": [
   {
