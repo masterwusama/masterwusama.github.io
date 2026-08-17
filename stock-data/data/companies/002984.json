@@ -1,7 +1,7 @@
 {
  "code": "002984",
  "name": "森麒麟",
- "updated_at": "2026-08-17T01:32:10+08:00",
+ "updated_at": "2026-08-17T10:35:43+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,94 +6762,16 @@
  ],
  "snapshot": {
   "name": "森麒麟",
-  "price": 13.92,
-  "change_pct": -0.0121,
-  "pe_ttm": 14.82,
+  "price": 13.94,
+  "change_pct": 0.0014,
+  "pe_ttm": 14.84,
   "pb": 1.07,
-  "market_cap": 14425000000.0,
-  "float_market_cap": 9938000000.0,
-  "turnover_rate": 0.0101,
-  "time": "2026-08-14T16:14:48+08:00"
+  "market_cap": 14446000000.0,
+  "float_market_cap": 9952000000.0,
+  "turnover_rate": 0.0031,
+  "time": "2026-08-17T10:35:51+08:00"
  },
- "dividends": [
-  {
-   "year": "2025年报",
-   "type": "年度分红",
-   "announce_date": "2026-06-27",
-   "record_date": "2026-07-02",
-   "ex_date": "2026-07-03",
-   "pay_date": "2026-07-03",
-   "bonus_per_10": 0.5,
-   "transfer_per_10": null,
-   "description": "10派0.5元(含税)"
-  },
-  {
-   "year": "2025半年报",
-   "type": "中期分红",
-   "announce_date": "2025-10-31",
-   "record_date": "2025-11-07",
-   "ex_date": "2025-11-10",
-   "pay_date": "2025-11-10",
-   "bonus_per_10": 3.0,
-   "transfer_per_10": null,
-   "description": "10派3元(含税)"
-  },
-  {
-   "year": "2024年报",
-   "type": "年度分红",
-   "announce_date": "2025-06-24",
-   "record_date": "2025-06-27",
-   "ex_date": "2025-06-30",
-   "pay_date": "2025-06-30",
-   "bonus_per_10": 2.9,
-   "transfer_per_10": null,
-   "description": "10派2.9元(含税)"
-  },
-  {
-   "year": "2024半年报",
-   "type": "中期分红",
-   "announce_date": "2024-10-15",
-   "record_date": "2024-10-18",
-   "ex_date": "2024-10-21",
-   "pay_date": "2024-10-21",
-   "bonus_per_10": 2.1,
-   "transfer_per_10": null,
-   "description": "10派2.1元(含税)"
-  },
-  {
-   "year": "2023年报",
-   "type": "年度分红",
-   "announce_date": "2024-04-12",
-   "record_date": "2024-04-18",
-   "ex_date": "2024-04-19",
-   "pay_date": "2024-04-19",
-   "bonus_per_10": 4.1,
-   "transfer_per_10": 4.0,
-   "description": "10转增4股派4.1元(含税)"
-  },
-  {
-   "year": "2021年报",
-   "type": "年度分红",
-   "announce_date": "2022-04-22",
-   "record_date": "2022-04-28",
-   "ex_date": "2022-04-29",
-   "pay_date": "2022-04-29",
-   "bonus_per_10": 1.7,
-   "transfer_per_10": null,
-   "description": "10派1.7元(含税)"
-  },
-  {
-   "year": "2020三季报",
-   "type": "季度分红",
-   "announce_date": "2021-01-08",
-   "record_date": "2021-01-14",
-   "ex_date": "2021-01-15",
-   "pay_date": "2021-01-15",
-   "bonus_per_10": 1.66,
-   "transfer_per_10": null,
-   "description": "10派1.66元(含税)"
-  }
- ],
+ "dividends": [],
  "reports": [
   {
    "title": "2025年年度报告",
@@ -6948,5 +6870,7 @@
    "audit_opinion": null
   }
  ],
- "errors": null
+ "errors": [
+  "dividends: Expecting value: line 1 column 1 (char 0)"
+ ]
 }
