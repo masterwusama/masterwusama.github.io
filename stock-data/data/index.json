@@ -1,84 +1,84 @@
 {
- "updated_at": "2026-08-18T01:45:14+08:00",
+ "updated_at": "2026-08-18T10:32:00+08:00",
  "count": 13,
  "companies": [
   {
    "code": "002027",
    "name": "分众传媒",
    "industry": null,
-   "updated_at": "2026-08-18T01:37:26+08:00"
+   "updated_at": "2026-08-18T10:18:22+08:00"
   },
   {
    "code": "603599",
    "name": "广信股份",
-   "industry": null,
-   "updated_at": "2026-08-18T01:38:07+08:00"
+   "industry": "农化制品",
+   "updated_at": "2026-08-18T10:18:58+08:00"
   },
   {
    "code": "600079",
    "name": "人福医药",
-   "industry": null,
-   "updated_at": "2026-08-18T01:38:34+08:00"
+   "industry": "化学制药",
+   "updated_at": "2026-08-18T10:19:37+08:00"
   },
   {
    "code": "603856",
    "name": "东宏股份",
-   "industry": null,
-   "updated_at": "2026-08-18T01:39:14+08:00"
+   "industry": "装修建材",
+   "updated_at": "2026-08-18T10:20:15+08:00"
   },
   {
    "code": "601020",
    "name": "华钰矿业",
    "industry": null,
-   "updated_at": "2026-08-18T01:39:46+08:00"
+   "updated_at": "2026-08-18T10:20:48+08:00"
   },
   {
    "code": "002594",
    "name": "比亚迪",
-   "industry": null,
-   "updated_at": "2026-08-18T01:40:30+08:00"
+   "industry": "乘用车",
+   "updated_at": "2026-08-18T10:21:12+08:00"
   },
   {
    "code": "601333",
    "name": "广深铁路",
-   "industry": null,
-   "updated_at": "2026-08-18T01:41:07+08:00"
+   "industry": "铁路公路",
+   "updated_at": "2026-08-18T10:21:50+08:00"
   },
   {
    "code": "600873",
    "name": "梅花生物",
    "industry": null,
-   "updated_at": "2026-08-18T01:41:41+08:00"
+   "updated_at": "2026-08-18T10:22:24+08:00"
   },
   {
    "code": "000528",
    "name": "柳工",
-   "industry": null,
-   "updated_at": "2026-08-18T01:42:21+08:00"
+   "industry": "工程机械",
+   "updated_at": "2026-08-18T10:23:04+08:00"
   },
   {
    "code": "600511",
    "name": "国药股份",
-   "industry": null,
-   "updated_at": "2026-08-18T01:42:58+08:00"
+   "industry": "医药商业",
+   "updated_at": "2026-08-18T10:23:44+08:00"
   },
   {
    "code": "300750",
    "name": "宁德时代",
-   "industry": null,
-   "updated_at": "2026-08-18T01:43:28+08:00"
+   "industry": "电池",
+   "updated_at": "2026-08-18T10:26:42+08:00"
   },
   {
    "code": "002984",
    "name": "森麒麟",
-   "industry": null,
-   "updated_at": "2026-08-18T01:44:09+08:00"
+   "industry": "汽车零部件",
+   "updated_at": "2026-08-18T10:27:24+08:00"
   },
   {
    "code": "300015",
    "name": "爱尔眼科",
    "industry": null,
-   "updated_at": "2026-08-18T01:44:42+08:00"
+   "updated_at": "2026-08-18T10:31:25+08:00"
   }
  ]
 }

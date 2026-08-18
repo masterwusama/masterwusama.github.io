@@ -1,8 +1,18 @@
 {
  "code": "000528",
  "name": "柳工",
- "updated_at": "2026-08-18T01:42:21+08:00",
- "info": {},
+ "updated_at": "2026-08-18T10:23:04+08:00",
+ "info": {
+  "最新": 8.06,
+  "股票代码": "000528",
+  "股票简称": "柳    工",
+  "总股本": 2037833336.0,
+  "流通股": 2035002777.0,
+  "总市值": 16424936688.160002,
+  "流通市值": 16402122382.62,
+  "行业": "工程机械",
+  "上市时间": 19931118
+ },
  "indicators": [
   {
    "报告期": "2026-03-31",
@@ -6762,14 +6772,14 @@
  ],
  "snapshot": {
   "name": "柳    工",
-  "price": 8.11,
-  "change_pct": -0.0025,
-  "pe_ttm": 10.61,
-  "pb": 0.9,
-  "market_cap": 16527000000.0,
-  "float_market_cap": 16504000000.0,
-  "turnover_rate": 0.0098,
-  "time": "2026-08-17T16:14:54+08:00"
+  "price": 8.07,
+  "change_pct": -0.0049,
+  "pe_ttm": 10.55,
+  "pb": 0.89,
+  "market_cap": 16445000000.0,
+  "float_market_cap": 16422000000.0,
+  "turnover_rate": 0.0038,
+  "time": "2026-08-18T10:23:15+08:00"
  },
  "dividends": [
   {
@@ -7117,6 +7127,15 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1224734957&orgId=gssz0000528&announcementTime=2025-10-25"
   },
   {
+   "title": "2025年半年度报告",
+   "category": "半年报",
+   "date": "2025-08-27",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-08-27/1224579412.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1224579412&orgId=gssz0000528&announcementTime=2025-08-27",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
+  {
    "title": "2025年一季度报告",
    "category": "一季报",
    "date": "2025-04-26",
@@ -7140,6 +7159,15 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1221473189&orgId=gssz0000528&announcementTime=2024-10-23"
   },
   {
+   "title": "2024年半年度报告",
+   "category": "半年报",
+   "date": "2024-08-29",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-08-29/1221028498.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1221028498&orgId=gssz0000528&announcementTime=2024-08-29",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
+  {
    "title": "2024年一季度报告",
    "category": "一季报",
    "date": "2024-04-27",
@@ -7161,6 +7189,15 @@
    "date": "2023-10-30",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-10-30/1218189996.PDF",
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1218189996&orgId=gssz0000528&announcementTime=2023-10-30"
+  },
+  {
+   "title": "2023年半年度报告",
+   "category": "半年报",
+   "date": "2023-08-31",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-08-31/1217713157.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=000528&announcementId=1217713157&orgId=gssz0000528&announcementTime=2023-08-31",
+   "audit_firm": null,
+   "audit_opinion": null
   }
  ],
  "errors": null
