@@ -1,7 +1,7 @@
 {
  "code": "601020",
  "name": "华钰矿业",
- "updated_at": "2026-08-19T01:37:04+08:00",
+ "updated_at": "2026-08-19T10:28:10+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "华钰矿业",
-  "price": 21.7,
-  "change_pct": -0.0177,
-  "pe_ttm": 20.8,
-  "pb": 4.2,
-  "market_cap": 17793000000.0,
-  "float_market_cap": 17793000000.0,
-  "turnover_rate": 0.0258,
-  "time": "2026-08-18T16:14:51+08:00"
+  "price": 21.32,
+  "change_pct": -0.0175,
+  "pe_ttm": 20.43,
+  "pb": 4.13,
+  "market_cap": 17482000000.0,
+  "float_market_cap": 17482000000.0,
+  "turnover_rate": 0.0122,
+  "time": "2026-08-19T10:28:17+08:00"
  },
  "dividends": [
   {
@@ -6886,6 +6886,15 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1224750153&orgId=9900029826&announcementTime=2025-10-29"
   },
   {
+   "title": "西藏华钰矿业股份有限公司2025年半年度报告",
+   "category": "半年报",
+   "date": "2025-08-29",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224609422.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1224609422&orgId=9900029826&announcementTime=2025-08-29",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
+  {
    "title": "西藏华钰矿业股份有限公司2024年年度报告",
    "category": "年报",
    "date": "2025-04-29",
@@ -6909,6 +6918,15 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1221538539&orgId=9900029826&announcementTime=2024-10-29"
   },
   {
+   "title": "华钰矿业2024年半年度报告",
+   "category": "半年报",
+   "date": "2024-08-31",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-08-31/1221081000.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1221081000&orgId=9900029826&announcementTime=2024-08-31",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
+  {
    "title": "西藏华钰矿业股份有限公司2023年年度报告",
    "category": "年报",
    "date": "2024-04-27",
@@ -6930,6 +6948,15 @@
    "date": "2023-10-28",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-10-28/1218186437.PDF",
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1218186437&orgId=9900029826&announcementTime=2023-10-28"
+  },
+  {
+   "title": "西藏华钰矿业股份有限公司2023年半年度报告",
+   "category": "半年报",
+   "date": "2023-08-29",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-08-29/1217672250.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=601020&announcementId=1217672250&orgId=9900029826&announcementTime=2023-08-29",
+   "audit_firm": null,
+   "audit_opinion": null
   }
  ],
  "errors": null

@@ -1,7 +1,7 @@
 {
  "code": "002027",
  "name": "分众传媒",
- "updated_at": "2026-08-19T01:35:02+08:00",
+ "updated_at": "2026-08-19T10:20:51+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "分众传媒",
-  "price": 4.96,
-  "change_pct": 0.002,
-  "pe_ttm": 21.01,
-  "pb": 5.12,
-  "market_cap": 71633000000.0,
-  "float_market_cap": 71633000000.0,
-  "turnover_rate": 0.0139,
-  "time": "2026-08-18T16:14:09+08:00"
+  "price": 4.95,
+  "change_pct": -0.002,
+  "pe_ttm": 20.97,
+  "pb": 5.11,
+  "market_cap": 71489000000.0,
+  "float_market_cap": 71489000000.0,
+  "turnover_rate": 0.0059,
+  "time": "2026-08-19T10:21:03+08:00"
  },
  "dividends": [
   {
@@ -6972,6 +6972,15 @@
   }
  ],
  "reports": [
+  {
+   "title": "2026年半年度报告",
+   "category": "半年报",
+   "date": "2026-08-19",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-08-19/1225480000.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=002027&announcementId=1225480000&orgId=gssz0002027&announcementTime=2026-08-19",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
   {
    "title": "2025年年度报告",
    "category": "年报",
