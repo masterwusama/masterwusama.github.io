@@ -1,7 +1,7 @@
 {
  "code": "600079",
  "name": "人福医药",
- "updated_at": "2026-08-19T10:27:15+08:00",
+ "updated_at": "2026-08-20T01:34:49+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "ST人福",
-  "price": 18.17,
-  "change_pct": 0.0145,
-  "pe_ttm": 15.58,
-  "pb": 1.59,
-  "market_cap": 29658000000.0,
-  "float_market_cap": 28040000000.0,
-  "turnover_rate": 0.0036,
-  "time": "2026-08-19T10:27:24+08:00"
+  "price": 18.05,
+  "change_pct": 0.0078,
+  "pe_ttm": 15.48,
+  "pb": 1.58,
+  "market_cap": 29462000000.0,
+  "float_market_cap": 27854000000.0,
+  "turnover_rate": 0.008,
+  "time": "2026-08-19T16:14:33+08:00"
  },
  "dividends": [
   {
