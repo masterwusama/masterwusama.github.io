@@ -1,7 +1,7 @@
 {
  "code": "600511",
  "name": "国药股份",
- "updated_at": "2026-08-20T01:39:11+08:00",
+ "updated_at": "2026-08-20T17:47:41+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "国药股份",
-  "price": 27.15,
-  "change_pct": 0.0044,
-  "pe_ttm": 10.63,
-  "pb": 1.09,
-  "market_cap": 20485000000.0,
-  "float_market_cap": 15023000000.0,
-  "turnover_rate": 0.0083,
-  "time": "2026-08-19T16:14:45+08:00"
+  "price": 26.84,
+  "change_pct": -0.0114,
+  "pe_ttm": 10.5,
+  "pb": 1.08,
+  "market_cap": 20251000000.0,
+  "float_market_cap": 14852000000.0,
+  "turnover_rate": 0.012,
+  "time": "2026-08-20T16:14:53+08:00"
  },
  "dividends": [
   {
@@ -7038,6 +7038,15 @@
   }
  ],
  "reports": [
+  {
+   "title": "国药股份2026年半年度报告",
+   "category": "半年报",
+   "date": "2026-08-20",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2026-08-20/1225481668.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=600511&announcementId=1225481668&orgId=gssh0600511&announcementTime=2026-08-20",
+   "audit_firm": null,
+   "audit_opinion": null
+  },
   {
    "title": "国药股份2026年第一季度报告",
    "category": "一季报",

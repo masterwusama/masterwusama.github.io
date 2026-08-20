@@ -1,84 +1,84 @@
 {
- "updated_at": "2026-08-20T01:41:35+08:00",
+ "updated_at": "2026-08-20T17:49:59+08:00",
  "count": 13,
  "companies": [
   {
    "code": "002027",
    "name": "分众传媒",
-   "industry": "广告营销",
-   "updated_at": "2026-08-20T01:33:43+08:00"
+   "industry": null,
+   "updated_at": "2026-08-20T17:42:31+08:00"
   },
   {
    "code": "603599",
    "name": "广信股份",
    "industry": null,
-   "updated_at": "2026-08-20T01:34:20+08:00"
+   "updated_at": "2026-08-20T17:43:08+08:00"
   },
   {
    "code": "600079",
    "name": "人福医药",
    "industry": null,
-   "updated_at": "2026-08-20T01:34:49+08:00"
+   "updated_at": "2026-08-20T17:43:41+08:00"
   },
   {
    "code": "603856",
    "name": "东宏股份",
    "industry": null,
-   "updated_at": "2026-08-20T01:35:29+08:00"
+   "updated_at": "2026-08-20T17:44:18+08:00"
   },
   {
    "code": "601020",
    "name": "华钰矿业",
    "industry": null,
-   "updated_at": "2026-08-20T01:36:08+08:00"
+   "updated_at": "2026-08-20T17:44:45+08:00"
   },
   {
    "code": "002594",
    "name": "比亚迪",
    "industry": null,
-   "updated_at": "2026-08-20T01:36:46+08:00"
+   "updated_at": "2026-08-20T17:45:23+08:00"
   },
   {
    "code": "601333",
    "name": "广深铁路",
    "industry": null,
-   "updated_at": "2026-08-20T01:37:23+08:00"
+   "updated_at": "2026-08-20T17:45:55+08:00"
   },
   {
    "code": "600873",
    "name": "梅花生物",
    "industry": null,
-   "updated_at": "2026-08-20T01:37:54+08:00"
+   "updated_at": "2026-08-20T17:46:26+08:00"
   },
   {
    "code": "000528",
    "name": "柳工",
    "industry": null,
-   "updated_at": "2026-08-20T01:38:38+08:00"
+   "updated_at": "2026-08-20T17:47:06+08:00"
   },
   {
    "code": "600511",
    "name": "国药股份",
    "industry": null,
-   "updated_at": "2026-08-20T01:39:11+08:00"
+   "updated_at": "2026-08-20T17:47:41+08:00"
   },
   {
    "code": "300750",
    "name": "宁德时代",
    "industry": null,
-   "updated_at": "2026-08-20T01:39:50+08:00"
+   "updated_at": "2026-08-20T17:48:08+08:00"
   },
   {
    "code": "002984",
    "name": "森麒麟",
    "industry": null,
-   "updated_at": "2026-08-20T01:40:27+08:00"
+   "updated_at": "2026-08-20T17:48:38+08:00"
   },
   {
    "code": "300015",
    "name": "爱尔眼科",
    "industry": null,
-   "updated_at": "2026-08-20T01:40:59+08:00"
+   "updated_at": "2026-08-20T17:49:10+08:00"
   }
  ]
 }

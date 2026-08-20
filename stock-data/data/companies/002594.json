@@ -1,7 +1,7 @@
 {
  "code": "002594",
  "name": "比亚迪",
- "updated_at": "2026-08-20T01:36:46+08:00",
+ "updated_at": "2026-08-20T17:45:23+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "比亚迪",
-  "price": 88.66,
-  "change_pct": -0.0097,
-  "pe_ttm": 29.34,
-  "pb": 3.54,
-  "market_cap": 808331000000.0,
-  "float_market_cap": 309123000000.0,
-  "turnover_rate": 0.0063,
-  "time": "2026-08-19T16:14:51+08:00"
+  "price": 90.48,
+  "change_pct": 0.0205,
+  "pe_ttm": 29.94,
+  "pb": 3.61,
+  "market_cap": 824924000000.0,
+  "float_market_cap": 315469000000.0,
+  "turnover_rate": 0.0103,
+  "time": "2026-08-20T16:14:09+08:00"
  },
  "dividends": [
   {
