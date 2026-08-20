@@ -1,7 +1,7 @@
 {
  "code": "603599",
  "name": "广信股份",
- "updated_at": "2026-08-20T17:43:08+08:00",
+ "updated_at": "2026-08-21T01:38:14+08:00",
  "info": {},
  "indicators": [
   {
@@ -6912,13 +6912,6 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603599&announcementId=1225197735&orgId=9900023967&announcementTime=2026-04-27"
   },
   {
-   "title": "2025年三季度报告",
-   "category": "三季报",
-   "date": "2025-10-28",
-   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-10-28/1224739842.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603599&announcementId=1224739842&orgId=9900023967&announcementTime=2025-10-28"
-  },
-  {
    "title": "2025年半年度报告",
    "category": "半年报",
    "date": "2025-08-20",
@@ -6944,13 +6937,6 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603599&announcementId=1223347079&orgId=9900023967&announcementTime=2025-04-28"
   },
   {
-   "title": "2024年三季度报告",
-   "category": "三季报",
-   "date": "2024-10-29",
-   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-10-29/1221538594.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603599&announcementId=1221538594&orgId=9900023967&announcementTime=2024-10-29"
-  },
-  {
    "title": "2024年半年度报告",
    "category": "半年报",
    "date": "2024-08-28",
@@ -6974,13 +6960,6 @@
    "date": "2024-04-26",
    "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-04-26/1219835890.PDF",
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603599&announcementId=1219835890&orgId=9900023967&announcementTime=2024-04-26"
-  },
-  {
-   "title": "2023年第三季度报告",
-   "category": "三季报",
-   "date": "2023-10-31",
-   "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-10-31/1218199568.PDF",
-   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=603599&announcementId=1218199568&orgId=9900023967&announcementTime=2023-10-31"
   },
   {
    "title": "2023年半年度报告",
