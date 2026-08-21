@@ -1,7 +1,7 @@
 {
  "code": "300015",
  "name": "爱尔眼科",
- "updated_at": "2026-08-21T10:38:14+08:00",
+ "updated_at": "2026-08-21T17:51:56+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "爱尔眼科",
-  "price": 8.39,
-  "change_pct": -0.0221,
-  "pe_ttm": 23.14,
-  "pb": 3.58,
-  "market_cap": 78023000000.0,
-  "float_market_cap": 66761000000.0,
-  "turnover_rate": 0.0046,
-  "time": "2026-08-21T10:39:18+08:00"
+  "price": 8.33,
+  "change_pct": -0.0291,
+  "pe_ttm": 22.98,
+  "pb": 3.55,
+  "market_cap": 77465000000.0,
+  "float_market_cap": 66283000000.0,
+  "turnover_rate": 0.0092,
+  "time": "2026-08-21T16:14:45+08:00"
  },
  "dividends": [
   {
