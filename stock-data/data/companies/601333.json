@@ -1,7 +1,7 @@
 {
  "code": "601333",
  "name": "广深铁路",
- "updated_at": "2026-08-21T01:41:02+08:00",
+ "updated_at": "2026-08-21T10:29:45+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "广深铁路",
-  "price": 2.95,
-  "change_pct": 0.0068,
-  "pe_ttm": 13.59,
-  "pb": 0.74,
-  "market_cap": 20896000000.0,
-  "float_market_cap": 16674000000.0,
-  "turnover_rate": 0.0115,
-  "time": "2026-08-20T16:14:39+08:00"
+  "price": 2.91,
+  "change_pct": -0.0136,
+  "pe_ttm": 13.41,
+  "pb": 0.73,
+  "market_cap": 20613000000.0,
+  "float_market_cap": 16448000000.0,
+  "turnover_rate": 0.0056,
+  "time": "2026-08-21T10:35:25+08:00"
  },
  "dividends": [
   {
