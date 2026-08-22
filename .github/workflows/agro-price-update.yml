@@ -1,0 +1,47 @@
+name: update-agro-price
+
+# 定时更新农化制品价格数据（agro-price/ 子文件夹）
+# 只提交 agro-price/data 下的数据文件，不会触碰博客的其他内容。
+
+on:
+  # 每天 2 次（UTC 时间）：1:00 / 13:00
+  # 对应北京时间：9:00 / 21:00（生意社报价动态每周 2~4 次，一天 2 次足够）
+  schedule:
+    - cron: "0 1,13 * * *"
+  # 支持在 GitHub 网页上手动触发
+  workflow_dispatch:
+
+# 只授予读取仓库 + 写回数据文件的最小权限
+permissions:
+  contents: write
+
+concurrency:
+  group: agro-price-update
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 抓取价格数据
+        working-directory: agro-price/scripts
+        run: python fetch_prices.py
+
+      - name: 提交数据变更
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(agro-price): 更新农化制品价格数据"
+          file_pattern: agro-price/data/*
+          commit_user_name: agro-price-bot
+          commit_user_email: agro-price-bot@users.noreply.github.com
+          skip_fetch: true
+          skip_checkout: true

@@ -1,0 +1,281 @@
+/* 农化制品价格跟踪 —— 样式 */
+
+#agro-app {
+  max-width: 980px;
+  margin: 0 auto;
+  font-size: 14px;
+}
+
+.agro-hint {
+  padding: 40px 0;
+  text-align: center;
+  color: #999;
+}
+
+/* ---------- 营收结构卡 ---------- */
+
+.agro-revenue {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: #fafafa;
+}
+
+.agro-revenue-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.agro-company {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+}
+
+.agro-revenue-title {
+  font-size: 13px;
+  color: #666;
+}
+
+.agro-rev-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background .15s;
+}
+
+.agro-rev-item:hover {
+  background: #f0f6ff;
+}
+
+.agro-rev-name {
+  width: 52px;
+  font-weight: 600;
+  color: #333;
+}
+
+.agro-rev-track {
+  flex: 1;
+  max-width: 380px;
+  height: 16px;
+  background: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.agro-rev-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #4c8d4c, #2f7d32);
+  border-radius: 8px;
+}
+
+.agro-rev-item:nth-child(2) .agro-rev-fill { background: linear-gradient(90deg, #5b9bd5, #2e75b6); }
+.agro-rev-item:nth-child(3) .agro-rev-fill { background: linear-gradient(90deg, #c99a5b, #b07a2e); }
+.agro-rev-item:nth-child(4) .agro-rev-fill { background: #bbb; }
+
+.agro-rev-pct {
+  width: 58px;
+  text-align: right;
+  font-weight: 700;
+  color: #222;
+}
+
+.agro-rev-note {
+  font-size: 12px;
+  color: #888;
+}
+
+.agro-revenue-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #999;
+  border-top: 1px dashed #e0e0e0;
+  padding-top: 8px;
+}
+
+/* ---------- 分类筛选 ---------- */
+
+.agro-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.agro-tab {
+  padding: 6px 18px;
+  border: 1px solid #d5d5d5;
+  border-radius: 18px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .15s;
+}
+
+.agro-tab:hover {
+  border-color: #2f7d32;
+  color: #2f7d32;
+}
+
+.agro-tab.active {
+  background: #2f7d32;
+  border-color: #2f7d32;
+  color: #fff;
+}
+
+/* ---------- 产品卡片 ---------- */
+
+.agro-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.agro-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all .15s;
+  background: #fff;
+}
+
+.agro-card:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+}
+
+.agro-card.on {
+  border-color: #2f7d32;
+  background: #f6fbf6;
+}
+
+.agro-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.agro-card-check {
+  display: flex;
+  cursor: pointer;
+}
+
+.agro-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
+
+.agro-card-cat {
+  font-size: 11px;
+  color: #2f7d32;
+  background: #e8f3e8;
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.agro-card-spec {
+  font-size: 11px;
+  color: #999;
+}
+
+.agro-card-body {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agro-card-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+}
+
+.agro-card-price em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+  margin-left: 2px;
+}
+
+.agro-card-chg {
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.agro-card-chg.up { color: #c0392b; background: #fdf0ee; }
+.agro-card-chg.down { color: #1e8449; background: #eaf7ee; }
+.agro-card-chg.flat { color: #888; background: #f2f2f2; }
+
+.agro-card-foot {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* ---------- 走势图 ---------- */
+
+.agro-chart-wrap {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.agro-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agro-chart-head > span:first-child {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
+
+.agro-chart-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #555;
+}
+
+.agro-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.agro-chart-tools select {
+  padding: 4px 8px;
+  border: 1px solid #d5d5d5;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.agro-foot {
+  margin: 14px 0 30px;
+  font-size: 12px;
+  color: #aaa;
+  text-align: center;
+}

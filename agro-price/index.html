@@ -1,0 +1,57 @@
+---
+layout: page
+title: 农化制品价格跟踪
+---
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="./assets/agro.css">
+
+<div id="agro-app">
+  <div id="agro-loading" class="agro-hint">数据加载中...</div>
+  <div id="agro-error" class="agro-hint" style="display:none"></div>
+
+  <div id="agro-main" style="display:none">
+
+    <!-- 公司营收结构卡 -->
+    <div class="agro-revenue">
+      <div class="agro-revenue-head">
+        <span class="agro-company">广信股份（603599）</span>
+        <span class="agro-revenue-title">2025 年营收结构 · 主营产品价格跟踪</span>
+      </div>
+      <div class="agro-revenue-bar" id="agro-revenue-bar"></div>
+      <div class="agro-revenue-note">产品价格 → 出厂价/毛利率 → 业绩（年报口径：杀菌剂毛利率波动主要系多菌灵价格变动所致）</div>
+    </div>
+
+    <!-- 分类筛选 -->
+    <div class="agro-tabs" id="agro-tabs">
+      <button class="agro-tab active" data-cat="全部">全部</button>
+      <button class="agro-tab" data-cat="杀菌剂">杀菌剂</button>
+      <button class="agro-tab" data-cat="除草剂">除草剂</button>
+      <button class="agro-tab" data-cat="中间体">中间体</button>
+    </div>
+
+    <!-- 产品卡片 -->
+    <div class="agro-cards" id="agro-cards"></div>
+
+    <!-- 走势图 -->
+    <div class="agro-chart-wrap">
+      <div class="agro-chart-head">
+        <span id="agro-chart-title">价格走势</span>
+        <span class="agro-chart-tools">
+          <label class="agro-check"><input type="checkbox" id="agro-normalize"> 归一化对比（基准=100）</label>
+          <select id="agro-range">
+            <option value="1y">近 1 年</option>
+            <option value="3y">近 3 年</option>
+            <option value="all" selected>全部</option>
+          </select>
+        </span>
+      </div>
+      <div id="agro-chart" style="width:100%;height:420px"></div>
+    </div>
+
+    <div class="agro-foot" id="agro-foot"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script charset="utf-8" src="./assets/agro.js"></script>
