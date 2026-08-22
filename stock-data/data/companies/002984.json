@@ -1,7 +1,7 @@
 {
  "code": "002984",
  "name": "森麒麟",
- "updated_at": "2026-08-16T17:42:50+08:00",
+ "updated_at": "2026-08-22T01:42:54+08:00",
  "info": {},
  "indicators": [
   {
@@ -6762,14 +6762,14 @@
  ],
  "snapshot": {
   "name": "森麒麟",
-  "price": 13.92,
-  "change_pct": -0.0121,
-  "pe_ttm": 14.82,
-  "pb": 1.07,
-  "market_cap": 14425000000.0,
-  "float_market_cap": 9938000000.0,
-  "turnover_rate": 0.0101,
-  "time": "2026-08-14T16:14:48+08:00"
+  "price": 14.0,
+  "change_pct": -0.0148,
+  "pe_ttm": 14.91,
+  "pb": 1.08,
+  "market_cap": 14508000000.0,
+  "float_market_cap": 9995000000.0,
+  "turnover_rate": 0.0151,
+  "time": "2026-08-21T16:14:21+08:00"
  },
  "dividends": [
   {
