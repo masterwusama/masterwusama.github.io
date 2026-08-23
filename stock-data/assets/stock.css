@@ -745,4 +745,11 @@
 
   /* 评分卡明细表格保持横向滚动（.stock-compare 已有 min-width + overflow） */
   .score-card .stock-compare-wrap { margin-top: 8px; }
+
+  /* 评分卡明细表“评判标准”列允许换行，窄屏下文字完整展示（其余数字列仍不折行） */
+  .score-card .stock-compare th:first-child,
+  .score-card .stock-compare td:first-child {
+    white-space: normal;
+    min-width: 96px;
+  }
 }
