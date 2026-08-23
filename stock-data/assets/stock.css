@@ -482,3 +482,160 @@
   color: #999;
   border: 1px solid #e0e0e0;
 }
+
+/* ---- 五大模块导航（吸顶，点击平滑滚动） ---- */
+.va-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: #fff;
+  padding: 8px 2px;
+  margin: 10px 0 4px;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.va-nav a {
+  font-size: 13px;
+  color: #4a6076;
+  text-decoration: none;
+  background: #f3f6fa;
+  border: 1px solid #e3e8f0;
+  border-radius: 14px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.va-nav a:hover {
+  color: #2b7bd4;
+  border-color: #2b7bd4;
+}
+
+/* ---- 模块容器标题 ---- */
+.va-module-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f2d3d;
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  background: linear-gradient(90deg, #f0f5fb, #fafcfe);
+  border-left: 4px solid #2b7bd4;
+  border-radius: 4px;
+}
+
+.va-module-title span {
+  color: #2b7bd4;
+  margin-right: 6px;
+}
+
+/* ---- 三大流派评分卡 ---- */
+.score-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.score-card {
+  flex: 1 1 440px;
+  min-width: 0;
+  border: 1px solid #e3e8f0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.score-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-card-head h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #1f2d3d;
+}
+
+.score-basis {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #8a94a6;
+}
+
+.score-circle {
+  flex: none;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.score-circle span {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+.score-circle b {
+  font-size: 19px;
+}
+
+.score-circle i {
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+.va-grade-good {
+  background: #2e9e5b;
+}
+
+.va-grade-mid {
+  background: #3f7fd9;
+}
+
+.va-grade-low {
+  background: #e8a33d;
+}
+
+.va-grade-bad {
+  background: #d9534f;
+}
+
+.va-grade-na {
+  background: #9aa5b5;
+}
+
+.score-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #8a94a6;
+  line-height: 1.7;
+}
+
+/* 符合度文字色：绿（达标）/橙（部分）/红（未达）/灰（缺失） */
+.sc-good {
+  color: #1e7e44;
+  font-weight: 600;
+}
+
+.sc-mid {
+  color: #b07a10;
+  font-weight: 600;
+}
+
+.sc-low {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.sc-na {
+  color: #9aa5b5;
+}

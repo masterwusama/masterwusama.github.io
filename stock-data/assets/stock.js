@@ -241,9 +241,22 @@
       '<span class="s-meta">更新于 ' + fmtDate(s.time || d.updated_at) + '</span>' +
       '</div>';
 
+    // 五大模块锚点导航（点击平滑滚动，避免与 #/code 路由冲突）
+    html += '<nav class="va-nav" aria-label="详情模块导航">' +
+      '<a href="#sec-basic" data-scroll="sec-basic">① 基础财务信息</a>' +
+      '<a href="#sec-value" data-scroll="sec-value">② 通用价值标准</a>' +
+      '<a href="#sec-graham" data-scroll="sec-graham">③ 格雷厄姆烟蒂</a>' +
+      '<a href="#sec-schloss" data-scroll="sec-schloss">④ 施洛斯烟蒂</a>' +
+      '<a href="#sec-buffett" data-scroll="sec-buffett">⑤ 巴菲特芒格</a>' +
+      '</nav>';
+
+    // ---- 模块一：基础财务信息（估值快照/趋势图/财务对比/报表/分红/定期报告）----
+    html += '<section id="sec-basic" class="stock-section va-module"><h2 class="va-module-title"><span>①</span>基础财务信息</h2>';
+
     // 估值快照
     var recDivs = recentDividends(d);
     var va = valueAnalysis(d); // 价值分析计算（股息/现金流/杜邦/成长/体检）
+    var sc = valueScores(d, va); // 三大流派评分（格雷厄姆/施洛斯/巴菲特）
     var divBox = '<div class="kv kv-div"><div class="k">近一年分红</div><div class="v">' + recDivs.length + ' 条</div>' +
       '<div class="div-list">' + (recDivs.length
         ? recDivs.map(function (r) {
@@ -260,53 +273,7 @@
       divBox +
       '</div></div>';
 
-    // 价值体检清单（Pass/Fail 一眼定位风险点）
-    html += '<div class="stock-section"><h3>价值体检</h3>' +
-      '<div class="stock-compare-wrap"><table class="stock-compare va-health"><tbody id="stock-health-body"></tbody></table>' +
-      '<p class="stock-chart-note">' + va.checkSummary + '</p></div></div>';
-
-    // 股东回报：股息率/分红率/连续分红/累计派息 + 每股分红趋势
-    html += '<div class="stock-section"><div class="stock-section-head">' +
-      '<h3>股东回报</h3></div>' +
-      '<div class="stock-snapshot va-snapshot">' +
-      kv('股息率(近12月)', fmtPct(va.divYield)) +
-      kv('10年国债收益率', fmtPct(BOND_10Y)) +
-      kv('股债利差', fmtPct(va.spread)) +
-      kv('分红率(最新年报)', fmtPct(va.payout)) +
-      kv('连续分红年数', va.divConsecutive ? va.divConsecutive + ' 年' : '-') +
-      kv('累计每股派息', va.cumPerShare == null ? '-' : fmtNum(va.cumPerShare) + ' 元') +
-      '</div>' +
-      '<div class="stock-chart-block"><h4>近 ' + va.divChart.length + ' 年每股派息（元/股）</h4><div class="stock-chart" id="stock-chart-dividend"></div></div></div>';
-
-    // 现金流质量：净现比/自由现金流/收现比
-    html += '<div class="stock-section"><div class="stock-section-head"><h3>现金流质量</h3></div>' +
-      '<div class="stock-snapshot va-snapshot">' +
-      kv('5年累计净现比', va.ratio5 == null ? '-' : fmtNum(va.ratio5)) +
-      kv('5年累计自由现金流', fmtMoney(va.fcf5)) +
-      kv('近5年收现比均值', va.collectAvg == null ? '-' : fmtNum(va.collectAvg)) +
-      '</div>' +
-      '<div class="stock-compare-wrap"><table class="stock-compare"><thead><tr>' +
-      '<th>年度</th><th>净利润(亿)</th><th>经营现金流(亿)</th><th>净现比</th><th>资本开支(亿)</th><th>自由现金流(亿)</th><th>收现比</th></tr></thead>' +
-      '<tbody id="stock-cf-body"></tbody></table></div>' +
-      '<div class="stock-chart-block"><h4>净现比（年报，>1 说明利润有真金白银支撑）</h4><div class="stock-chart" id="stock-chart-netcash"></div></div></div>';
-
-    // 杜邦分析：ROE = 净利率 × 总资产周转率 × 权益乘数
-    html += '<div class="stock-section"><h3>杜邦分析</h3>' +
-      '<div class="stock-compare-wrap"><table class="stock-compare"><thead><tr>' +
-      '<th>年度</th><th>净利率</th><th>总资产周转率</th><th>权益乘数</th><th>ROE(拆解)</th><th>ROE(披露)</th></tr></thead>' +
-      '<tbody id="stock-dupont-body"></tbody></table></div>' +
-      '<p class="stock-chart-note">ROE 拆解 = 净利率 × 总资产周转率 × 权益乘数（期末口径）；披露 ROE 为同花顺报告期口径，两者略有差异属正常。</p></div>';
-
-    // 成长性 & 估值匹配
-    html += '<div class="stock-section"><div class="stock-section-head"><h3>成长性与估值匹配</h3></div>' +
-      '<div class="stock-snapshot va-snapshot">' +
-      kv('营收 CAGR(5年)', fmtPct(va.revCagr5)) +
-      kv('净利 CAGR(5年)', fmtPct(va.netCagr5)) +
-      kv('营收 CAGR(3年)', fmtPct(va.revCagr3)) +
-      kv('净利 CAGR(3年)', fmtPct(va.netCagr3)) +
-      kv('PEG', va.pegText) +
-      '</div>' +
-      '<p class="stock-chart-note">CAGR 基于 ' + va.growthNote + '；PEG = PE(TTM) / 净利5年CAGR，&lt;1 低估、1~2 合理、&gt;2 偏贵。</p></div>';
+    // （价值分析五大区块：价值体检/股东回报/现金流质量/杜邦分析/成长性已移至模块二）
 
     // 指标趋势图（按指标分 3 个独立图表；支持季/年视图切换）
     var indCount = (d.indicators || []).length;
@@ -374,14 +341,84 @@
         '</div>';
     });
     html += '</div>';
+    html += '</section>'; // 模块一结束
+
+    // ---- 模块二：通用价值标准（体检/股东回报/现金流/杜邦/成长）----
+    html += '<section id="sec-value" class="stock-section va-module"><h2 class="va-module-title"><span>②</span>通用价值标准</h2>';
+
+    // 价值体检清单（Pass/Fail 一眼定位风险点）
+    html += '<div class="stock-section"><h3>价值体检</h3>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare va-health"><tbody id="stock-health-body"></tbody></table>' +
+      '<p class="stock-chart-note">' + va.checkSummary + '</p></div></div>';
+
+    // 股东回报：股息率/分红率/连续分红/累计派息 + 每股分红趋势
+    html += '<div class="stock-section"><div class="stock-section-head">' +
+      '<h3>股东回报</h3></div>' +
+      '<div class="stock-snapshot va-snapshot">' +
+      kv('股息率(近12月)', fmtPct(va.divYield)) +
+      kv('10年国债收益率', fmtPct(BOND_10Y)) +
+      kv('股债利差', fmtPct(va.spread)) +
+      kv('分红率(最新年报)', fmtPct(va.payout)) +
+      kv('连续分红年数', va.divConsecutive ? va.divConsecutive + ' 年' : '-') +
+      kv('累计每股派息', va.cumPerShare == null ? '-' : fmtNum(va.cumPerShare) + ' 元') +
+      '</div>' +
+      '<div class="stock-chart-block"><h4>近 ' + va.divChart.length + ' 年每股派息（元/股）</h4><div class="stock-chart" id="stock-chart-dividend"></div></div></div>';
+
+    // 现金流质量：净现比/自由现金流/收现比
+    html += '<div class="stock-section"><div class="stock-section-head"><h3>现金流质量</h3></div>' +
+      '<div class="stock-snapshot va-snapshot">' +
+      kv('5年累计净现比', va.ratio5 == null ? '-' : fmtNum(va.ratio5)) +
+      kv('5年累计自由现金流', fmtMoney(va.fcf5)) +
+      kv('近5年收现比均值', va.collectAvg == null ? '-' : fmtNum(va.collectAvg)) +
+      '</div>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare"><thead><tr>' +
+      '<th>年度</th><th>净利润(亿)</th><th>经营现金流(亿)</th><th>净现比</th><th>资本开支(亿)</th><th>自由现金流(亿)</th><th>收现比</th></tr></thead>' +
+      '<tbody id="stock-cf-body"></tbody></table></div>' +
+      '<div class="stock-chart-block"><h4>净现比（年报，>1 说明利润有真金白银支撑）</h4><div class="stock-chart" id="stock-chart-netcash"></div></div></div>';
+
+    // 杜邦分析：ROE = 净利率 × 总资产周转率 × 权益乘数
+    html += '<div class="stock-section"><h3>杜邦分析</h3>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare"><thead><tr>' +
+      '<th>年度</th><th>净利率</th><th>总资产周转率</th><th>权益乘数</th><th>ROE(拆解)</th><th>ROE(披露)</th></tr></thead>' +
+      '<tbody id="stock-dupont-body"></tbody></table></div>' +
+      '<p class="stock-chart-note">ROE 拆解 = 净利率 × 总资产周转率 × 权益乘数（期末口径）；披露 ROE 为同花顺报告期口径，两者略有差异属正常。</p></div>';
+
+    // 成长性 & 估值匹配
+    html += '<div class="stock-section"><div class="stock-section-head"><h3>成长性与估值匹配</h3></div>' +
+      '<div class="stock-snapshot va-snapshot">' +
+      kv('营收 CAGR(5年)', fmtPct(va.revCagr5)) +
+      kv('净利 CAGR(5年)', fmtPct(va.netCagr5)) +
+      kv('营收 CAGR(3年)', fmtPct(va.revCagr3)) +
+      kv('净利 CAGR(3年)', fmtPct(va.netCagr3)) +
+      kv('PEG', va.pegText) +
+      '</div>' +
+      '<p class="stock-chart-note">CAGR 基于 ' + va.growthNote + '；PEG = PE(TTM) / 净利5年CAGR，&lt;1 低估、1~2 合理、&gt;2 偏贵。</p></div>';
+    html += '</section>'; // 模块二结束
+
+    // ---- 模块三：格雷厄姆烟蒂标准评判（进取型 + 防御型两张评分卡）----
+    html += '<section id="sec-graham" class="stock-section va-module"><h2 class="va-module-title"><span>③</span>格雷厄姆烟蒂标准评判</h2>' +
+      '<div class="score-grid">' +
+      '<div class="score-card" id="stock-score-graham-agg"></div>' +
+      '<div class="score-card" id="stock-score-graham-def"></div>' +
+      '</div></section>';
+
+    // ---- 模块四：施洛斯烟蒂标准评判 ----
+    html += '<section id="sec-schloss" class="stock-section va-module"><h2 class="va-module-title"><span>④</span>施洛斯烟蒂标准评判</h2>' +
+      '<div class="score-card" id="stock-score-schloss"></div></section>';
+
+    // ---- 模块五：巴菲特芒格价值标准评判 ----
+    html += '<section id="sec-buffett" class="stock-section va-module"><h2 class="va-module-title"><span>⑤</span>巴菲特芒格价值标准评判</h2>' +
+      '<div class="score-card" id="stock-score-buffett"></div></section>';
 
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
     bindComparePicks();
+    bindVaNav();
     renderCharts(d.indicators || []);
     renderCompare(d);
     initSheet(d);
     renderValueAnalysis(va);
+    renderScores(sc);
   }
 
   /* ---------------- 价值分析：核心计算与渲染 ---------------- */
@@ -599,6 +636,218 @@
         '<td>' + fmtPct(r.roe) + '</td>' +
         '<td>' + fmtPct(r.roeReported) + '</td></tr>';
     }).join('');
+  }
+
+  /* ---------------- 三大流派价值评分（满分 100，基准=最新年报 + 最新市值） ---------------- */
+
+  // 线性得分：v ≤ a 取 ma；v ≥ b 取 mb；中间线性
+  function lerpScore(v, a, b, ma, mb) {
+    if (v == null || isNaN(v)) return null;
+    if (v <= a) return ma;
+    if (v >= b) return mb;
+    return ma + (v - a) / (b - a) * (mb - ma);
+  }
+
+  // 总分 → 等级（优秀/良好/一般/较差/数据不足）
+  function gradeOf(total) {
+    if (total == null) return 'na';
+    if (total >= 80) return 'good';
+    if (total >= 60) return 'mid';
+    if (total >= 40) return 'low';
+    return 'bad';
+  }
+
+  function gradeText(g) {
+    return { good: '优秀', mid: '良好', low: '一般', bad: '较差', na: '数据不足' }[g];
+  }
+
+  // 评分项构造：match = 符合度（score/max，用于百分比与颜色）
+  function it(std, val, thr, max, score) {
+    return { std: std, val: val, thr: thr, max: max, score: score, match: score == null ? null : score / max };
+  }
+
+  // 评分卡 HTML：标题 + 总分圆徽 + 标准明细表（标准/当前值/参考阈值/符合度/得分）+ 备注
+  function scoreCard(title, basis, total, items, note) {
+    var g = gradeOf(total);
+    var rows = items.map(function (x) {
+      var mCls = x.match == null ? 'sc-na' : x.match >= 0.99 ? 'sc-good' : x.match >= 0.5 ? 'sc-mid' : 'sc-low';
+      var mTxt = x.match == null ? '-' : (x.match * 100).toFixed(0) + '%';
+      return '<tr><td>' + x.std + '</td><td class="v">' + x.val + '</td><td class="v">' + x.thr + '</td>' +
+        '<td class="v ' + mCls + '">' + mTxt + '</td>' +
+        '<td class="v"><b>' + (x.score == null ? '-' : fmtNum(x.score)) + '</b> / ' + x.max + '</td></tr>';
+    }).join('');
+    return '<div class="score-card-head"><h4>' + title + '</h4>' +
+      '<div class="score-circle va-grade-' + g + '"><span>总分</span><b>' + (total == null ? '-' : fmtNum(total)) + '</b><i>' + gradeText(g) + '</i></div></div>' +
+      '<p class="score-basis">' + basis + '</p>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare">' +
+      '<thead><tr><th>评判标准</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>' +
+      (note ? '<p class="score-note">' + note + '</p>' : '');
+  }
+
+  // 三大流派评分汇总（格雷厄姆进取/防御、施洛斯、巴菲特芒格），以最新年报为基础
+  function valueScores(d, va) {
+    var annual = annualRows(d.indicators || []);
+    var last = annual[annual.length - 1];
+    var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
+    var lastYear = lastDate ? Number(lastDate.slice(0, 4)) : null;
+    var baList = (d.balance || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
+    var s = d.snapshot || {};
+    var mcap = s.market_cap, pe = s.pe_ttm, pb = s.pb;
+    var divConsecutive = va.divConsecutive || 0;
+
+    // ---- 基础量（最新年报）----
+    var ca = lastBa ? lastBa['流动资产合计'] : null;      // 流动资产合计
+    var cl = lastBa ? lastBa['流动负债合计'] : null;      // 流动负债合计
+    var tl = lastBa ? lastBa['负债合计'] : null;          // 负债合计
+    var assets = lastBa ? lastBa['资产总计'] : null;      // 资产总计
+    var cash = lastBa ? lastBa['货币资金'] : null;        // 货币资金
+    var stDebt = lastBa ? lastBa['短期借款'] : null;      // 短期借款
+    var ltDebt = lastBa ? lastBa['长期借款'] : null;      // 长期借款
+    var bond = lastBa ? lastBa['应付债券'] : null;        // 应付债券
+    var intang = lastBa ? lastBa['无形资产'] : null;      // 无形资产
+    var goodwill = lastBa ? lastBa['商誉'] : null;        // 商誉
+    var netProfit = last ? last['净利润'] : null;
+    var debtr = last ? last['资产负债率'] : null;
+    var gMargin = last ? last['销售毛利率'] : null;
+    var nMargin = last ? last['销售净利率'] : null;
+    var intDebt = sum([stDebt, ltDebt, bond]);            // 有息负债合计（字段缺失视为 0，即无有息负债）
+    if (intDebt == null) intDebt = 0;
+    var netCash = (cash != null && intDebt != null) ? cash - intDebt : null; // 净现金
+    var ncav = (ca != null && tl != null) ? ca - tl : null;   // 净流动资产 NCAV
+    var wc = (ca != null && cl != null) ? ca - cl : null;     // 营运资本
+    var ltd = sum([ltDebt, bond]);                            // 长期有息负债（字段缺失视为 0）
+    if (ltd == null) ltd = 0;
+    var curRatio = (ca != null && cl != null && cl > 0) ? ca / cl : null;
+    var liqRatio = (ca != null && tl != null && tl > 0) ? ca / tl : null;
+    var pncav = (mcap != null && ncav != null && ncav > 0) ? mcap / ncav : null;
+    var pnetcash = (mcap != null && netCash != null && netCash > 0) ? mcap / netCash : null;
+    var pepb = (pe != null && pb != null) ? pe * pb : null;
+    var intangShare = (intang != null && assets != null && assets > 0) ? intang / assets : null;
+    var goodwillShare = (goodwill != null && assets != null && assets > 0) ? goodwill / assets : null;
+
+    // 近5年年报净利润（盈利稳定性）与近5年净利累计增长
+    var net5 = annual.slice(-5).map(function (r) { return r['净利润']; });
+    var posN = net5.filter(function (v) { return v != null && v > 0; }).length;
+    var grow5 = (net5.length >= 2 && net5[0] != null && net5[net5.length - 1] != null && net5[0] > 0)
+      ? net5[net5.length - 1] / net5[0] - 1 : null;
+
+    // ROE 近5年均值（披露口径）
+    var roeVals = va.dupont.map(function (r) { return r.roeReported; }).filter(function (v) { return v != null; });
+    var roe5 = roeVals.length ? sum(roeVals) / roeVals.length : null;
+
+    var basis = '评分基准：' + (lastYear ? lastYear + ' 年报' : '最新财报') +
+      (s.time ? ' + ' + fmtDate(s.time) + ' 收盘价/市值' : '');
+
+    // ---- 格雷厄姆 · 进取型烟蒂（net-net 净流动资产折价）----
+    var gA = [
+      it('价格/净流动资产（市值/NCAV）', pncav == null ? '-' : fmtNum(pncav) + '×', '≤ 0.67×（2/3 净流动资产）', 30, lerpScore(pncav, 0.67, 1.5, 30, 0)),
+      it('价格/净现金（市值/现金-有息负债）', pnetcash == null ? '-' : fmtNum(pnetcash) + '×', '≤ 1×', 20, lerpScore(pnetcash, 1, 2, 20, 0)),
+      it('流动资产/总负债', liqRatio == null ? '-' : fmtNum(liqRatio), '≥ 2（资产覆盖债务）', 20, lerpScore(liqRatio, 1, 2, 0, 20)),
+      it('最新年报净利润', fmtMoney(netProfit), '> 0（清算缓冲）', 15, netProfit != null && netProfit > 0 ? 15 : 0),
+      it('资产负债率', fmtPct(debtr), '≤ 60%', 10, lerpScore(debtr, 0.6, 0.8, 10, 0)),
+      it('连续分红年数', (divConsecutive || 0) + ' 年', '≥ 3 年', 5, divConsecutive >= 3 ? 5 : divConsecutive >= 1 ? 2.5 : 0)
+    ];
+    var gATotal = sum(gA.map(function (x) { return x.score; }));
+
+    // ---- 格雷厄姆 · 防御型烟蒂（《聪明的投资者》防御型标准）----
+    var gD = [
+      it('企业规模（总资产）', fmtMoney(assets), '≥ 30 亿', 10, lerpScore(assets, 1e9, 3e9, 0, 10)),
+      it('流动比率', fmtNum(curRatio), '≥ 2', 20, lerpScore(curRatio, 1, 2, 0, 20)),
+      it('长期有息负债 / 营运资本', (ltd == null ? '-' : fmtMoney(ltd)) + ' / ' + (wc == null ? '-' : fmtMoney(wc)), '长期负债 ≤ 营运资本', 20,
+        (ltd != null && wc != null && wc > 0) ? (ltd <= wc ? 20 : lerpScore(ltd / wc, 1, 2, 20, 0)) : null),
+      it('盈利稳定（近5年净利为正）', posN + '/5 年', '5 年全部为正', 15, posN >= 5 ? 15 : posN * 3),
+      it('连续分红年数', (divConsecutive || 0) + ' 年', '≥ 10 年', 15, Math.min(divConsecutive, 10) / 10 * 15),
+      it('近5年净利累计增长', fmtPct(grow5), '≥ 33%', 10, lerpScore(grow5, 0, 0.33, 0, 10)),
+      it('市盈率（TTM）', fmtNum(pe), '≤ 15', 5, lerpScore(pe, 15, 25, 5, 0)),
+      it('PE × PB', pepb == null ? '-' : fmtNum(pepb), '≤ 22.5', 5, pepb != null ? (pepb <= 22.5 ? 5 : (pepb <= 45 ? lerpScore(pepb, 22.5, 45, 5, 0) : 0)) : null)
+    ];
+    var gDTotal = sum(gD.map(function (x) { return x.score; }));
+
+    // ---- 施洛斯烟蒂（资产折扣 + 低估值 + 低负债 + 股息）----
+    var sItems = [
+      it('市净率', fmtNum(pb), '≤ 0.75（资产折扣）', 25, lerpScore(pb, 0.75, 1.5, 25, 0)),
+      it('市盈率（TTM）', fmtNum(pe), '≤ 10', 20, lerpScore(pe, 10, 20, 20, 0)),
+      it('流动资产/总负债', liqRatio == null ? '-' : fmtNum(liqRatio), '≥ 2', 20, lerpScore(liqRatio, 1, 2, 0, 20)),
+      it('股息率（近12月）', fmtPct(va.divYield), '≥ 3%', 15, lerpScore(va.divYield, 0, 0.03, 0, 15)),
+      it('最新年报净利润', fmtMoney(netProfit), '> 0', 10, netProfit != null && netProfit > 0 ? 10 : 0),
+      it('市值 / 流动资产', (mcap == null ? '-' : fmtMoney(mcap)) + ' / ' + (ca == null ? '-' : fmtMoney(ca)), '市值 ≤ 流动资产', 10,
+        (mcap != null && ca != null && ca > 0) ? (mcap <= ca ? 10 : lerpScore(mcap / ca, 1, 2, 10, 0)) : null)
+    ];
+    var sTotal = sum(sItems.map(function (x) { return x.score; }));
+
+    // ---- 巴菲特芒格（优质企业 + 护城河）----
+    var moatItems = [
+      it('销售毛利率', fmtPct(gMargin), '≥ 40%（定价权迹象）', 5, lerpScore(gMargin, 0.2, 0.4, 0, 5)),
+      it('ROE（近5年均值）', fmtPct(roe5), '≥ 15%', 4, lerpScore(roe5, 0.08, 0.15, 0, 4)),
+      it('无形资产+商誉 / 总资产', fmtPct((intangShare != null || goodwillShare != null) ? (intangShare || 0) + (goodwillShare || 0) : null), '≥ 10%（品牌/专利/特许权）', 3,
+        lerpScore((intangShare != null || goodwillShare != null) ? (intangShare || 0) + (goodwillShare || 0) : null, 0, 0.1, 0, 3)),
+      it('连续分红且分红率 ≤ 70%', (divConsecutive || 0) + ' 年 / ' + fmtPct(va.payout), '≥ 5 年且 ≤ 70%', 3,
+        divConsecutive >= 5 ? (va.payout != null && va.payout <= 0.7 ? 3 : 1.5) : 0)
+    ];
+    var bItems = [
+      it('ROE（近5年均值）', fmtPct(roe5), '≥ 15%', 25, lerpScore(roe5, 0.10, 0.15, 0, 25)),
+      it('销售净利率（最新年报）', fmtPct(nMargin), '≥ 10%', 15, lerpScore(nMargin, 0.05, 0.10, 0, 15)),
+      it('资产负债率', fmtPct(debtr), '≤ 50%', 15, lerpScore(debtr, 0.5, 0.75, 15, 0)),
+      it('5年累计净现比', fmtNum(va.ratio5), '≥ 1', 15, lerpScore(va.ratio5, 0.5, 1, 0, 15)),
+      it('净利润 5 年 CAGR', fmtPct(va.netCagr5), '≥ 10%', 15, lerpScore(va.netCagr5, 0, 0.1, 0, 15))
+    ];
+    var bTotal = sum(bItems.concat(moatItems).map(function (x) { return x.score; }));
+
+    // 护城河备注：无形资产/商誉明细 + 特许经营（定价权）证据说明
+    var moatNote = '';
+    if (intang != null || goodwill != null) {
+      moatNote = '无形资产 ' + fmtMoney(intang) + '（占总资产 ' + fmtPct(intangShare) + '），商誉 ' + fmtMoney(goodwill) + '（占 ' + fmtPct(goodwillShare) + '）。';
+      if (gMargin != null && gMargin >= 0.4 && roe5 != null && roe5 >= 0.15) {
+        moatNote += '高毛利率（≥40%）+ 高 ROE（≥15%）组合通常意味着品牌溢价或特许经营（定价权）等护城河，是无形资产创造超额回报的量化证据；若该特征为行业通性（如医药/软件），则更多体现行业属性而非个体优势，需结合行业地位判断。';
+      } else if (gMargin != null && gMargin >= 0.4 || roe5 != null && roe5 >= 0.15) {
+        moatNote += '毛利率或 ROE 单项突出，特许经营/品牌优势的证据不完全，需结合行业地位判断其可持续性。';
+      } else {
+        moatNote += '毛利率与 ROE 均未达强护城河量化线（40%/15%），暂未见品牌溢价或特许经营定价权证据。';
+      }
+      if (goodwillShare != null && goodwillShare > 0.2) moatNote += '商誉占比偏高（>20%），若增长依赖并购需警惕商誉减值风险。';
+      if (intangShare != null && intangShare > 0.3) moatNote += '无形资产占比较高（>30%），注意区分专利/特许经营权与土地使用权，前者才是定价权来源。';
+    } else {
+      moatNote = '最新年报未披露无形资产/商誉明细，无法量化评估特许经营资产。';
+    }
+
+    return {
+      basis: basis,
+      grahamAgg: { title: '进取型烟蒂 · net-net（低于净流动资产买入）', total: gATotal, items: gA,
+        note: '格雷厄姆 net-net 思路：以低于净流动资产（流动资产-全部负债）2/3 的价格买入，赚取清算价值与市价之差。得分越高代表越接近“捡烟蒂”状态。' },
+      grahamDef: { title: '防御型烟蒂 · 防御型投资者标准', total: gDTotal, items: gD,
+        note: '对应《聪明的投资者》第 14 章防御型投资者选股标准（规模/流动比率/长期负债/盈利稳定/分红历史/盈利增长/估值），阈值已按 A 股现状微调。' },
+      schloss: { title: '施洛斯烟蒂 · 资产折扣+低估值+低负债', total: sTotal, items: sItems,
+        note: '沃尔特·施洛斯风格：以低于净资产/流动资产的价格买入、负债极低、有股息，分散持有等待价值回归。' },
+      buffett: { title: '巴菲特芒格 · 优质企业合理价格+护城河', total: bTotal, items: bItems.concat(moatItems),
+        note: moatNote }
+    };
+  }
+
+  // 渲染四大评分卡（格雷厄姆进取/防御、施洛斯、巴菲特芒格）
+  function renderScores(sc) {
+    var cards = [
+      ['stock-score-graham-agg', sc.grahamAgg],
+      ['stock-score-graham-def', sc.grahamDef],
+      ['stock-score-schloss', sc.schloss],
+      ['stock-score-buffett', sc.buffett]
+    ];
+    cards.forEach(function (pair) {
+      var el = $(pair[0]);
+      if (el) el.innerHTML = scoreCard(pair[1].title, sc.basis, pair[1].total, pair[1].items, pair[1].note);
+    });
+  }
+
+  // 模块锚点导航：平滑滚动（避免与 #/code 路由冲突）
+  function bindVaNav() {
+    document.querySelectorAll('.va-nav a').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var el = $(a.getAttribute('data-scroll'));
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
   }
 
   // 每股派息柱状图 + 净现比柱状图（renderDetail 时重建实例，随 state.charts 统一销毁）
