@@ -81,9 +81,9 @@ def parse_number(value):
 
 
 def to_iso(date_value) -> str:
-    """'20251231' / '2025-12-31' → '2025-12-31'；无法识别原样返回"""
+    """'20251231' / '2025-12-31' → '2025-12-31'；无法识别原样返回；NaN/NaT → None"""
     s = str(date_value).strip()
-    if not s:
+    if not s or s.lower() in ("nan", "nat", "none"):
         return None
     digits = s.replace("-", "").replace("/", "")
     if len(digits) == 8 and digits.isdigit():
@@ -193,14 +193,32 @@ def fetch_report(code: str, kind: str):
 
 
 def fetch_info(code: str):
-    """东财个股基本信息；失败时返回空 dict（不影响整体流程）"""
+    """个股基本信息：优先东财，失败时用巨潮 profile 兜底（提供行业）；
+    两者都失败时抛异常，由调用方记录到 errors（不静默吞掉）。"""
     try:
         df = ak.stock_individual_info_em(symbol=code)
-        if df is None or df.empty:
-            return {}
-        return {str(r["item"]): r["value"] for _, r in df.iterrows()}
+        if df is not None and not df.empty:
+            return {str(r["item"]): r["value"] for _, r in df.iterrows()}
     except Exception:
-        return {}
+        pass
+    try:
+        df = ak.stock_profile_cninfo(symbol=code)
+        if df is not None and not df.empty:
+            row = df.iloc[0]
+            info = {}
+            if row.get("所属行业") is not None:
+                info["行业"] = str(row["所属行业"]).strip()
+            if row.get("A股简称") is not None:
+                info["股票简称"] = str(row["A股简称"]).strip()
+            if row.get("上市日期") is not None:
+                info["上市日期"] = to_iso(str(row["上市日期"])[:10])
+            return info
+    except Exception:
+        pass
+    raise RuntimeError("东财/巨潮基本信息接口均不可用")
+
+
+# 东财/巨潮的“行业”字段值（如“汽车制造业”）为证监会行业分类，原样保留即可
 
 
 def iso_or_none(v):
@@ -216,15 +234,18 @@ def iso_or_none(v):
 
 
 def format_quote_time(raw):
-    """腾讯行情时间 '20260807161442' → ISO 格式"""
+    """行情时间 → ISO：A 股 '20260807161442' / 港股 '2026/08/21 16:08:14'"""
     s = str(raw).strip()
     if len(s) == 14 and s.isdigit():
         return f"{s[:4]}-{s[4:6]}-{s[6:8]}T{s[8:10]}:{s[10:12]}:{s[12:14]}+08:00"
+    m = re.match(r"(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})", s)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}T{m.group(4)}:{m.group(5)}:{m.group(6)}+08:00"
     return None
 
 
 def fetch_snapshot(code: str):
-    """最新估值快照：腾讯行情接口（最新价/涨跌幅/PE/PB/市值/换手率）"""
+    """最新估值快照：腾讯行情接口（最新价/涨跌幅/PE/PB/市值/换手率），A 股专用"""
     url = f"http://qt.gtimg.cn/q={sina_symbol(code)}"
     r = requests.get(url, timeout=10)
     r.encoding = "gbk"
@@ -252,6 +273,242 @@ def fetch_snapshot(code: str):
         "time": format_quote_time(parts[30]),
     }
     return snapshot
+
+
+# ==================== 港股数据源（东财港股 + 腾讯行情） ====================
+# 东财港股三大报表为长表（每行一个科目），科目名按 IFRS 口径，映射回前端 A 股字段名。
+# 注意：东财已把各公司财年末统一映射为 12-31 报告期，与 A 股 schema 完全对齐。
+
+# 资产负债表科目映射：东财科目名 → 前端字段（未列出的科目保留原名）
+HK_BALANCE_MAP = {
+    "流动资产合计": "流动资产合计",
+    "流动负债合计": "流动负债合计",
+    "总负债": "负债合计",
+    "总资产": "资产总计",
+    "现金及等价物": "货币资金",
+    "无形资产": "无形资产",
+    "商誉": "商誉",
+    "短期贷款": "短期借款",
+    "长期贷款": "长期借款",
+    "融资租赁负债(非流动)": "租赁负债",
+    "股东权益": "所有者权益(或股东权益)合计",
+}
+
+# 利润表科目映射
+HK_INCOME_MAP = {
+    "营业额": "营业总收入",
+    "营运收入": "营业收入",
+    "股东应占溢利": "净利润",
+    "毛利": "营业利润",
+    "税项": "所得税费用",
+}
+
+# 现金流量表科目映射（港股无“销售商品提供劳务收到的现金”，收现比留空）
+HK_CASHFLOW_MAP = {
+    "经营业务现金净额": "经营活动产生的现金流量净额",
+    "购建固定资产": "购建固定资产、无形资产和其他长期资产所支付的现金",
+    "购建无形资产及其他资产": "购建无形资产及其他资产支付的现金",
+    "期末现金": "期末现金及现金等价物余额",
+}
+
+# 东财港股分析指标（英文列）→ 前端 indicators 字段；比率类为百分数数值需 /100
+HK_IND_MAP = {
+    "OPERATE_INCOME": "营业总收入",
+    "HOLDER_PROFIT": "净利润",
+    "BASIC_EPS": "基本每股收益",
+    "BPS": "每股净资产",
+}
+HK_IND_PCT = {
+    "GROSS_PROFIT_RATIO": "销售毛利率",
+    "NET_PROFIT_RATIO": "销售净利率",
+    "ROE_AVG": "净资产收益率",
+    "ROA": "总资产净利率",
+    "DEBT_ASSET_RATIO": "资产负债率",
+}
+
+
+def _pct(v):
+    """百分数数值（50.87）→ 小数（0.5087）"""
+    n = parse_number(v)
+    return None if n is None else round(n / 100.0, 4)
+
+
+def fetch_hk_report(code: str, kind: str, item_map: dict):
+    """东财港股三大报表：长表（科目×金额）→ 宽表（报告日 × 字段），按报告日倒序"""
+    df = ak.stock_financial_hk_report_em(stock=code, symbol=kind)
+    if df is None or df.empty:
+        return []
+    by_date = {}
+    for _, r in df.iterrows():
+        dt = to_iso(str(r["REPORT_DATE"])[:10])
+        if not dt:
+            continue
+        item = item_map.get(str(r["STD_ITEM_NAME"]).strip(), str(r["STD_ITEM_NAME"]).strip())
+        val = parse_number(r["AMOUNT"])
+        by_date.setdefault(dt, {})[item] = val
+    records = [{"报告日": dt, **fields} for dt, fields in by_date.items()]
+    records.sort(key=lambda r: r["报告日"], reverse=True)
+    return records[:MAX_PERIODS]
+
+
+def fetch_hk_indicators(code: str):
+    """东财港股财务分析指标：映射为前端 indicators 字段，含单季还原（累计差），按报告期倒序"""
+    df = ak.stock_financial_hk_analysis_indicator_em(symbol=code)
+    if df is None or df.empty:
+        return []
+    df = df.copy()
+    df = df.sort_values("REPORT_DATE", ascending=True).reset_index(drop=True)
+    rows = []
+    for _, r in df.iterrows():
+        rec = {"报告期": to_iso(str(r["REPORT_DATE"])[:10])}
+        for en, zh in HK_IND_MAP.items():
+            rec[zh] = parse_number(r[en])
+        for en, zh in HK_IND_PCT.items():
+            rec[zh] = _pct(r[en])
+        rec["流动比率"] = parse_number(r["CURRENT_RATIO"])
+        rows.append(rec)
+    # 单季还原：本期累计 - 上期累计（港股无 A 股式一季报特例，统一按累计差）
+    for col in ("营业总收入", "净利润"):
+        for i, rec in enumerate(rows):
+            cum = rec[col]
+            if i == 0:
+                rec[col + "_单季"] = None
+            else:
+                prev = rows[i - 1][col]
+                rec[col + "_单季"] = None if (cum is None or prev is None) else round(cum - prev, 4)
+    rows = rows[-MAX_PERIODS:]
+    return rows[::-1]
+
+
+def fetch_hk_snapshot(code: str):
+    """港股快照：腾讯行情（价格/涨跌幅/时间）+ 东财指标（PE/PB/市值）
+
+    腾讯港股字段与 A 股不同：3=最新价、30=时间、31=涨跌额、32=涨跌幅、44=流通市值(亿港元)、45=总市值(亿港元)
+    """
+    url = f"http://qt.gtimg.cn/q=hk{code}"
+    r = requests.get(url, timeout=10)
+    r.encoding = "gbk"
+    parts = r.text.strip().split(";")[0].split("~")
+    if len(parts) < 40:
+        return {}
+
+    def num(i):
+        try:
+            return float(parts[i])
+        except (ValueError, IndexError):
+            return None
+
+    snapshot = {
+        "name": parts[1].strip() or None,
+        "price": num(3),
+        "change_pct": None if num(32) is None else round(num(32) / 100.0, 6),
+        "time": format_quote_time(parts[30]),
+    }
+    try:
+        df = ak.stock_hk_financial_indicator_em(symbol=code)
+        if df is not None and not df.empty:
+            row = df.iloc[0]
+            snapshot["pe_ttm"] = parse_number(row["市盈率"])
+            snapshot["pb"] = parse_number(row["市净率"])
+            snapshot["market_cap"] = parse_number(row["总市值(港元)"])
+            snapshot["float_market_cap"] = None if num(44) is None else round(num(44) * 1e8, 2)
+            snapshot["turnover_rate"] = None
+    except Exception:
+        snapshot["pe_ttm"] = None
+        snapshot["pb"] = None
+        snapshot["market_cap"] = None
+        snapshot["float_market_cap"] = None
+        snapshot["turnover_rate"] = None
+    return snapshot
+
+
+def fetch_hk_dividends(code: str):
+    """东财港股分红：方案文本解析每股派息 → 每10股口径，日期统一 ISO"""
+    df = ak.stock_hk_dividend_payout_em(symbol=code)
+    if df is None or df.empty:
+        return []
+    records = []
+    for _, row in df.iterrows():
+        plan = str(row["分红方案"]).strip()
+        bonus = None
+        m = re.search(r"每股派(?:人民币|港币)?([\d.]+)元", plan)
+        if m:
+            bonus = round(float(m.group(1)) * 10, 4)  # 每股 → 每10股
+        else:
+            m = re.search(r"每10股派(?:人民币|港币)?([\d.]+)元", plan)
+            if m:
+                bonus = round(float(m.group(1)), 4)
+        kind = str(row["分配类型"]).strip()
+        annual = ("年度" in kind) or ("末期" in kind)
+        rec_date = str(row["截至过户日"]).strip() if row["截至过户日"] else ""
+        rec_date = to_iso(rec_date.split("-")[0].split("至")[0]) if rec_date else None
+        records.append(
+            {
+                "year": str(row["财政年度"]).strip() + ("年报" if annual else "中报"),
+                "type": "年度分红" if annual else "中期分红",
+                "announce_date": iso_or_none(str(row["最新公告日期"])[:10]),
+                "record_date": rec_date,
+                "ex_date": iso_or_none(str(row["除净日"])[:10]),
+                "pay_date": iso_or_none(str(row["发放日"])[:10]),
+                "bonus_per_10": bonus,
+                "transfer_per_10": None,
+                "description": plan,
+            }
+        )
+    records.sort(key=lambda r: r["announce_date"] or "", reverse=True)
+    return records
+
+
+def fetch_company_hk(code: str, name: str):
+    """抓取港股公司：指标/三大报表/快照/分红（东财 + 腾讯）；无定期报告 PDF 与审计信息"""
+    result = {"code": code, "name": name, "market": "HK"}
+    result["updated_at"] = datetime.now(CN_TZ).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+    errors = []
+    result["info"] = {}  # 东财港股无行业信息，留空
+
+    try:
+        result["indicators"] = fetch_hk_indicators(code)
+    except Exception as e:
+        result["indicators"] = []
+        errors.append(f"indicators: {e}")
+    sleep_between()
+
+    for key, kind, item_map in (
+        ("income", "利润表", HK_INCOME_MAP),
+        ("balance", "资产负债表", HK_BALANCE_MAP),
+        ("cashflow", "现金流量表", HK_CASHFLOW_MAP),
+    ):
+        try:
+            result[key] = fetch_hk_report(code, kind, item_map)
+        except Exception as e:
+            result[key] = []
+            errors.append(f"{key}: {e}")
+        sleep_between()
+
+    # 归母权益 = 股东权益 - 少数股东权益（杜邦拆解口径）
+    for rec in result["balance"]:
+        eq = rec.get("所有者权益(或股东权益)合计")
+        mi = rec.get("少数股东权益")
+        if eq is not None and mi is not None:
+            rec["归属于母公司股东权益合计"] = round(eq - mi, 4)
+
+    try:
+        result["snapshot"] = fetch_hk_snapshot(code)
+    except Exception as e:
+        result["snapshot"] = {}
+        errors.append(f"snapshot: {e}")
+    sleep_between()
+
+    try:
+        result["dividends"] = fetch_hk_dividends(code)
+    except Exception as e:
+        result["dividends"] = []
+        errors.append(f"dividends: {e}")
+    sleep_between()
+
+    result["reports"] = []  # 港股无巨潮定期报告，前端已容错
+    result["errors"] = errors if errors else None
+    return result
 
 
 def fetch_dividends(code: str):
@@ -472,8 +729,15 @@ def fetch_reports(code: str):
     return reports[: MAX_PERIODS * 2]
 
 
-def fetch_company(code: str, name: str):
-    """抓取单家公司全部数据，失败项单独降级，不中断"""
+def fetch_company(code: str, name: str, market: str = "A"):
+    """按市场分流：A 股走同花顺/新浪/巨潮，港股走东财港股接口"""
+    if market == "HK":
+        return fetch_company_hk(code, name)
+    return fetch_company_a(code, name)
+
+
+def fetch_company_a(code: str, name: str):
+    """抓取 A 股单家公司全部数据，失败项单独降级，不中断"""
     result = {"code": code, "name": name}
     result["updated_at"] = datetime.now(CN_TZ).strftime("%Y-%m-%dT%H:%M:%S+08:00")
     errors = []
@@ -556,15 +820,20 @@ def main():
 
     index_items = []
     failed = []
-    for i, (code, name) in enumerate(companies, 1):
-        print(f"[{i}/{len(companies)}] {code} {name} ...", flush=True)
+    for i, item in enumerate(companies, 1):
+        if len(item) >= 3:
+            code, name, market = item[0], item[1], item[2]
+        else:  # 兼容旧的两元组配置
+            code, name, market = item[0], item[1], "A"
+        print(f"[{i}/{len(companies)}] {code} {name} [{market}] ...", flush=True)
         try:
-            data = fetch_company(code, name)
+            data = fetch_company(code, name, market)
             save_json(COMPANIES_DIR / f"{code}.json", data)
             index_items.append(
                 {
                     "code": code,
                     "name": name,
+                    "market": market,
                     "industry": (data.get("info") or {}).get("行业"),
                     "updated_at": data["updated_at"],
                 }

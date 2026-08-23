@@ -128,7 +128,8 @@
   }
 
   function route() {
-    var m = location.hash.match(/^#\/(\d{6})$/);
+    // 5~6 位代码：港股 5 位（00696），A 股 6 位（600873）
+    var m = location.hash.match(/^#\/(\d{5,6})$/);
     if (m) {
       // 进入详情前记录列表滚动位置，返回时恢复
       state.listScroll = window.scrollY;
