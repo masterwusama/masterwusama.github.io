@@ -436,3 +436,49 @@
 @media (max-width: 600px) {
   .stock-grid { grid-template-columns: 1fr; }
 }
+
+/* ---- 价值分析（股东回报/现金流/杜邦/成长/体检） ---- */
+.va-snapshot {
+  margin-bottom: 14px;
+}
+
+/* 体检清单：四列（指标/当前值/标准/状态） */
+.va-health td {
+  text-align: left !important;
+}
+
+.va-health td:first-child {
+  white-space: normal;
+}
+
+.va-health td.k {
+  background: #fafafa;
+  color: #555;
+  font-weight: 600;
+}
+
+.va-badge {
+  display: inline-block;
+  font-size: 12px;
+  border-radius: 3px;
+  padding: 1px 10px;
+  white-space: nowrap;
+}
+
+.va-pass {
+  background: #e6f7ec;
+  color: #1a7f37;
+  border: 1px solid #b7e3c8;
+}
+
+.va-fail {
+  background: #fdeeee;
+  color: #c0392b;
+  border: 1px solid #f2c1bc;
+}
+
+.va-na {
+  background: #f4f4f4;
+  color: #999;
+  border: 1px solid #e0e0e0;
+}
