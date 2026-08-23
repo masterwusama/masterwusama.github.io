@@ -72,8 +72,11 @@ PRODUCTS = [
         'id': 'p-nitrochlorobenzene', 'name': '对硝基氯化苯', 'category': '中间体', 'spec': '99%',
         'primary': 'sunsirs',
         'sunsirs_seed': 'https://www.100ppi.com/news/detail-20260708-5891252.html',
-        # (商品ID, 页面显示名)：2345 页叫"对硝基氯苯"，1535 页叫"对硝基氯化苯"
-        'mprice_ids': [(2345, '对硝基氯苯'), (1535, '对硝基氯化苯')],
+        # (商品ID, 页面显示名)：2345"对硝基氯苯"、1535"对硝基氯化苯"、
+        # 2364"对氯硝基苯"（同一化合物 CAS 100-00-5 的别名命名）
+        'mprice_ids': [(2345, '对硝基氯苯'), (1535, '对硝基氯化苯'), (2364, '对氯硝基苯')],
+        # 多交易商报价全部按日取中位数合并（默认只取样本最多的单一交易商）
+        'merge_all_traders': True,
     },
 ]
 
@@ -305,6 +308,30 @@ def parse_sunsirs_mprice(html, names):
     return results
 
 
+def filter_outlier_traders(rows):
+    """剔除价格口径系统性偏离的交易商（离群价混入其他规格）
+
+    以该商品全量价格中位数为基准，某交易商自身价格中位数偏差超过 25%
+    且样本 >= 3 条时视为混入其他规格（如对硝基氯苯页面混入高纯规格
+    14000 元/吨 vs 主流 8800），整组剔除。
+    """
+    if len(rows) < 3:
+        return rows
+    med = sorted(r['price'] for r in rows)[len(rows) // 2]
+    if not med:
+        return rows
+    groups = {}
+    for r in rows:
+        groups.setdefault(r.get('note') or '', []).append(r)
+    keep = []
+    for grp in groups.values():
+        gmed = sorted(r['price'] for r in grp)[len(grp) // 2]
+        if len(grp) >= 3 and abs(gmed - med) / med > 0.25:
+            continue
+        keep.extend(grp)
+    return keep
+
+
 def fetch_sunsirs(product):
     """抓某品种在生意社的全部历史报价（detail 文章 + mprice 最新表格）"""
     prices = []
@@ -321,19 +348,24 @@ def fetch_sunsirs(product):
                     print('  [warn] %s 抓取失败 %s: %r' % (product['name'], u, e))
         except Exception as e:  # noqa: BLE001
             print('  [warn] %s 栏目定位失败: %r' % (product['name'], e))
+    mprice_rows = []
     for pid, mname in product.get('mprice_ids', []):
-        for page in range(1, 4):
+        # 翻 5 页：部分商品历史 > 3 页（如对硝基氯苯 2345 有 4 页 110 行）
+        for page in range(1, 6):
             try:
                 u = 'https://www.100ppi.com/mprice/plist-1-%d-%d.html' % (pid, page)
                 html = fetch(u, referer='https://www.100ppi.com/mprice/')
                 rows = parse_sunsirs_mprice(html, [mname])
                 if not rows:
                     break
-                prices.extend(rows)
+                mprice_rows.extend(rows)
                 time.sleep(SLEEP)
             except Exception as e:  # noqa: BLE001
                 print('  [warn] %s mprice 抓取失败: %r' % (product['name'], e))
                 break
+    # 离群交易商过滤：避免混入其他规格的报价污染按日聚合中位数
+    mprice_rows = filter_outlier_traders(mprice_rows)
+    prices += mprice_rows
     for p in prices:
         p['source'] = 'sunsirs'
     return prices
@@ -397,14 +429,20 @@ def median_by_date(items):
     for date in sorted(by_date):
         day_items = by_date[date]
         vals = sorted(x['price'] for x in day_items)
+        # 偶数样本取平均（上中位数会把稀疏日少数高价拉成突变尖峰）
+        n = len(vals)
+        if n % 2 == 0:
+            med = (vals[n // 2 - 1] + vals[n // 2]) / 2.0
+        else:
+            med = vals[n // 2]
         # source/note 取当日样本最多的（防混合源时元数据污染）
         src = Counter(x.get('source') for x in day_items).most_common(1)[0][0]
         nt = Counter(x.get('note', '') for x in day_items).most_common(1)[0][0]
-        out.append({'date': date, 'price': vals[len(vals) // 2], 'source': src, 'note': nt})
+        out.append({'date': date, 'price': med, 'source': src, 'note': nt})
     return out
 
 
-def merge_prices(existing, fresh, primary, exclude_sources=()):
+def merge_prices(existing, fresh, primary, exclude_sources=(), merge_all_traders=False):
     """合并多条报价为时间序列
 
     primary 决定主序列来源：
@@ -413,7 +451,8 @@ def merge_prices(existing, fresh, primary, exclude_sources=()):
                    bug 产生的错误值残留）；其余源只填主序列时间范围之外。
       'sunsirs'  : 生意社按交易商分组取样本最多的交易商作主序列（增量抓取，
                    existing+fresh 累积），同一天多条再取中位数；其余源只填主序列
-                   时间范围之外。
+                   时间范围之外。merge_all_traders=True 时不做交易商分组，全部
+                   报价按日取中位数（多交易商口径差异小于离群阈值时更稳健）。
     其他源（3456.tv 等）仅在主序列时间范围外做历史/近期补充，避免不同口径
     来源在同一时间段交错造成假突变。3456.tv 行情 2025 年已停更，晚于
     2025-12-31 的日期为页面误提取，一律剔除。exclude_sources 中的源直接弃用
@@ -424,7 +463,16 @@ def merge_prices(existing, fresh, primary, exclude_sources=()):
     if primary == 'sino-agri':
         main_items = [p for p in (fresh or []) if p.get('source') == main_src]
     else:
-        main_items = [p for p in all_p if p.get('source') == main_src]
+        # 主序列以本轮 fresh 为准（防旧聚合值重复参与聚合），
+        # existing 只补 fresh 未覆盖的更早历史（增量翻页限页时靠旧文件积累）
+        fresh_items = [p for p in (fresh or []) if p.get('source') == main_src]
+        if fresh_items:
+            lo = min(p['date'] for p in fresh_items)
+            existing_main = [p for p in (existing or [])
+                             if p.get('source') == main_src and p.get('date', '') < lo]
+            main_items = fresh_items + existing_main
+        else:
+            main_items = [p for p in all_p if p.get('source') == main_src]
     legacy = [p for p in all_p
               if p.get('source') != main_src and p.get('source') not in exclude_sources
               and not (p.get('source') == '3456tv' and p.get('date', '') > '2025-12-31')]
@@ -432,6 +480,8 @@ def merge_prices(existing, fresh, primary, exclude_sources=()):
     main_series = []
     if main_items:
         if primary == 'sino-agri':
+            main_series = median_by_date(main_items)
+        elif merge_all_traders:
             main_series = median_by_date(main_items)
         else:
             groups = {}
@@ -483,7 +533,8 @@ def main():
             fresh += s
 
         old_prices = old.get(pid, {}).get('prices', [])
-        merged = merge_prices(old_prices, fresh, p['primary'], p.get('exclude_sources', ()))
+        merged = merge_prices(old_prices, fresh, p['primary'], p.get('exclude_sources', ()),
+                              p.get('merge_all_traders', False))
         result_products.append({
             'id': pid,
             'name': p['name'],
