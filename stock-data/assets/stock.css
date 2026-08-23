@@ -433,8 +433,9 @@
   padding: 1px 8px;
 }
 
-@media (max-width: 600px) {
-  .stock-grid { grid-template-columns: 1fr; }
+/* 锚点跳转到模块时,给吸顶导航让出高度,避免遮挡模块标题 */
+.va-module {
+  scroll-margin-top: 54px;
 }
 
 /* ---- 价值分析（股东回报/现金流/杜邦/成长/体检） ---- */
@@ -638,4 +639,110 @@
 
 .sc-na {
   color: #9aa5b5;
+}
+
+/* ---- 列表页评分排序工具栏与分数徽章 ---- */
+.s-sort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 14px;
+}
+
+.s-sort button {
+  font-size: 12px;
+  color: #4a6076;
+  background: #f3f6fa;
+  border: 1px solid #e3e8f0;
+  border-radius: 14px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.s-sort button:hover {
+  color: #2b7bd4;
+  border-color: #2b7bd4;
+}
+
+.s-sort button.active {
+  background: #2b7bd4;
+  border-color: #2b7bd4;
+  color: #fff;
+}
+
+.s-sort-hint {
+  font-size: 12px;
+  color: #999;
+}
+
+.s-scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.s-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #666;
+  background: #f7f8fa;
+  border: 1px solid #e8ecf2;
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.s-score b {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-score.s-good b { color: #1e7e44; }
+.s-score.s-mid b { color: #3f7fd9; }
+.s-score.s-low b { color: #b07a10; }
+.s-score.s-bad b { color: #c0392b; }
+.s-score.s-na b { color: #9aa5b5; }
+
+/* 当前排序标准高亮 */
+.s-score.s-active {
+  border-color: #2b7bd4;
+  background: #eef4ff;
+}
+
+/* ---- 小屏适配（必须放在所有基础规则之后，避免同特异性规则被后定义覆盖） ---- */
+@media (max-width: 600px) {
+  .stock-grid { grid-template-columns: 1fr; }
+
+  /* 模块导航：单行横向滑动，避免换行成多行挤压内容区 */
+  .va-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .va-nav::-webkit-scrollbar { display: none; }
+
+  .va-nav a { flex: none; }
+
+  /* 估值快照：固定 2 列，避免 3 列时格子过窄导致数值换行 */
+  .stock-snapshot { grid-template-columns: repeat(2, 1fr); }
+
+  /* 评分卡：窄屏每张卡独占一行，标题自适应换行、圆徽不压缩 */
+  .score-card { flex: 1 1 100%; }
+
+  .score-card-head { align-items: flex-start; }
+
+  .score-card-head h4 {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.5;
+  }
+
+  /* 评分卡明细表格保持横向滚动（.stock-compare 已有 min-width + overflow） */
+  .score-card .stock-compare-wrap { margin-top: 8px; }
 }

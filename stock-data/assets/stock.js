@@ -8,7 +8,8 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var state = { companies: [], current: null, charts: [], view: 'year',
-    indexUpdatedAt: null, listScroll: 0, keyword: '' };
+    indexUpdatedAt: null, listScroll: 0, keyword: '',
+    scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc' };
 
   // 10年期国债收益率参考值（用于股债利差对比，需手动定期更新）
   var BOND_10Y = 0.017;
@@ -145,13 +146,27 @@
   function showList() {
     if (!state.companies.length) { fetchIndex(); return; }
     show('stock-list');
+    renderList();
+    // 预载全部公司数据并计算三大流派评分（异步填充，缓存复用进详情页）
+    if (!state.scoresLoaded) fetchScores();
+  }
+
+  // 渲染列表（搜索过滤 + 评分排序 + 分数徽章），重建 DOM 后重新绑定交互
+  function renderList() {
     var box = $('stock-list');
     var kw = (state.keyword || '').trim().toLowerCase();
+    var list = sortCompanies();
     var html = '<div class="stock-search-wrap">' +
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>';
+    html += '<div class="s-sort">' +
+      sortBtn('grahamAgg', '格·进取') +
+      sortBtn('grahamDef', '格·防御') +
+      sortBtn('schloss', '施洛斯') +
+      sortBtn('buffett', '巴菲特') +
+      '<span class="s-sort-hint">点击按评分排序，再点同标准切换升/降序</span></div>';
     html += '<div class="stock-grid">';
-    state.companies.forEach(function (c) {
+    list.forEach(function (c) {
       var k = (c.name + ' ' + c.code).toLowerCase();
       if (kw && k.indexOf(kw) < 0) return;
       html +=
@@ -159,7 +174,8 @@
         'onclick="location.hash=\'#/' + c.code + '\'">' +
         '<div><span class="s-name">' + c.name + '</span><span class="s-code">' + c.code + '</span>' +
         (c.industry ? '<span class="s-industry">' + c.industry + '</span>' : '') +
-        '</div></div>';
+        '</div>' + scoreBadges(state.scores[c.code] || null) +
+        '</div>';
     });
     html += '</div>';
     html += '<div class="stock-hint" id="stock-search-empty" style="display:none">未找到匹配的公司</div>';
@@ -180,6 +196,20 @@
       $('stock-search-empty').style.display = shown ? 'none' : '';
     });
 
+    // 评分排序：首次点击按该标准降序（高分在前），再点同标准切换升/降
+    box.querySelectorAll('.s-sort button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var k = btn.getAttribute('data-sort');
+        if (state.sortKey === k) {
+          state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sortKey = k;
+          state.sortDir = 'desc';
+        }
+        renderList();
+      });
+    });
+
     // 键盘可达：Enter/空格进入详情
     box.querySelectorAll('.stock-card').forEach(function (card) {
       card.addEventListener('keydown', function (e) {
@@ -192,6 +222,76 @@
 
     // 从详情返回时恢复滚动位置
     if (state.listScroll) window.scrollTo(0, state.listScroll);
+  }
+
+  /* ---------------- 列表评分预载与排序 ---------------- */
+
+  // 排序按钮 HTML（当前选中标准高亮并显示升降箭头）
+  function sortBtn(key, label) {
+    var active = state.sortKey === key;
+    return '<button data-sort="' + key + '"' + (active ? ' class="active"' : '') + '>' +
+      label + (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</button>';
+  }
+
+  // 按当前排序标准返回公司列表（无排序时保持原顺序；缺分排最后）
+  function sortCompanies() {
+    var key = state.sortKey;
+    if (!key) return state.companies.slice();
+    var arr = state.companies.slice().sort(function (a, b) {
+      var sa = state.scores[a.code] ? state.scores[a.code][key] : null;
+      var sb = state.scores[b.code] ? state.scores[b.code][key] : null;
+      if (sa == null && sb == null) return 0;
+      if (sa == null) return 1;
+      if (sb == null) return -1;
+      return sa - sb;
+    });
+    if (state.sortDir === 'desc') arr.reverse();
+    return arr;
+  }
+
+  // 单张卡片评分徽章（2×2 网格，颜色随等级，当前排序标准高亮）
+  function scoreBadges(sc) {
+    var defs = [
+      ['grahamAgg', '格进取', '格雷厄姆·进取型烟蒂'],
+      ['grahamDef', '格防御', '格雷厄姆·防御型烟蒂'],
+      ['schloss', '施洛斯', '施洛斯烟蒂'],
+      ['buffett', '巴菲特', '巴菲特芒格']
+    ];
+    return '<div class="s-scores">' + defs.map(function (d) {
+      var v = sc ? sc[d[0]] : null;
+      var g = gradeOf(v);
+      var active = state.sortKey === d[0] ? ' s-active' : '';
+      return '<span class="s-score s-' + g + active + '" title="' + d[2] + '评分：' +
+        (v == null ? '数据不足' : fmtNum(v)) + ' 分">' + d[1] +
+        ' <b>' + (v == null ? '-' : fmtNum(v)) + '</b></span>';
+    }).join('') + '</div>';
+  }
+
+  // 并行预载全部公司详细数据并计算四大评分（渐进填充；数据缓存供详情页复用）
+  function fetchScores() {
+    state.scoresLoaded = true;
+    state.companies.forEach(function (c) {
+      fetch(DATA_BASE + 'companies/' + c.code + '.json')
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (d) {
+          state.details[c.code] = d;
+          try {
+            var v = valueScores(d, valueAnalysis(d));
+            state.scores[c.code] = {
+              grahamAgg: v.grahamAgg.total, grahamDef: v.grahamDef.total,
+              schloss: v.schloss.total, buffett: v.buffett.total
+            };
+          } catch (e) { /* 单家计算失败不影响其他公司 */ }
+          fillCardScores(c.code);
+        })
+        .catch(function () { /* 单家加载失败跳过 */ });
+    });
+  }
+
+  // 单张卡片渐进补充分数徽章（不重建整个列表）
+  function fillCardScores(code) {
+    var card = document.querySelector('.stock-card[data-code="' + code + '"]');
+    if (card) card.querySelector('.s-scores').outerHTML = scoreBadges(state.scores[code] || null);
   }
 
   function fetchIndex() {
@@ -210,13 +310,18 @@
   /* ---------------- 公司详情 ---------------- */
 
   function showDetail(code) {
+    // 列表页已预载过该公司数据（评分预载），直接复用免重复下载
+    if (state.details[code]) { renderDetail(state.details[code]); return; }
     show('stock-loading');
     fetch(DATA_BASE + 'companies/' + code + '.json')
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
-      .then(function (d) { renderDetail(d); })
+      .then(function (d) {
+        state.details[code] = d;
+        renderDetail(d);
+      })
       .catch(function () { fail('公司数据加载失败：' + code); });
   }
 
@@ -545,7 +650,7 @@
     if (roeVals.length) roe3 = sum(roeVals.slice(-3)) / Math.min(3, roeVals.length);
     var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
     var cash = lastBa ? lastBa['货币资金'] : null;
-    var debt = lastBa ? [lastBa['短期借款'], lastBa['长期借款'], lastBa['应付债券']] : [];
+    var debt = lastBa ? [lastBa['短期借款'], lastBa['一年内到期的非流动负债'], lastBa['长期借款'], lastBa['应付债券'], lastBa['租赁负债']] : [];
     var netCash = (cash != null && sum(debt) != null) ? cash - sum(debt) : null;
     var lastLb = last ? last['资产负债率'] : null;
     var lastCr = last ? last['流动比率'] : null;
@@ -706,18 +811,22 @@
     var stDebt = lastBa ? lastBa['短期借款'] : null;      // 短期借款
     var ltDebt = lastBa ? lastBa['长期借款'] : null;      // 长期借款
     var bond = lastBa ? lastBa['应付债券'] : null;        // 应付债券
+    var due1y = lastBa ? lastBa['一年内到期的非流动负债'] : null; // 一年内到期的长贷/债券/租赁重分类
+    var lease = lastBa ? lastBa['租赁负债'] : null;       // 租赁负债（新租赁准则表内化的分期付款）
     var intang = lastBa ? lastBa['无形资产'] : null;      // 无形资产
     var goodwill = lastBa ? lastBa['商誉'] : null;        // 商誉
     var netProfit = last ? last['净利润'] : null;
     var debtr = last ? last['资产负债率'] : null;
     var gMargin = last ? last['销售毛利率'] : null;
     var nMargin = last ? last['销售净利率'] : null;
-    var intDebt = sum([stDebt, ltDebt, bond]);            // 有息负债合计（字段缺失视为 0，即无有息负债）
+    // 有息负债全口径：短借 + 一年内到期 + 长借 + 应付债券 + 租赁负债（字段缺失视为 0）
+    var intDebt = sum([stDebt, due1y, ltDebt, bond, lease]);
     if (intDebt == null) intDebt = 0;
     var netCash = (cash != null && intDebt != null) ? cash - intDebt : null; // 净现金
     var ncav = (ca != null && tl != null) ? ca - tl : null;   // 净流动资产 NCAV
     var wc = (ca != null && cl != null) ? ca - cl : null;     // 营运资本
-    var ltd = sum([ltDebt, bond]);                            // 长期有息负债（字段缺失视为 0）
+    // 长期有息负债全口径：一年内到期部分为重分类的长贷/债券，租赁负债计入（字段缺失视为 0）
+    var ltd = sum([due1y, ltDebt, bond, lease]);
     if (ltd == null) ltd = 0;
     var curRatio = (ca != null && cl != null && cl > 0) ? ca / cl : null;
     var liqRatio = (ca != null && tl != null && tl > 0) ? ca / tl : null;
@@ -738,7 +847,8 @@
     var roe5 = roeVals.length ? sum(roeVals) / roeVals.length : null;
 
     var basis = '评分基准：' + (lastYear ? lastYear + ' 年报' : '最新财报') +
-      (s.time ? ' + ' + fmtDate(s.time) + ' 收盘价/市值' : '');
+      (s.time ? ' + ' + fmtDate(s.time) + ' 收盘价/市值' : '') +
+      '；有息负债含一年内到期与租赁负债（全口径）';
 
     // ---- 格雷厄姆 · 进取型烟蒂（net-net 净流动资产折价）----
     var gA = [
