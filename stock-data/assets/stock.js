@@ -767,9 +767,9 @@
     return { good: '优秀', mid: '良好', low: '一般', bad: '较差', na: '数据不足' }[g];
   }
 
-  // 评分项构造：match = 符合度（score/max，用于百分比与颜色）
+  // 评分项构造：match = 符合度（score/max，用于百分比与颜色；负分按 0% 显示）
   function it(std, val, thr, max, score) {
-    return { std: std, val: val, thr: thr, max: max, score: score, match: score == null ? null : score / max };
+    return { std: std, val: val, thr: thr, max: max, score: score, match: score == null ? null : Math.max(0, score) / max };
   }
 
   // 评分卡 HTML：标题 + 总分圆徽 + 标准明细表（标准/当前值/参考阈值/符合度/得分）+ 备注
@@ -833,6 +833,9 @@
     var liqRatio = (ca != null && tl != null && tl > 0) ? ca / tl : null;
     var pncav = (mcap != null && ncav != null && ncav > 0) ? mcap / ncav : null;
     var pnetcash = (mcap != null && netCash != null && netCash > 0) ? mcap / netCash : null;
+    // 净现金/NCAV 为负时属于“不达标”而非“数据缺失”：当前值文本说明 + 得 0 分
+    var pncavVal = ncav == null ? '-' : (ncav > 0 ? (pncav == null ? '-' : fmtNum(pncav) + '×') : 'NCAV 为负');
+    var pnetcashVal = netCash == null ? '-' : (netCash > 0 ? (pnetcash == null ? '-' : fmtNum(pnetcash) + '×') : '净现金为负');
     var pepb = (pe != null && pb != null) ? pe * pb : null;
     var intangShare = (intang != null && assets != null && assets > 0) ? intang / assets : null;
     var goodwillShare = (goodwill != null && assets != null && assets > 0) ? goodwill / assets : null;
@@ -853,8 +856,8 @@
 
     // ---- 格雷厄姆 · 进取型烟蒂（net-net 净流动资产折价）----
     var gA = [
-      it('价格/净流动资产（市值/NCAV）', pncav == null ? '-' : fmtNum(pncav) + '×', '≤ 0.67×（2/3 净流动资产）', 30, lerpScore(pncav, 0.67, 1.5, 30, 0)),
-      it('价格/净现金（市值/现金-有息负债）', pnetcash == null ? '-' : fmtNum(pnetcash) + '×', '≤ 1×', 20, lerpScore(pnetcash, 1, 2, 20, 0)),
+      it('价格/净流动资产（市值/NCAV）', pncavVal, '≤ 0.67×（2/3 净流动资产）', 30, ncav == null ? null : (ncav > 0 ? lerpScore(pncav, 0.67, 1.5, 30, 0) : 0)),
+      it('价格/净现金（市值/现金-有息负债）', pnetcashVal, '≤ 1×', 20, netCash == null ? null : (netCash > 0 ? lerpScore(pnetcash, 1, 2, 20, 0) : 0)),
       it('流动资产/总负债', liqRatio == null ? '-' : fmtNum(liqRatio), '≥ 2（资产覆盖债务）', 20, lerpScore(liqRatio, 1, 2, 0, 20)),
       it('最新年报净利润', fmtMoney(netProfit), '> 0（清算缓冲）', 15, netProfit != null && netProfit > 0 ? 15 : 0),
       it('资产负债率', fmtPct(debtr), '≤ 60%', 10, lerpScore(debtr, 0.6, 0.8, 10, 0)),
@@ -863,14 +866,36 @@
     var gATotal = sum(gA.map(function (x) { return x.score; }));
 
     // ---- 格雷厄姆 · 防御型烟蒂（《聪明的投资者》防御型标准）----
+    // 严格性设计：规模为硬门槛（≥100亿满分）；关键安全项（流动比率/长期负债比/盈利稳定/增长）
+    // 严重不达标时直接负分惩罚，而非仅给 0 分，避免“凑分式”达标
+    function sizeScore(v) {
+      if (v == null) return null;
+      if (v >= 1e10) return 10;   // ≥100 亿
+      if (v >= 5e9) return 6;     // 50~100 亿
+      if (v >= 3e9) return 3;     // 30~50 亿
+      return 0;                   // <30 亿（过小，防御型不参与）
+    }
+    function divScore10(years) {
+      if (years >= 10) return 15;
+      if (years >= 7) return 10;
+      if (years >= 5) return 5;
+      if (years >= 3) return 2;
+      return 0;                   // <3 年分红史，防御型不给分
+    }
+    var ltdScore;
+    if (wc == null) { ltdScore = null; }
+    else if (wc <= 0) { ltdScore = -10; }  // 营运资本为负（流动负债>流动资产）危险信号
+    else if (ltd <= wc) { ltdScore = 20; }
+    else if (ltd <= wc * 1.5) { ltdScore = lerpScore(ltd / wc, 1, 1.5, 20, 5); }
+    else { ltdScore = 0; }
     var gD = [
-      it('企业规模（总资产）', fmtMoney(assets), '≥ 30 亿', 10, lerpScore(assets, 1e9, 3e9, 0, 10)),
-      it('流动比率', fmtNum(curRatio), '≥ 2', 20, lerpScore(curRatio, 1, 2, 0, 20)),
-      it('长期有息负债 / 营运资本', (ltd == null ? '-' : fmtMoney(ltd)) + ' / ' + (wc == null ? '-' : fmtMoney(wc)), '长期负债 ≤ 营运资本', 20,
-        (ltd != null && wc != null && wc > 0) ? (ltd <= wc ? 20 : lerpScore(ltd / wc, 1, 2, 20, 0)) : null),
-      it('盈利稳定（近5年净利为正）', posN + '/5 年', '5 年全部为正', 15, posN >= 5 ? 15 : posN * 3),
-      it('连续分红年数', (divConsecutive || 0) + ' 年', '≥ 10 年', 15, Math.min(divConsecutive, 10) / 10 * 15),
-      it('近5年净利累计增长', fmtPct(grow5), '≥ 33%', 10, lerpScore(grow5, 0, 0.33, 0, 10)),
+      it('企业规模（总资产）', fmtMoney(assets), '≥ 100 亿', 10, sizeScore(assets)),
+      it('流动比率', fmtNum(curRatio), '≥ 2', 20, curRatio == null ? null
+        : (curRatio >= 2 ? 20 : curRatio >= 1.5 ? lerpScore(curRatio, 1.5, 2, 0, 20) : curRatio >= 1 ? 5 : -10)),
+      it('长期有息负债 / 营运资本', (ltd == null ? '-' : fmtMoney(ltd)) + ' / ' + (wc == null ? '-' : fmtMoney(wc)), '长期负债 ≤ 营运资本', 20, ltdScore),
+      it('盈利稳定（近5年净利为正）', posN + '/5 年', '5 年全部为正', 15, posN >= 5 ? 15 : posN === 4 ? 9 : posN === 3 ? 4 : -5),
+      it('连续分红年数', (divConsecutive || 0) + ' 年', '≥ 10 年', 15, divScore10(divConsecutive || 0)),
+      it('近5年净利累计增长', fmtPct(grow5), '≥ 33%', 10, grow5 == null ? null : (grow5 >= 0.33 ? 10 : grow5 >= 0 ? lerpScore(grow5, 0, 0.33, 0, 10) : -5)),
       it('市盈率（TTM）', fmtNum(pe), '≤ 15', 5, lerpScore(pe, 15, 25, 5, 0)),
       it('PE × PB', pepb == null ? '-' : fmtNum(pepb), '≤ 22.5', 5, pepb != null ? (pepb <= 22.5 ? 5 : (pepb <= 45 ? lerpScore(pepb, 22.5, 45, 5, 0) : 0)) : null)
     ];
@@ -928,7 +953,7 @@
       grahamAgg: { title: '进取型烟蒂 · net-net（低于净流动资产买入）', total: gATotal, items: gA,
         note: '格雷厄姆 net-net 思路：以低于净流动资产（流动资产-全部负债）2/3 的价格买入，赚取清算价值与市价之差。得分越高代表越接近“捡烟蒂”状态。' },
       grahamDef: { title: '防御型烟蒂 · 防御型投资者标准', total: gDTotal, items: gD,
-        note: '对应《聪明的投资者》第 14 章防御型投资者选股标准（规模/流动比率/长期负债/盈利稳定/分红历史/盈利增长/估值），阈值已按 A 股现状微调。' },
+        note: '对应《聪明的投资者》第 14 章防御型投资者选股标准（规模/流动比率/长期负债/盈利稳定/分红历史/盈利增长/估值）。规模为硬门槛（总资产≥100亿），关键安全项（流动比率<1、营运资本为负、近5年过半亏损、净利负增长）直接负分惩罚，比进取型更严格。' },
       schloss: { title: '施洛斯烟蒂 · 资产折扣+低估值+低负债', total: sTotal, items: sItems,
         note: '沃尔特·施洛斯风格：以低于净资产/流动资产的价格买入、负债极低、有股息，分散持有等待价值回归。' },
       buffett: { title: '巴菲特芒格 · 优质企业合理价格+护城河', total: bTotal, items: bItems.concat(moatItems),
