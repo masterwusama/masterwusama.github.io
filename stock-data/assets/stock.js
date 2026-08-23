@@ -196,7 +196,8 @@
 
   function fetchIndex() {
     show('stock-loading');
-    fetch(DATA_BASE + 'index.json')
+    // 加时间戳避免浏览器缓存旧列表（数据由 Actions 定期更新）
+    fetch(DATA_BASE + 'index.json?t=' + Date.now())
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
         state.companies = data.companies || [];
