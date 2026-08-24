@@ -30,6 +30,7 @@ import pymupdf
 import requests
 
 from config import DEFAULT_COMPANIES, REQUEST_INTERVAL
+from scoring import compute_scores  # 预计算评分（与 assets/stock.js 一致性由 _score_check.py 验证）
 
 # 输出目录：<仓库>/stock-data/data
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -811,11 +812,11 @@ def fetch_company_a(code: str, name: str):
 
 
 def save_json(path: Path, data):
-    """原子写入：先写临时文件再替换，避免半截文件被 Pages 读取"""
+    """原子写入：先写临时文件再替换，避免半截文件被 Pages 读取。紧凑格式压缩体积（约减半）。"""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(
-        json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8"
+        json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
     os.replace(tmp, path)
 
@@ -839,6 +840,11 @@ def main():
         try:
             data = fetch_company(code, name, market)
             save_json(COMPANIES_DIR / f"{code}.json", data)
+            # 预计算四大流派总分（Python 版评分，与前端 JS 评分一致性由 scripts/_score_check.py 验证）
+            try:
+                scores = compute_scores(data)
+            except Exception:
+                scores = None
             index_items.append(
                 {
                     "code": code,
@@ -846,6 +852,7 @@ def main():
                     "market": market,
                     "industry": (data.get("info") or {}).get("行业"),
                     "updated_at": data["updated_at"],
+                    "scores": scores,
                 }
             )
             if data.get("errors"):

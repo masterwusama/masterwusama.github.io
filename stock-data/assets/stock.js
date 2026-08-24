@@ -303,6 +303,13 @@
       .then(function (data) {
         state.companies = data.companies || [];
         state.indexUpdatedAt = data.updated_at;
+        // 后端已预计算评分（scoring.py），直接使用免去逐家下载全量数据（卡顿优化）；
+        // 旧 index.json 缺 scores 时视为未加载，走 fetchScores() 降级路径
+        var have = 0, total = state.companies.length;
+        state.companies.forEach(function (c) {
+          if (c.scores) { state.scores[c.code] = c.scores; have++; }
+        });
+        state.scoresLoaded = total > 0 && have === total;
         showList();
       })
       .catch(function () { fail('公司列表加载失败，请稍后刷新重试'); });
