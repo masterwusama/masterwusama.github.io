@@ -2,7 +2,7 @@
  "code": "00506",
  "name": "中国食品",
  "market": "HK",
- "updated_at": "2026-08-24T09:41:49+08:00",
+ "updated_at": "2026-08-24T18:15:30+08:00",
  "info": {},
  "indicators": [
   {
@@ -2485,13 +2485,13 @@
  ],
  "snapshot": {
   "name": "中国食品",
-  "price": 3.33,
-  "change_pct": 0.0,
-  "time": "2026-08-24T09:20:07+08:00",
-  "pe_ttm": 9.7605,
-  "pb": 1.22,
-  "market_cap": 9314753908.68,
-  "float_market_cap": 9314750000.0,
+  "price": 3.325,
+  "change_pct": -0.0015,
+  "time": "2026-08-24T16:08:25+08:00",
+  "pe_ttm": 9.7459,
+  "pb": 1.2181,
+  "market_cap": 9300767791.7,
+  "float_market_cap": 9300770000.0,
   "turnover_rate": null
  },
  "dividends": [

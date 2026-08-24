@@ -2,7 +2,7 @@
  "code": "06049",
  "name": "保利物业",
  "market": "HK",
- "updated_at": "2026-08-24T09:41:44+08:00",
+ "updated_at": "2026-08-24T18:15:25+08:00",
  "info": {},
  "indicators": [
   {
@@ -1178,13 +1178,13 @@
  ],
  "snapshot": {
   "name": "保利物业",
-  "price": 28.42,
-  "change_pct": 0.0,
-  "time": "2026-08-24T09:20:07+08:00",
-  "pe_ttm": 9.167,
-  "pb": 1.3459,
-  "market_cap": 15725735228.0,
-  "float_market_cap": 9861740000.0,
+  "price": 27.78,
+  "change_pct": -0.0225,
+  "time": "2026-08-24T16:08:25+08:00",
+  "pe_ttm": 8.9606,
+  "pb": 1.3156,
+  "market_cap": 15371601852.0,
+  "float_market_cap": 9639660000.0,
   "turnover_rate": null
  },
  "dividends": [

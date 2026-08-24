@@ -2,7 +2,7 @@
  "code": "02669",
  "name": "中海物业",
  "market": "HK",
- "updated_at": "2026-08-24T09:41:40+08:00",
+ "updated_at": "2026-08-24T18:15:20+08:00",
  "info": {},
  "indicators": [
   {
@@ -1654,13 +1654,13 @@
  ],
  "snapshot": {
   "name": "中海物业",
-  "price": 3.62,
-  "change_pct": 0.0,
-  "time": "2026-08-24T09:20:07+08:00",
-  "pe_ttm": 8.058,
-  "pb": 1.6558,
-  "market_cap": 11887936865.2,
-  "float_market_cap": 11887940000.0,
+  "price": 3.59,
+  "change_pct": -0.0083,
+  "time": "2026-08-24T16:08:26+08:00",
+  "pe_ttm": 7.9912,
+  "pb": 1.6421,
+  "market_cap": 11789418051.4,
+  "float_market_cap": 11789420000.0,
   "turnover_rate": null
  },
  "dividends": [

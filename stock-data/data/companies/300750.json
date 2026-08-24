@@ -1,7 +1,7 @@
 {
  "code": "300750",
  "name": "宁德时代",
- "updated_at": "2026-08-24T09:39:23+08:00",
+ "updated_at": "2026-08-24T18:12:58+08:00",
  "info": {
   "行业": "电气机械和器材制造业",
   "股票简称": "宁德时代",
@@ -6766,14 +6766,14 @@
  ],
  "snapshot": {
   "name": "宁德时代",
-  "price": 392.75,
-  "change_pct": 0.0041,
-  "pe_ttm": 21.38,
-  "pb": 4.87,
-  "market_cap": 1817119000000.0,
-  "float_market_cap": 1673147000000.0,
-  "turnover_rate": 0.0004,
-  "time": "2026-08-24T09:39:24+08:00"
+  "price": 387.89,
+  "change_pct": -0.0083,
+  "pe_ttm": 21.11,
+  "pb": 4.81,
+  "market_cap": 1794633000000.0,
+  "float_market_cap": 1652443000000.0,
+  "turnover_rate": 0.0033,
+  "time": "2026-08-24T16:14:51+08:00"
  },
  "dividends": [
   {
@@ -6947,6 +6947,13 @@
    "audit_opinion": "标准无保留意见"
   },
   {
+   "title": "2025年三季度报告",
+   "category": "三季报",
+   "date": "2025-10-21",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2025-10-21/1224721971.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1224721971&orgId=GD165627&announcementTime=2025-10-21"
+  },
+  {
    "title": "2025年半年度报告",
    "category": "半年报",
    "date": "2025-07-31",
@@ -6972,6 +6979,13 @@
    "audit_opinion": "标准无保留意见"
   },
   {
+   "title": "2024年三季度报告",
+   "category": "三季报",
+   "date": "2024-10-19",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2024-10-19/1221432744.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1221432744&orgId=GD165627&announcementTime=2024-10-19"
+  },
+  {
    "title": "2024年半年度报告",
    "category": "半年报",
    "date": "2024-07-27",
@@ -6995,6 +7009,13 @@
    "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1219313047&orgId=GD165627&announcementTime=2024-03-16",
    "audit_firm": "致同会计师事务所（特殊普通合伙）",
    "audit_opinion": "标准无保留意见"
+  },
+  {
+   "title": "2023年三季度报告",
+   "category": "三季报",
+   "date": "2023-10-20",
+   "pdf_url": "http://static.cninfo.com.cn/finalpage/2023-10-20/1218095874.PDF",
+   "detail_url": "http://www.cninfo.com.cn/new/disclosure/detail?stockCode=300750&announcementId=1218095874&orgId=GD165627&announcementTime=2023-10-20"
   }
  ],
  "errors": null
