@@ -2,7 +2,7 @@
  "code": "00696",
  "name": "中国民航信息网络",
  "market": "HK",
- "updated_at": "2026-08-24T09:41:35+08:00",
+ "updated_at": "2026-08-24T16:57:42+08:00",
  "info": {},
  "indicators": [
   {
@@ -2282,13 +2282,13 @@
  ],
  "snapshot": {
   "name": "中国民航信息网络",
-  "price": 8.275,
-  "change_pct": 0.0,
-  "time": "2026-08-24T09:20:07+08:00",
-  "pe_ttm": 9.3403,
-  "pb": 0.9119,
-  "market_cap": 24214384348.975,
-  "float_market_cap": 7716950000.0,
+  "price": 8.34,
+  "change_pct": 0.0079,
+  "time": "2026-08-24T16:08:22+08:00",
+  "pe_ttm": 9.4137,
+  "pb": 0.9191,
+  "market_cap": 24404587972.26,
+  "float_market_cap": 7777570000.0,
   "turnover_rate": null
  },
  "dividends": [
