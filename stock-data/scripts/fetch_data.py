@@ -672,16 +672,26 @@ def fetch_audit(code: str, reports: list):
         if cached:
             r.update(cached)
             continue
-        try:
-            resp = requests.get(r["pdf_url"], headers=headers, timeout=90)
-            resp.raise_for_status()
-            doc = pymupdf.open(stream=resp.content, filetype="pdf")
-            text = "".join(page.get_text() for page in doc)
-            doc.close()
-            firm, opinion = extract_audit(text, r["category"] == "年报")
-            r["audit_firm"] = firm
-            r["audit_opinion"] = opinion
-        except Exception:
+        ok = False
+        for attempt in range(2):  # 瞬时网络失败自动重试一次
+            try:
+                resp = requests.get(r["pdf_url"], headers=headers, timeout=90)
+                if resp.status_code == 404:
+                    # 巨潮归档已移除/更换该 PDF，跳过且不计失败（不影响财务数据）
+                    ok = True
+                    break
+                resp.raise_for_status()
+                doc = pymupdf.open(stream=resp.content, filetype="pdf")
+                text = "".join(page.get_text() for page in doc)
+                doc.close()
+                firm, opinion = extract_audit(text, r["category"] == "年报")
+                r["audit_firm"] = firm
+                r["audit_opinion"] = opinion
+                ok = True
+                break
+            except Exception:
+                time.sleep(2)
+        if not ok:
             failed += 1
             r["audit_firm"] = None
             r["audit_opinion"] = None
