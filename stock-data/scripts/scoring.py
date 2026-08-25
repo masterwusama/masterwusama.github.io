@@ -178,8 +178,12 @@ def value_analysis(d, now=None):
     }
 
 
-def value_scores(d, va):
-    """对应 JS valueScores —— 返回四大流派总分（满分 100）"""
+def value_scores(d, va, k=1.0):
+    """对应 JS valueScores —— 返回四大流派总分（满分 100）。
+
+    k 为市值/估值缩放因子（默认 1=当前市值）：mcap/pe/pb 同乘 k、股息率除以 k，
+    使总分随 k 单调变化，供价格参考二分反推使用（price_references）。
+    """
     annual = annual_rows(d.get('indicators') or [])
     last = annual[-1] if annual else None
     last_date = str(last.get('报告期') or '')[:10] if last else None
@@ -188,7 +192,15 @@ def value_scores(d, va):
     last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
     s = d.get('snapshot') or {}
     mcap, pe, pb = s.get('market_cap'), s.get('pe_ttm'), s.get('pb')
+    if k != 1.0:
+        mcap = mcap * k if mcap is not None else None
+        pe = pe * k if pe is not None else None
+        pb = pb * k if pb is not None else None
     div_consecutive = va['divConsecutive'] or 0
+    # 股息率随假设价格反向缩放（仅施洛斯股息率项使用）
+    div_yield = va['divYield']
+    if k != 1.0 and div_yield is not None:
+        div_yield = div_yield / k
 
     # ---- 基础量（最新年报）----
     def g(ba, key):
@@ -317,7 +329,7 @@ def value_scores(d, va):
         lerp_score(pb, 0.75, 1.5, 25, 0),          # 市净率 ≤ 0.75
         lerp_score(pe, 10, 20, 20, 0),             # 市盈率 ≤ 10
         lerp_score(liq_ratio, 1, 2, 0, 20),        # 流动资产/总负债 ≥ 2
-        lerp_score(va['divYield'], 0, 0.03, 0, 15),  # 股息率 ≥ 3%
+        lerp_score(div_yield, 0, 0.03, 0, 15),  # 股息率 ≥ 3%
         10.0 if (net_profit is not None and net_profit > 0) else 0.0,  # 最新年报净利 > 0
         # 市值 ≤ 流动资产
         ((10.0 if mcap <= ca else lerp_score(mcap / ca, 1, 2, 10, 0))
@@ -429,7 +441,114 @@ def value_scores(d, va):
     }
 
 
+# ---- 价格参考（买入/保守卖出/公允卖出）----
+# 买入价：二分反推使该流派总分 ≥ BUY_SCORE_TARGET 的最高市值对应股价；
+#         若质量项托底已达标或总分不随价格变化则返回 None。
+# 卖出价：锚定各流派核心估值指标的评分阈值倍数（不随质量分托底失真）。
+BUY_SCORE_TARGET = 90.0   # 买入参考价对应的评分目标
+PRICE_K_HI = 1000.0       # 二分市值缩放上限（足够大使价格项归零）
+PRICE_K_ITERS = 80        # 二分固定迭代次数（双端一致）
+
+
+def _fair_pe(net_cagr5):
+    """巴菲特合理市盈率 = 净利5年CAGR×100，夹在 [8, 25]；无数据取 15"""
+    if net_cagr5 is None:
+        return 15.0
+    return max(8.0, min(25.0, net_cagr5 * 100.0))
+
+
+def _bisect_buy(score_fn, price0):
+    """二分找总分 ≥ 目标的最大缩放因子 k，返回买入价 = price0×k；无解返回 None"""
+    t_max = score_fn(1e-9)          # k→0：价格项全满分的上限
+    t_inf = score_fn(PRICE_K_HI)    # k→很大：价格项归零后的质量分托底
+    if t_max is None or t_inf is None:
+        return None
+    if t_max - t_inf < 1e-9:
+        return None                 # 总分不随价格变（无价格项），无法反推
+    if t_inf >= BUY_SCORE_TARGET:
+        return None                 # 质量分已达标，买入价无上界
+    tgt = min(BUY_SCORE_TARGET, t_max)
+    lo, hi = 0.0, PRICE_K_HI
+    for _ in range(PRICE_K_ITERS):
+        mid = (lo + hi) / 2.0
+        if score_fn(mid) >= tgt:
+            lo = mid
+        else:
+            hi = mid
+    return price0 * lo
+
+
+def price_references(d, va):
+    """对应 JS priceReferences：四大流派买入/保守卖出/公允卖出价格参考"""
+    s = d.get('snapshot') or {}
+    price0, mcap0 = s.get('price'), s.get('market_cap')
+    pe0, pb0 = s.get('pe_ttm'), s.get('pb')
+    if price0 is None or price0 <= 0:
+        return {'grahamAgg': {'buy': None, 'sellCons': None, 'sellFair': None},
+                'grahamDef': {'buy': None, 'sellCons': None, 'sellFair': None},
+                'schloss': {'buy': None, 'sellCons': None, 'sellFair': None},
+                'buffett': {'buy': None, 'sellCons': None, 'sellFair': None}}
+
+    # ---- 基础量（最新年报资产负债表）----
+    annual = annual_rows(d.get('indicators') or [])
+    last = annual[-1] if annual else None
+    last_date = str(last.get('报告期') or '')[:10] if last else None
+    ba_list = sorted(d.get('balance') or [], key=lambda r: str(r.get('报告日') or ''))
+    last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
+
+    def g(key):
+        return last_ba.get(key) if last_ba else None
+
+    ca, tl = g('流动资产合计'), g('负债合计')
+    ncav = (ca - tl) if (ca is not None and tl is not None) else None
+    shares = mcap0 / price0 if mcap0 is not None else None
+    ncav_ps = ncav / shares if (ncav is not None and shares) else None
+    bps = price0 / pb0 if (pb0 is not None and pb0 > 0) else None
+    eps_ttm = price0 / pe0 if (pe0 is not None and pe0 > 0) else None
+    fair_pe = _fair_pe(va.get('netCagr5'))
+
+    def buy_of(key):
+        return _bisect_buy(lambda kk: value_scores(d, va, kk)[key], price0)
+
+    def clamp_buy(buy, anchor):
+        """买入价不超过本流派估值锚（保守卖出价）：质量分托底时反推价可能高于锚位，
+        截断后仍满足“该价时评分≥90”且避免买入参考高于卖出参考的矛盾"""
+        if buy is not None and anchor is not None and buy > anchor:
+            return anchor
+        return buy
+
+    gA_cons = ncav_ps if (ncav_ps is not None and ncav_ps > 0) else None
+    gD_cons = (15.0 * eps_ttm) if (eps_ttm is not None and eps_ttm > 0) else None
+    s_cons = bps if (bps is not None and bps > 0) else None
+    b_cons = (fair_pe * eps_ttm) if eps_ttm is not None else None
+
+    return {
+        'grahamAgg': {
+            'buy': clamp_buy(buy_of('grahamAgg'), gA_cons),
+            'sellCons': gA_cons,
+            'sellFair': (1.5 * ncav_ps) if (ncav_ps is not None and ncav_ps > 0) else None,
+        },
+        'grahamDef': {
+            'buy': clamp_buy(buy_of('grahamDef'), gD_cons),
+            'sellCons': gD_cons,
+            'sellFair': (20.0 * eps_ttm) if (eps_ttm is not None and eps_ttm > 0) else None,
+        },
+        'schloss': {
+            'buy': clamp_buy(buy_of('schloss'), s_cons),
+            'sellCons': s_cons,
+            'sellFair': (1.5 * bps) if (bps is not None and bps > 0) else None,
+        },
+        'buffett': {
+            'buy': clamp_buy((fair_pe * eps_ttm * 2.0 / 3.0) if eps_ttm is not None else None, b_cons),
+            'sellCons': b_cons,
+            'sellFair': (fair_pe * eps_ttm * 1.3) if eps_ttm is not None else None,
+        },
+    }
+
+
 def compute_scores(company, now=None):
-    """抓取后调用：返回四大流派总分 dict（供 index.json 列表页直接使用）"""
+    """抓取后调用：返回四大流派总分 + 价格参考 dict（供 index.json 直接使用）"""
     va = value_analysis(company, now)
-    return value_scores(company, va)
+    scores = value_scores(company, va)
+    scores['priceRefs'] = price_references(company, va)
+    return scores

@@ -377,6 +377,9 @@
     var recDivs = recentDividends(d);
     var va = valueAnalysis(d); // 价值分析计算（股息/现金流/杜邦/成长/体检）
     var sc = valueScores(d, va); // 三大流派评分（格雷厄姆/施洛斯/巴菲特）
+    sc.d = d;
+    // 价格参考单独挂载（二分循环调用 valueScores，绝不可放进 valueScores 内部防递归）
+    sc.priceRefs = priceReferences(d, va);
     var divBox = '<div class="kv kv-div"><div class="k">近一年分红</div><div class="v">' + recDivs.length + ' 条</div>' +
       '<div class="div-list">' + (recDivs.length
         ? recDivs.map(function (r) {
@@ -786,8 +789,19 @@
     return { std: std, val: val, thr: thr, max: max, score: score, match: score == null ? null : Math.max(0, score) / max };
   }
 
-  // 评分卡 HTML：标题 + 总分圆徽 + 标准明细表（标准/当前值/参考阈值/符合度/得分）+ 备注
-  function scoreCard(title, basis, total, items, note) {
+  // 价格标签：买入价≤现价（进入买入区）标绿；卖出价≥现价（进入卖出区）标红
+  function _priceTag(label, p, curPrice, kind, tip) {
+    var cls = '';
+    if (p != null && curPrice != null) {
+      if (kind === 'buy' && curPrice <= p) cls = ' sp-hit';
+      if (kind === 'sell' && curPrice >= p) cls = ' sp-hit';
+    }
+    return '<span class="sp' + cls + '" title="' + tip + '"><i>' + label + '</i><b>' +
+      (p == null ? '-' : fmtNum(p)) + '</b></span>';
+  }
+
+  // 评分卡 HTML：标题 + 总分圆徽 + 价格参考行 + 标准明细表（标准/当前值/参考阈值/符合度/得分）+ 备注
+  function scoreCard(title, basis, total, items, note, priceRefs, curPrice) {
     var g = gradeOf(total);
     var rows = items.map(function (x) {
       var mCls = x.match == null ? 'sc-na' : x.match >= 0.99 ? 'sc-good' : x.match >= 0.5 ? 'sc-mid' : 'sc-low';
@@ -796,9 +810,16 @@
         '<td class="v ' + mCls + '">' + mTxt + '</td>' +
         '<td class="v"><b>' + (x.score == null ? '-' : fmtNum(x.score)) + '</b> / ' + x.max + '</td></tr>';
     }).join('');
+    var refs = priceRefs || {};
+    var pricesHtml = '<div class="score-prices">' +
+      _priceTag('买入参考', refs.buy, curPrice, 'buy', '该流派评分达到 90 分（或评分上限）对应的价格；现价不高于此价时进入买入参考区') +
+      _priceTag('保守卖出', refs.sellCons, curPrice, 'sell', '核心估值锚位；现价不低于此价时进入保守卖出参考区') +
+      _priceTag('公允卖出', refs.sellFair, curPrice, 'sell', '估值锚位上浮后的价格；现价不低于此价时进入公允卖出参考区') +
+      '</div>';
     return '<div class="score-card-head"><h4>' + title + '</h4>' +
       '<div class="score-circle va-grade-' + g + '"><span>总分</span><b>' + (total == null ? '-' : fmtNum(total)) + '</b><i>' + gradeText(g) + '</i></div></div>' +
       '<p class="score-basis">' + basis + '</p>' +
+      pricesHtml +
       '<div class="stock-compare-wrap"><table class="stock-compare">' +
       '<thead><tr><th>评判标准</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
@@ -806,7 +827,10 @@
   }
 
   // 三大流派评分汇总（格雷厄姆进取/防御、施洛斯、巴菲特芒格），以最新年报为基础
-  function valueScores(d, va) {
+  // k 为市值/估值缩放因子（默认 1=当前市值）：mcap/pe/pb 同乘 k、股息率除以 k，
+  // 使总分随 k 单调变化，供价格参考二分反推使用（priceReferences）
+  function valueScores(d, va, k) {
+    if (k == null) k = 1;
     var annual = annualRows(d.indicators || []);
     var last = annual[annual.length - 1];
     var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
@@ -815,7 +839,15 @@
     var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
     var s = d.snapshot || {};
     var mcap = s.market_cap, pe = s.pe_ttm, pb = s.pb;
+    if (k !== 1) {
+      mcap = mcap != null ? mcap * k : null;
+      pe = pe != null ? pe * k : null;
+      pb = pb != null ? pb * k : null;
+    }
     var divConsecutive = va.divConsecutive || 0;
+    // 股息率随假设价格反向缩放（仅施洛斯股息率项使用）
+    var divYield = va.divYield;
+    if (k !== 1 && divYield != null) divYield = divYield / k;
 
     // ---- 基础量（最新年报）----
     var ca = lastBa ? lastBa['流动资产合计'] : null;      // 流动资产合计
@@ -989,7 +1021,7 @@
       it('市净率', fmtNum(pb), '≤ 0.75（资产折扣）', 25, lerpScore(pb, 0.75, 1.5, 25, 0)),
       it('市盈率（TTM）', fmtNum(pe), '≤ 10', 20, lerpScore(pe, 10, 20, 20, 0)),
       it('流动资产/总负债', liqRatio == null ? '-' : fmtNum(liqRatio), '≥ 2', 20, lerpScore(liqRatio, 1, 2, 0, 20)),
-      it('股息率（近12月）', fmtPct(va.divYield), '≥ 3%', 15, lerpScore(va.divYield, 0, 0.03, 0, 15)),
+      it('股息率（近12月）', fmtPct(divYield), '≥ 3%', 15, lerpScore(divYield, 0, 0.03, 0, 15)),
       it('最新年报净利润', fmtMoney(netProfit), '> 0', 10, netProfit != null && netProfit > 0 ? 10 : 0),
       it('市值 / 流动资产', (mcap == null ? '-' : fmtMoney(mcap)) + ' / ' + (ca == null ? '-' : fmtMoney(ca)), '市值 ≤ 流动资产', 10,
         (mcap != null && ca != null && ca > 0) ? (mcap <= ca ? 10 : lerpScore(mcap / ca, 1, 2, 10, 0)) : null)
@@ -1044,17 +1076,106 @@
     };
   }
 
+  // ---- 价格参考（买入/保守卖出/公允卖出）----
+  // 买入价：二分反推使该流派总分 ≥ 90 的最高市值对应股价；质量项托底已达标或不随价格变化时为 null。
+  // 卖出价：锚定各流派核心估值指标的阈值倍数（不随质量分托底失真）。
+  // ⚠ 二分循环调用 valueScores，本函数绝不可在 valueScores 内部调用（防递归），由 renderDetail 单独挂载。
+
+  // 巴菲特合理市盈率 = 净利5年CAGR×100，夹在 [8, 25]；无数据取 15
+  function fairPe(netCagr5) {
+    if (netCagr5 == null) return 15;
+    return Math.max(8, Math.min(25, netCagr5 * 100));
+  }
+
+  // 二分找总分 ≥ 目标的最大缩放因子 k，返回买入价 = price0×k；无解返回 null
+  function bisectBuy(scoreFn, price0) {
+    var TARGET = 90, K_HI = 1000, ITERS = 80; // 常量与 scoring.py 一致
+    var tMax = scoreFn(1e-9);        // k→0：价格项全满分的上限
+    var tInf = scoreFn(K_HI);        // k→很大：价格项归零后的质量分托底
+    if (tMax == null || tInf == null) return null;
+    if (tMax - tInf < 1e-9) return null;   // 总分不随价格变（无价格项），无法反推
+    if (tInf >= TARGET) return null;       // 质量分已达标，买入价无上界
+    var tgt = Math.min(TARGET, tMax);      // 上限不足 90 时取“刚好到上限”
+    var lo = 0, hi = K_HI;
+    for (var i = 0; i < ITERS; i++) {
+      var mid = (lo + hi) / 2;
+      if (scoreFn(mid) >= tgt) lo = mid; else hi = mid;
+    }
+    return price0 * lo;
+  }
+
+  // 四大流派买入/保守卖出/公允卖出价格参考（对应 scoring.py price_references）
+  function priceReferences(d, va) {
+    var s = d.snapshot || {};
+    var price0 = s.price, mcap0 = s.market_cap, pe0 = s.pe_ttm, pb0 = s.pb;
+    var none = { buy: null, sellCons: null, sellFair: null };
+    if (price0 == null || price0 <= 0) {
+      return { grahamAgg: none, grahamDef: none, schloss: none, buffett: none };
+    }
+    // ---- 基础量（最新年报资产负债表）----
+    var annual = annualRows(d.indicators || []);
+    var last = annual[annual.length - 1];
+    var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
+    var baList = (d.balance || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
+    var ca = lastBa ? lastBa['流动资产合计'] : null;
+    var tl = lastBa ? lastBa['负债合计'] : null;
+    var ncav = (ca != null && tl != null) ? ca - tl : null;
+    var shares = mcap0 != null ? mcap0 / price0 : null;
+    var ncavPs = (ncav != null && shares) ? ncav / shares : null;   // 每股净流动资产
+    var bps = (pb0 != null && pb0 > 0) ? price0 / pb0 : null;       // 每股净资产
+    var epsTtm = (pe0 != null && pe0 > 0) ? price0 / pe0 : null;    // TTM 每股收益
+    var fpe = fairPe(va.netCagr5);
+    function buyOf(key) {
+      return bisectBuy(function (kk) { return valueScores(d, va, kk)[key].total; }, price0);
+    }
+    // 买入价不超过本流派估值锚（保守卖出价）：质量分托底时反推价可能高于锚位，
+    // 截断后仍满足“该价时评分≥90”且避免买入参考高于卖出参考的矛盾
+    function clampBuy(buy, anchor) {
+      if (buy != null && anchor != null && buy > anchor) return anchor;
+      return buy;
+    }
+    var gACons = (ncavPs != null && ncavPs > 0) ? ncavPs : null;
+    var gDCons = (epsTtm != null && epsTtm > 0) ? 15 * epsTtm : null;
+    var sCons = (bps != null && bps > 0) ? bps : null;
+    var bCons = epsTtm != null ? fpe * epsTtm : null;
+    return {
+      grahamAgg: {
+        buy: clampBuy(buyOf('grahamAgg'), gACons),
+        sellCons: gACons,
+        sellFair: (ncavPs != null && ncavPs > 0) ? 1.5 * ncavPs : null
+      },
+      grahamDef: {
+        buy: clampBuy(buyOf('grahamDef'), gDCons),
+        sellCons: gDCons,
+        sellFair: (epsTtm != null && epsTtm > 0) ? 20 * epsTtm : null
+      },
+      schloss: {
+        buy: clampBuy(buyOf('schloss'), sCons),
+        sellCons: sCons,
+        sellFair: (bps != null && bps > 0) ? 1.5 * bps : null
+      },
+      buffett: {
+        buy: clampBuy(epsTtm != null ? fpe * epsTtm * 2 / 3 : null, bCons),
+        sellCons: bCons,
+        sellFair: epsTtm != null ? fpe * epsTtm * 1.3 : null
+      }
+    };
+  }
+
   // 渲染四大评分卡（格雷厄姆进取/防御、施洛斯、巴菲特芒格）
   function renderScores(sc) {
+    var curPrice = ((sc.d || {}).snapshot || {}).price;
+    var refs = sc.priceRefs || {};
     var cards = [
-      ['stock-score-graham-agg', sc.grahamAgg],
-      ['stock-score-graham-def', sc.grahamDef],
-      ['stock-score-schloss', sc.schloss],
-      ['stock-score-buffett', sc.buffett]
+      ['stock-score-graham-agg', sc.grahamAgg, refs.grahamAgg],
+      ['stock-score-graham-def', sc.grahamDef, refs.grahamDef],
+      ['stock-score-schloss', sc.schloss, refs.schloss],
+      ['stock-score-buffett', sc.buffett, refs.buffett]
     ];
-    cards.forEach(function (pair) {
-      var el = $(pair[0]);
-      if (el) el.innerHTML = scoreCard(pair[1].title, sc.basis, pair[1].total, pair[1].items, pair[1].note);
+    cards.forEach(function (trio) {
+      var el = $(trio[0]);
+      if (el) el.innerHTML = scoreCard(trio[1].title, sc.basis, trio[1].total, trio[1].items, trio[1].note, trio[2], curPrice);
     });
   }
 

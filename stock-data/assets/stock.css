@@ -566,6 +566,49 @@
   color: #8a94a6;
 }
 
+/* 价格参考行（买入/保守卖出/公允卖出，随财报更新重算） */
+.score-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.score-prices .sp {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f4f6f9;
+  font-size: 12px;
+  color: #8a94a6;
+}
+
+.score-prices .sp b {
+  font-size: 13px;
+  color: #1f2d3d;
+}
+
+/* 进入买入区（现价≤买入参考）标绿；进入卖出区（现价≥卖出参考）标红 */
+.score-prices .sp.sp-hit {
+  background: rgba(52, 168, 116, 0.12);
+  color: #2a7a55;
+}
+
+.score-prices .sp.sp-hit b {
+  color: #2a7a55;
+}
+
+.score-prices .sp.sp-hit:nth-child(n+2) {
+  background: rgba(232, 104, 74, 0.12);
+  color: #c2492e;
+}
+
+.score-prices .sp.sp-hit:nth-child(n+2) b {
+  color: #c2492e;
+}
+
 .score-circle {
   flex: none;
   width: 66px;

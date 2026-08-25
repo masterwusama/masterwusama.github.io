@@ -24,7 +24,8 @@ function extractFunc(name) {
 
 const NAMES = ['annualRows', 'sheetRowByDate', 'annualBalanceRows', 'cagr', 'perShareDiv',
   'consecutiveDivYears', 'sum', 'recentDividends', 'lerpScore', 'it',
-  'fmtNum', 'fmtMoney', 'fmtPct', 'fmtDate', 'valueAnalysis', 'valueScores'];
+  'fmtNum', 'fmtMoney', 'fmtPct', 'fmtDate', 'valueAnalysis', 'valueScores',
+  'fairPe', 'bisectBuy', 'priceReferences'];
 
 let code = SRC.match(/var BOND_10Y = [\d.]+;/)[0] + '\n';
 for (const n of NAMES) {
@@ -32,10 +33,10 @@ for (const n of NAMES) {
   if (!f) throw new Error('missing function: ' + n);
   code += f + '\n';
 }
-code += '\nmodule.exports = { valueAnalysis: valueAnalysis, valueScores: valueScores };\n';
+code += '\nmodule.exports = { valueAnalysis: valueAnalysis, valueScores: valueScores, priceReferences: priceReferences };\n';
 fs.writeFileSync(path.join(__dirname, '_score_check_funcs.js'), code);
 
-const { valueAnalysis, valueScores } = require('./_score_check_funcs.js');
+const { valueAnalysis, valueScores, priceReferences } = require('./_score_check_funcs.js');
 const DATA = path.join(__dirname, '..', 'data', 'companies');
 const out = {};
 for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
@@ -43,7 +44,10 @@ for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
   try {
     const va = valueAnalysis(d);
     const sc = valueScores(d, va);
-    out[d.code] = { grahamAgg: sc.grahamAgg.total, grahamDef: sc.grahamDef.total, schloss: sc.schloss.total, buffett: sc.buffett.total };
+    out[d.code] = {
+      grahamAgg: sc.grahamAgg.total, grahamDef: sc.grahamDef.total, schloss: sc.schloss.total, buffett: sc.buffett.total,
+      priceRefs: priceReferences(d, va)
+    };
   } catch (e) {
     out[d.code] = { error: String(e) };
   }

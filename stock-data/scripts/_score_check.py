@@ -33,6 +33,17 @@ for f in sorted(companies_dir.glob('*.json')):
             continue
         if p is None or j is None or abs(p - j) > 1e-6:
             diffs.append((code, key, p, j))
+    # 价格参考对比（金额为量级较大的数值，用相对容差）
+    py_refs, js_refs = py.get('priceRefs') or {}, js.get('priceRefs') or {}
+    for key in ('grahamAgg', 'grahamDef', 'schloss', 'buffett'):
+        pr, jr = py_refs.get(key) or {}, js_refs.get(key) or {}
+        for fld in ('buy', 'sellCons', 'sellFair'):
+            p, j = pr.get(fld), jr.get(fld)
+            if p is None and j is None:
+                continue
+            tol = 1e-9 if p is None else max(1e-9, abs(p) * 1e-9)
+            if p is None or j is None or abs(p - j) > tol:
+                diffs.append((code, key + '.' + fld, p, j))
 
 if diffs:
     print('不一致 %d 处:' % len(diffs))
@@ -40,8 +51,7 @@ if diffs:
         print(f'  {code} {key}: Python={p} JS={j}')
     sys.exit(1)
 else:
-    print('全部一致: %d 家 × 4 项 = %d 个分数完全相同' % (
-        len(js_scores), len(js_scores) * 4))
+    print('全部一致: %d 家 × (4 项分数 + 12 项价格参考) 完全相同' % len(js_scores))
     print('示例 3 家:')
     for f in sorted(companies_dir.glob('*.json'))[:3]:
         d = json.loads(f.read_text(encoding='utf-8'))
