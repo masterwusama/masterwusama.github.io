@@ -851,6 +851,7 @@ def main():
                     "name": name,
                     "market": market,
                     "industry": (data.get("info") or {}).get("行业"),
+                    "price": (data.get("snapshot") or {}).get("price"),
                     "updated_at": data["updated_at"],
                     "scores": scores,
                 }

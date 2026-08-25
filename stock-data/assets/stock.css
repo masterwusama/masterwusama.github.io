@@ -11,7 +11,130 @@
   font-size: 14px;
 }
 
-/* ---- 公司卡片列表 ---- */
+/* ---- 公司列表宽表（双行分组表头，横向滚动，名称列吸顶/吸左） ---- */
+.stock-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e1e1e1;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.stock-list-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: 1600px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.stock-list-table th {
+  padding: 6px 10px;
+  background: #f0f3f7;
+  color: #5a6577;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+  border-bottom: 1px solid #e1e1e1;
+  border-right: 1px solid #e8ebf0;
+}
+
+.stock-list-table .th-g1 th {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.stock-list-table .th-g2 th {
+  font-weight: 500;
+  color: #7a8699;
+}
+
+/* 表头垂直吸顶（页面内滚动时保持可见）；名称列额外吸左 */
+.stock-list-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.stock-list-table .stick {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 2;
+  text-align: left;
+}
+
+.stock-list-table thead .stick {
+  background: #f0f3f7;
+  z-index: 4;
+}
+
+.stock-list-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #f0f2f5;
+  border-right: 1px solid #f4f6f9;
+  white-space: nowrap;
+}
+
+.stock-row {
+  cursor: pointer;
+}
+
+.stock-row:hover td,
+.stock-row:hover td.stick {
+  background: #f7f9fc;
+}
+
+.stock-row:focus-visible {
+  outline: 2px solid #5b8ff9;
+  outline-offset: -2px;
+}
+
+.c-name {
+  font-weight: 600;
+  color: #1f2d3d;
+}
+
+.c-code {
+  color: #8a94a6;
+  font-variant-numeric: tabular-nums;
+}
+
+.c-industry {
+  color: #7a6a4d;
+}
+
+.c-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #333;
+}
+
+.c-now {
+  font-weight: 700;
+}
+
+/* 评分等级色（与详情页评分圆徽一致） */
+.sc-good { color: #1e7e44; font-weight: 600; }
+.sc-mid { color: #3f7fd9; font-weight: 600; }
+.sc-low { color: #b07a10; font-weight: 600; }
+.sc-bad { color: #c0392b; font-weight: 600; }
+.sc-na { color: #9aa5b5; }
+
+/* 价格与现价对照着色：现价≤买入参考（买入区）绿；现价≥卖出参考（卖出区）红 */
+.r-hit {
+  color: #1e7e44;
+  font-weight: 700;
+  background: rgba(52, 168, 116, 0.1);
+}
+
+.r-hit-s {
+  color: #c2492e;
+  font-weight: 700;
+  background: rgba(232, 104, 74, 0.1);
+}
+
+/* ---- 公司卡片列表（旧版卡片视图样式保留备用） ---- */
 .stock-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

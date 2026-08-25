@@ -159,7 +159,7 @@
     if (!state.scoresLoaded) fetchScores();
   }
 
-  // 渲染列表（搜索过滤 + 评分排序 + 分数徽章），重建 DOM 后重新绑定交互
+  // 渲染列表（搜索过滤 + 评分排序 + 宽表展示），重建 DOM 后重新绑定交互
   function renderList() {
     var box = $('stock-list');
     var kw = (state.keyword || '').trim().toLowerCase();
@@ -173,19 +173,30 @@
       sortBtn('schloss', '施洛斯') +
       sortBtn('buffett', '巴菲特') +
       '<span class="s-sort-hint">点击按评分排序，再点同标准切换升/降序</span></div>';
-    html += '<div class="stock-grid">';
+    // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看
+    html += '<div class="stock-table-wrap"><table class="stock-list-table"><thead>' +
+      '<tr class="th-g1">' +
+      '<th rowspan="2" class="stick">股票名称</th>' +
+      '<th rowspan="2">代码</th>' +
+      '<th rowspan="2">所属行业</th>' +
+      '<th rowspan="2">现价</th>' +
+      '<th colspan="4">四大流派评分</th>' +
+      '<th colspan="4">建议买入参考</th>' +
+      '<th colspan="4">保守卖出参考</th>' +
+      '<th colspan="4">公允卖出参考</th>' +
+      '</tr><tr class="th-g2">' +
+      [1, 2, 3, 4].map(function () {
+        return '<th>格进取</th><th>格防御</th><th>施洛斯</th><th>巴菲特</th>';
+      }).join('') +
+      '</tr></thead><tbody>';
     list.forEach(function (c) {
       var k = (c.name + ' ' + c.code).toLowerCase();
       if (kw && k.indexOf(kw) < 0) return;
-      html +=
-        '<div class="stock-card" data-k="' + k + '" data-code="' + c.code + '" tabindex="0" role="link" ' +
-        'onclick="location.hash=\'#/' + c.code + '\'">' +
-        '<div><span class="s-name">' + c.name + '</span><span class="s-code">' + c.code + '</span>' +
-        (c.industry ? '<span class="s-industry">' + c.industry + '</span>' : '') +
-        '</div>' + scoreBadges(state.scores[c.code] || null) +
-        '</div>';
+      html += '<tr class="stock-row" data-k="' + k + '" data-code="' + c.code + '" ' +
+        'data-price="' + (c.price == null ? '' : c.price) + '" tabindex="0" role="link">' +
+        listCells(c) + '</tr>';
     });
-    html += '</div>';
+    html += '</tbody></table></div>';
     html += '<div class="stock-hint" id="stock-search-empty" style="display:none">未找到匹配的公司</div>';
     html += '<div class="stock-list-foot">数据更新于 ' + fmtFullDate(state.indexUpdatedAt) + '</div>';
     box.innerHTML = html;
@@ -196,9 +207,9 @@
       state.keyword = input.value;
       var q = state.keyword.trim().toLowerCase();
       var shown = 0;
-      box.querySelectorAll('.stock-card').forEach(function (card) {
-        var hit = !q || (card.getAttribute('data-k') || '').indexOf(q) >= 0;
-        card.style.display = hit ? '' : 'none';
+      box.querySelectorAll('.stock-row').forEach(function (row) {
+        var hit = !q || (row.getAttribute('data-k') || '').indexOf(q) >= 0;
+        row.style.display = hit ? '' : 'none';
         if (hit) shown++;
       });
       $('stock-search-empty').style.display = shown ? 'none' : '';
@@ -218,18 +229,57 @@
       });
     });
 
-    // 键盘可达：Enter/空格进入详情
-    box.querySelectorAll('.stock-card').forEach(function (card) {
-      card.addEventListener('keydown', function (e) {
+    // 行点击与键盘可达：进入详情（路由由 hashchange 统一处理）
+    box.querySelectorAll('.stock-row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        location.hash = '#/' + row.getAttribute('data-code');
+      });
+      row.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          location.hash = '#/' + card.getAttribute('data-code');
+          location.hash = '#/' + row.getAttribute('data-code');
         }
       });
     });
 
     // 从详情返回时恢复滚动位置
     if (state.listScroll) window.scrollTo(0, state.listScroll);
+  }
+
+  // 单行 20 个单元格：名称/代码/行业/现价 + 评分4 + 买入4 + 保守卖出4 + 公允卖出4
+  // data-s 标记供降级路径 fillRowScores 渐进重填；价格与现价对照着色（买区绿/卖区红）
+  function listCells(c) {
+    var sc = state.scores[c.code] || null;
+    var refs = sc ? sc.priceRefs : null;
+    var cur = c.price;
+    var h = '<td class="c-name stick">' + c.name + '</td>' +
+      '<td class="c-code">' + c.code + '</td>' +
+      '<td class="c-industry">' + (c.industry || '-') + '</td>' +
+      '<td class="c-num c-now">' + (cur == null ? '-' : fmtNum(cur)) + '</td>';
+    ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
+      var v = sc ? sc[k] : null;
+      var g = gradeOf(v);
+      h += '<td class="c-num sc-' + g + '" data-s="score-' + k + '" title="' + gradeText(g) + '">' +
+        (v == null ? '-' : fmtNum(v)) + '</td>';
+    });
+    // 买入参考：现价 ≤ 买入价（进入买入区）标绿
+    ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
+      var p = refs && refs[k] ? refs[k].buy : null;
+      var hit = p != null && cur != null && cur <= p ? ' r-hit' : '';
+      h += '<td class="c-num' + hit + '" data-s="buy-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
+    });
+    // 保守卖出：现价 ≥ 卖出价（进入卖出区）标红
+    ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
+      var p = refs && refs[k] ? refs[k].sellCons : null;
+      var hit = p != null && cur != null && cur >= p ? ' r-hit-s' : '';
+      h += '<td class="c-num' + hit + '" data-s="sellC-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
+    });
+    ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
+      var p = refs && refs[k] ? refs[k].sellFair : null;
+      var hit = p != null && cur != null && cur >= p ? ' r-hit-s' : '';
+      h += '<td class="c-num' + hit + '" data-s="sellF-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
+    });
+    return h;
   }
 
   /* ---------------- 列表评分预载与排序 ---------------- */
@@ -257,24 +307,6 @@
     return arr;
   }
 
-  // 单张卡片评分徽章（2×2 网格，颜色随等级，当前排序标准高亮）
-  function scoreBadges(sc) {
-    var defs = [
-      ['grahamAgg', '格进取', '格雷厄姆·进取型烟蒂'],
-      ['grahamDef', '格防御', '格雷厄姆·防御型烟蒂'],
-      ['schloss', '施洛斯', '施洛斯烟蒂'],
-      ['buffett', '巴菲特', '巴菲特芒格']
-    ];
-    return '<div class="s-scores">' + defs.map(function (d) {
-      var v = sc ? sc[d[0]] : null;
-      var g = gradeOf(v);
-      var active = state.sortKey === d[0] ? ' s-active' : '';
-      return '<span class="s-score s-' + g + active + '" title="' + d[2] + '评分：' +
-        (v == null ? '数据不足' : fmtNum(v)) + ' 分">' + d[1] +
-        ' <b>' + (v == null ? '-' : fmtNum(v)) + '</b></span>';
-    }).join('') + '</div>';
-  }
-
   // 并行预载全部公司详细数据并计算四大评分（渐进填充；数据缓存供详情页复用）
   function fetchScores() {
     state.scoresLoaded = true;
@@ -284,22 +316,46 @@
         .then(function (d) {
           state.details[c.code] = d;
           try {
-            var v = valueScores(d, valueAnalysis(d));
+            var va = valueAnalysis(d);
+            var v = valueScores(d, va);
             state.scores[c.code] = {
               grahamAgg: v.grahamAgg.total, grahamDef: v.grahamDef.total,
-              schloss: v.schloss.total, buffett: v.buffett.total
+              schloss: v.schloss.total, buffett: v.buffett.total,
+              priceRefs: priceReferences(d, va)
             };
           } catch (e) { /* 单家计算失败不影响其他公司 */ }
-          fillCardScores(c.code);
+          fillRowScores(c.code);
         })
         .catch(function () { /* 单家加载失败跳过 */ });
     });
   }
 
-  // 单张卡片渐进补充分数徽章（不重建整个列表）
-  function fillCardScores(code) {
-    var card = document.querySelector('.stock-card[data-code="' + code + '"]');
-    if (card) card.querySelector('.s-scores').outerHTML = scoreBadges(state.scores[code] || null);
+  // 单行渐进补填评分与价格参考（不重建整个表格）
+  function fillRowScores(code) {
+    var row = document.querySelector('.stock-row[data-code="' + code + '"]');
+    if (!row) return;
+    var sc = state.scores[code] || null;
+    var refs = sc ? sc.priceRefs : null;
+    var cur = row.getAttribute('data-price');
+    cur = cur === '' || cur == null ? null : Number(cur);
+    row.querySelectorAll('[data-s]').forEach(function (td) {
+      var m = td.getAttribute('data-s').split('-');
+      var kind = m[0], k = m[1], p = null;
+      if (kind === 'score') {
+        p = sc ? sc[k] : null;
+        td.className = 'c-num sc-' + gradeOf(p);
+        td.title = gradeText(gradeOf(p));
+      } else {
+        if (refs && refs[k]) p = refs[k][kind === 'buy' ? 'buy' : kind === 'sellC' ? 'sellCons' : 'sellFair'];
+        var hit = '';
+        if (p != null && cur != null) {
+          if (kind === 'buy' && cur <= p) hit = ' r-hit';
+          if (kind !== 'buy' && cur >= p) hit = ' r-hit-s';
+        }
+        td.className = 'c-num' + hit;
+      }
+      td.innerHTML = p == null ? '-' : fmtNum(p);
+    });
   }
 
   function fetchIndex() {
