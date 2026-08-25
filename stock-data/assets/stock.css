@@ -49,6 +49,22 @@
   color: #7a8699;
 }
 
+/* 可排序列：手型光标 + 悬停反馈；激活列高亮显示箭头 */
+.stock-list-table th.th-sort {
+  cursor: pointer;
+  user-select: none;
+}
+
+.stock-list-table th.th-sort:hover {
+  background: #e4e9f2;
+  color: #1f2d3d;
+}
+
+.stock-list-table th.th-sort.active {
+  background: #e3ecfa;
+  color: #2b6cb0;
+}
+
 /* 表头垂直吸顶（页面内滚动时保持可见）；名称列额外吸左 */
 .stock-list-table thead th {
   position: sticky;

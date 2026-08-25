@@ -168,25 +168,28 @@
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>';
     html += '<div class="s-sort">' +
-      sortBtn('grahamAgg', '格·进取') +
-      sortBtn('grahamDef', '格·防御') +
-      sortBtn('schloss', '施洛斯') +
-      sortBtn('buffett', '巴菲特') +
-      '<span class="s-sort-hint">点击按评分排序，再点同标准切换升/降序</span></div>';
-    // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看
+      sortBtn('score-grahamAgg', '格·进取') +
+      sortBtn('score-grahamDef', '格·防御') +
+      sortBtn('score-schloss', '施洛斯') +
+      sortBtn('score-buffett', '巴菲特') +
+      '<span class="s-sort-hint">点击表头任意列或下方按钮排序，再点同列切换升/降序</span></div>';
+    // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看；
+    // 子表头与基础列均可点击排序（data-sort 键：score-/buy-/sellC-/sellF- + 流派）
     html += '<div class="stock-table-wrap"><table class="stock-list-table"><thead>' +
       '<tr class="th-g1">' +
-      '<th rowspan="2" class="stick">股票名称</th>' +
-      '<th rowspan="2">代码</th>' +
-      '<th rowspan="2">所属行业</th>' +
-      '<th rowspan="2">现价</th>' +
+      thSort('name', '股票名称', 'stick', ' rowspan="2"') +
+      thSort('code', '代码', null, ' rowspan="2"') +
+      thSort('industry', '所属行业', null, ' rowspan="2"') +
+      thSort('price', '现价', null, ' rowspan="2"') +
       '<th colspan="4">四大流派评分</th>' +
       '<th colspan="4">建议买入参考</th>' +
       '<th colspan="4">保守卖出参考</th>' +
       '<th colspan="4">公允卖出参考</th>' +
       '</tr><tr class="th-g2">' +
-      [1, 2, 3, 4].map(function () {
-        return '<th>格进取</th><th>格防御</th><th>施洛斯</th><th>巴菲特</th>';
+      ['score', 'buy', 'sellC', 'sellF'].map(function (prefix) {
+        return ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
+          return thSort(prefix + '-' + k, ['格进取', '格防御', '施洛斯', '巴菲特'][i]);
+        }).join('');
       }).join('') +
       '</tr></thead><tbody>';
     list.forEach(function (c) {
@@ -215,18 +218,12 @@
       $('stock-search-empty').style.display = shown ? 'none' : '';
     });
 
-    // 评分排序：首次点击按该标准降序（高分在前），再点同标准切换升/降
+    // 排序：表头列与下方按钮共用同一逻辑（applySort），首次点击数值列降序、文本列升序
+    box.querySelectorAll('thead th[data-sort]').forEach(function (th) {
+      th.addEventListener('click', function () { applySort(th.getAttribute('data-sort')); });
+    });
     box.querySelectorAll('.s-sort button').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var k = btn.getAttribute('data-sort');
-        if (state.sortKey === k) {
-          state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-        } else {
-          state.sortKey = k;
-          state.sortDir = 'desc';
-        }
-        renderList();
-      });
+      btn.addEventListener('click', function () { applySort(btn.getAttribute('data-sort')); });
     });
 
     // 行点击与键盘可达：进入详情（路由由 hashchange 统一处理）
@@ -291,20 +288,59 @@
       label + (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</button>';
   }
 
-  // 按当前排序标准返回公司列表（无排序时保持原顺序；缺分排最后）
+  // 表头排序单元格 HTML（可点击；激活列高亮并显示箭头；cls 追加样式如 stick，attrs 追加属性如 rowspan）
+  function thSort(key, label, cls, attrs) {
+    var active = state.sortKey === key;
+    return '<th' + (attrs || '') + ' data-sort="' + key + '" class="th-sort' +
+      (active ? ' active' : '') + (cls ? ' ' + cls : '') +
+      '" title="点击按' + label + '排序，再点切换升/降序">' + label +
+      (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</th>';
+  }
+
+  // 统一排序入口：首次点击数值列降序（高分/高价在前）、文本列升序；再点同列切换升/降
+  function applySort(key) {
+    if (state.sortKey === key) {
+      state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.sortKey = key;
+      state.sortDir = (key === 'name' || key === 'code' || key === 'industry') ? 'asc' : 'desc';
+    }
+    renderList();
+  }
+
+  // 取公司排序值：基础列直接读字段；评分/价格参考从预计算 scores（缺则 null 排最后）
+  function sortVal(c, key) {
+    if (key === 'name' || key === 'code' || key === 'industry') return c[key] || '';
+    if (key === 'price') return c.price;
+    var sc = state.scores[c.code];
+    if (!sc) return null;
+    if (key.indexOf('score-') === 0) return sc[key.slice(6)];
+    var refs = sc.priceRefs;
+    if (!refs) return null;
+    var k = key.slice(key.indexOf('-') + 1);
+    var r = refs[k];
+    if (!r) return null;
+    if (key.indexOf('buy-') === 0) return r.buy;
+    if (key.indexOf('sellC-') === 0) return r.sellCons;
+    if (key.indexOf('sellF-') === 0) return r.sellFair;
+    return null;
+  }
+
+  // 按当前排序标准返回公司列表（无排序时保持原顺序；缺值排最后）
   function sortCompanies() {
     var key = state.sortKey;
     if (!key) return state.companies.slice();
-    var arr = state.companies.slice().sort(function (a, b) {
-      var sa = state.scores[a.code] ? state.scores[a.code][key] : null;
-      var sb = state.scores[b.code] ? state.scores[b.code][key] : null;
+    return state.companies.slice().sort(function (a, b) {
+      var sa = sortVal(a, key);
+      var sb = sortVal(b, key);
       if (sa == null && sb == null) return 0;
       if (sa == null) return 1;
       if (sb == null) return -1;
-      return sa - sb;
+      var r;
+      if (typeof sa === 'number' && typeof sb === 'number') r = sa - sb;
+      else r = String(sa).localeCompare(String(sb), 'zh-Hans-CN');
+      return state.sortDir === 'asc' ? r : -r;
     });
-    if (state.sortDir === 'desc') arr.reverse();
-    return arr;
   }
 
   // 并行预载全部公司详细数据并计算四大评分（渐进填充；数据缓存供详情页复用）
