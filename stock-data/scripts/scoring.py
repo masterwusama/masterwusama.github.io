@@ -38,6 +38,13 @@ def sheet_row_by_date(rows, date):
     return None
 
 
+def annual_balance_rows(rows):
+    """对应 JS annualBalanceRows：三大报表年报序列（报告日 12-31，升序）"""
+    rows = [r for r in (rows or [])
+            if '12-31' in str(r.get('报告日') or '')]
+    return sorted(rows, key=lambda r: str(r.get('报告日') or ''))
+
+
 def cagr(cur, prev, years):
     if cur is None or prev is None or prev <= 0 or not years:
         return None
@@ -316,7 +323,82 @@ def value_scores(d, va):
         ((10.0 if mcap <= ca else lerp_score(mcap / ca, 1, 2, 10, 0))
          if (mcap is not None and ca is not None and ca > 0) else None),
     )
-    s_total = ssum(s_items)
+    # ---- 施洛斯风险扣分（与 JS valueScores 中 riskItems 一一对应）----
+    def eq_of(row):
+        """归母权益（优先归母，缺则全部权益）"""
+        if not row:
+            return None
+        v = row.get('归属于母公司股东权益合计')
+        return v if v is not None else row.get('所有者权益(或股东权益)合计')
+
+    def int_debt_of(row):
+        """有息负债全口径（与上方 int_debt 一致：短借+一年内+长借+债券+租赁，缺键当 0）"""
+        if not row:
+            return None
+        v = ssum([row.get('短期借款'), row.get('一年内到期的非流动负债'),
+                  row.get('长期借款'), row.get('应付债券'), row.get('租赁负债')])
+        return 0.0 if v is None else v
+
+    ba_annual = annual_balance_rows(d.get('balance') or [])
+    in_annual = annual_balance_rows(d.get('income') or [])
+    cf_annual = annual_balance_rows(d.get('cashflow') or [])
+    last_eq = eq_of(last_ba)
+    earliest_eq = eq_of(ba_annual[0]) if len(ba_annual) >= 5 else None
+    int_debt_now = int_debt_of(last_ba) if last_ba else None
+    int_debt_earliest = int_debt_of(ba_annual[0]) if len(ba_annual) >= 5 else None
+    # 近5年扣非亏损年数（annual 最后 5 行）
+    adj_net = [r.get('扣非净利润') for r in annual[-5:]]
+    adj_loss_n = len([v for v in adj_net if v is not None and v < 0])
+    adj_valid = len([v for v in adj_net if v is not None])
+    # 应收账款/营收 3 年年报均值（位置对齐，缺失年忽略）
+    ar3 = [r.get('应收账款') for r in ba_annual[-3:]]
+    rev3 = [r.get('营业总收入') for r in in_annual[-3:]]
+    ar_rev3 = None
+    if len(ar3) == 3 and len(rev3) == 3:
+        s_ar, s_rev = ssum(ar3), ssum(rev3)
+        if s_ar is not None and s_rev is not None:
+            ar_rev3 = s_ar / s_rev
+    # 近3年累计经营现金流 vs 累计利息费用
+    ocf3 = [r.get('经营活动产生的现金流量净额') for r in cf_annual[-3:]]
+    int_exp3 = [r.get('利息费用') for r in in_annual[-3:]]
+    ocf3_sum, int_exp3_sum = ssum(ocf3), ssum(int_exp3)
+    ocf_covers = (ocf3_sum >= int_exp3_sum) if (ocf3_sum is not None and int_exp3_sum is not None) else None
+    # 近5年累计经营现金流（区分扩张举债 vs 补亏举债）
+    ocf5_sum = ssum([r.get('经营活动产生的现金流量净额') for r in cf_annual[-5:]])
+    # 5 年趋势（最新 vs 最早年报，要求 ≥5 个年报）
+    span_ok = len(annual) >= 5
+    rev_now = last.get('营业总收入') if last else None
+    rev_earliest = annual[0].get('营业总收入') if span_ok else None
+    g_margin_now = last.get('销售毛利率') if last else None
+    g_margin_earliest = annual[0].get('销售毛利率') if span_ok else None
+    eq_grow = (last_eq / earliest_eq - 1.0) if (last_eq is not None and earliest_eq is not None and earliest_eq > 0) else None
+    int_debt_grow = (int_debt_now / int_debt_earliest - 1.0) if (int_debt_now is not None and int_debt_earliest is not None and int_debt_earliest > 0) else None
+    rev_grow = (rev_now / rev_earliest - 1.0) if (rev_now is not None and rev_earliest is not None and rev_earliest > 0) else None
+    g_margin_delta = (g_margin_now - g_margin_earliest) if (g_margin_now is not None and g_margin_earliest is not None) else None
+    gw_int_sum = (goodwill or 0.0) + (intang or 0.0)
+    inv = last_ba.get('存货') if last_ba else None
+    # 9 个量化扣分项（与 JS riskItems 阈值/分值完全一致），数据不足给 0 不误伤
+    risk_items = (
+        # 净资产5年变动（归母权益）
+        0.0 if eq_grow is None else (-5.0 if eq_grow <= -0.4 else (-3.0 if eq_grow <= -0.2 else 0.0)),
+        # 近5年扣非亏损年数
+        0.0 if adj_valid < 3 else (-5.0 if adj_loss_n >= 3 else (-3.0 if adj_loss_n == 2 else 0.0)),
+        # (商誉+无形资产)/归母权益
+        0.0 if (last_eq is None or last_eq <= 0) else (-4.0 if gw_int_sum / last_eq > 0.6 else (-2.0 if gw_int_sum / last_eq > 0.3 else 0.0)),
+        # 应收账款/营收（3年年报均值）
+        0.0 if ar_rev3 is None else (-3.0 if ar_rev3 > 0.6 else (-1.5 if ar_rev3 > 0.4 else 0.0)),
+        # 存货/总资产（最新年报）
+        0.0 if (inv is None or assets is None or assets <= 0) else (-2.0 if inv / assets > 0.5 else (-1.0 if inv / assets > 0.35 else 0.0)),
+        # 有息负债5年变动（翻倍且 5 年经营现金流为负 → 补亏举债重扣）
+        0.0 if int_debt_grow is None else (-6.0 if (int_debt_grow > 1 and ocf5_sum is not None and ocf5_sum < 0) else (-3.0 if int_debt_grow > 1 else (-2.0 if int_debt_grow > 0.5 else 0.0))),
+        # 近3年经营现金流 vs 利息费用
+        -4.0 if ocf_covers is False else 0.0,
+        # 营收5年变动
+        0.0 if rev_grow is None else (-4.0 if rev_grow <= -0.5 else (-2.0 if rev_grow <= -0.2 else 0.0)),
+        # 毛利率5年变动
+        0.0 if g_margin_delta is None else (-4.0 if g_margin_delta <= -0.2 else (-2.0 if g_margin_delta <= -0.1 else 0.0)),
+    )
+    s_total = ssum(s_items + risk_items)
 
     # ---- 巴菲特芒格 ----
     share = None

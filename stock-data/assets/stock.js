@@ -73,6 +73,13 @@
     return null;
   }
 
+  // 三大报表年报序列（报告日 12-31，升序）——用于历史趋势对比
+  function annualBalanceRows(rows) {
+    return (rows || [])
+      .filter(function (r) { return String(r['报告日'] || '').indexOf('12-31') >= 0; })
+      .sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+  }
+
   // 复合增长率：cur 较 prev 跨越 years 年
   function cagr(cur, prev, years) {
     if (cur == null || prev == null || prev <= 0 || !years) return null;
@@ -908,6 +915,75 @@
     ];
     var gDTotal = sum(gD.map(function (x) { return x.score; }));
 
+    // ---- 施洛斯风险扣分（资产萎缩/减值结构/债务恶化/经营溃败的量化危险信号，仅负分）----
+    // 归母权益（优先归母，缺则全部权益）
+    function eqOf(row) {
+      if (!row) return null;
+      var v = row['归属于母公司股东权益合计'];
+      return v != null ? v : row['所有者权益(或股东权益)合计'];
+    }
+    // 有息负债全口径（与上方 intDebt 一致：短借+一年内到期+长借+债券+租赁，缺键当 0）
+    function intDebtOf(row) {
+      if (!row) return null;
+      var v = sum([row['短期借款'], row['一年内到期的非流动负债'], row['长期借款'], row['应付债券'], row['租赁负债']]);
+      return v == null ? 0 : v;
+    }
+    var baAnnual = annualBalanceRows(d.balance);   // 三大报表年报序列（升序）
+    var inAnnual = annualBalanceRows(d.income);
+    var cfAnnual = annualBalanceRows(d.cashflow);
+    var lastEq = eqOf(lastBa);
+    var earliestEq = baAnnual.length >= 5 ? eqOf(baAnnual[0]) : null;
+    var intDebtNow = lastBa ? intDebtOf(lastBa) : null;
+    var intDebtEarliest = baAnnual.length >= 5 ? intDebtOf(baAnnual[0]) : null;
+    // 近5年扣非亏损年数（annual 最后 5 行）
+    var adjNet = annual.slice(-5).map(function (r) { return r['扣非净利润']; });
+    var adjLossN = adjNet.filter(function (v) { return v != null && v < 0; }).length;
+    var adjValid = adjNet.filter(function (v) { return v != null; }).length;
+    // 应收账款/营收 3 年年报均值（位置对齐，缺失年忽略）
+    var ar3 = baAnnual.slice(-3).map(function (r) { return r['应收账款']; });
+    var rev3 = inAnnual.slice(-3).map(function (r) { return r['营业总收入']; });
+    var arRev3 = (ar3.length === 3 && rev3.length === 3) ? sum(ar3) / sum(rev3) : null;
+    // 近3年累计经营现金流 vs 累计利息费用
+    var ocf3 = cfAnnual.slice(-3).map(function (r) { return r['经营活动产生的现金流量净额']; });
+    var intExp3 = inAnnual.slice(-3).map(function (r) { return r['利息费用']; });
+    var ocf3Sum = sum(ocf3), intExp3Sum = sum(intExp3);
+    var ocfCovers = (ocf3Sum != null && intExp3Sum != null) ? ocf3Sum >= intExp3Sum : null;
+    // 近5年累计经营现金流（区分扩张举债 vs 补亏举债）
+    var ocf5Sum = sum(cfAnnual.slice(-5).map(function (r) { return r['经营活动产生的现金流量净额']; }));
+    // 5 年趋势（最新 vs 最早年报，要求 ≥5 个年报）
+    var spanOk = annual.length >= 5;
+    var revNow = last ? last['营业总收入'] : null;
+    var revEarliest = spanOk ? annual[0]['营业总收入'] : null;
+    var gMarginNow = last ? last['销售毛利率'] : null;
+    var gMarginEarliest = spanOk ? annual[0]['销售毛利率'] : null;
+    var eqGrow = (lastEq != null && earliestEq != null && earliestEq > 0) ? lastEq / earliestEq - 1 : null;
+    var intDebtGrow = (intDebtNow != null && intDebtEarliest != null && intDebtEarliest > 0) ? intDebtNow / intDebtEarliest - 1 : null;
+    var revGrow = (revNow != null && revEarliest != null && revEarliest > 0) ? revNow / revEarliest - 1 : null;
+    var gMarginDelta = (gMarginNow != null && gMarginEarliest != null) ? gMarginNow - gMarginEarliest : null;
+    var gwIntSum = (goodwill != null ? goodwill : 0) + (intang != null ? intang : 0);
+    var inv = lastBa ? lastBa['存货'] : null;
+    // 9 个量化扣分项：危险信号触发负分（与正向分叠加），数据不足给 0 不误伤
+    var riskItems = [
+      it('净资产5年变动（归母权益）', eqGrow == null ? '-' : fmtPct(eqGrow), '≥ -20%（萎缩扣分）', 5,
+        eqGrow == null ? 0 : (eqGrow <= -0.4 ? -5 : eqGrow <= -0.2 ? -3 : 0)),
+      it('近5年扣非亏损年数', adjValid < 3 ? '-' : adjLossN + '/5 年', '≤ 1 年（扣非口径）', 5,
+        adjValid < 3 ? 0 : (adjLossN >= 3 ? -5 : adjLossN === 2 ? -3 : 0)),
+      it('(商誉+无形资产)/归母权益', (lastEq != null && lastEq > 0) ? fmtPct(gwIntSum / lastEq) : '-', '≤ 30%（减值风险）', 4,
+        (lastEq != null && lastEq > 0) ? (gwIntSum / lastEq > 0.6 ? -4 : gwIntSum / lastEq > 0.3 ? -2 : 0) : 0),
+      it('应收账款/营收（3年年报均值）', arRev3 == null ? '-' : fmtPct(arRev3), '≤ 40%（坏账风险）', 3,
+        arRev3 == null ? 0 : (arRev3 > 0.6 ? -3 : arRev3 > 0.4 ? -1.5 : 0)),
+      it('存货/总资产（最新年报）', (inv != null && assets != null && assets > 0) ? fmtPct(inv / assets) : '-', '≤ 35%（跌价风险）', 2,
+        (inv != null && assets != null && assets > 0) ? (inv / assets > 0.5 ? -2 : inv / assets > 0.35 ? -1 : 0) : 0),
+      it('有息负债5年变动', intDebtGrow == null ? '-' : fmtPct(intDebtGrow), '≤ 50%；翻倍且5年经营现金流为负重扣（补亏举债）', 6,
+        intDebtGrow == null ? 0 : (intDebtGrow > 1 ? ((ocf5Sum != null && ocf5Sum < 0) ? -6 : -3) : intDebtGrow > 0.5 ? -2 : 0)),
+      it('近3年经营现金流 vs 利息费用', (ocf3Sum == null || intExp3Sum == null) ? '-' : fmtMoney(ocf3Sum) + ' / ' + fmtMoney(intExp3Sum), '经营现金流 ≥ 利息费用', 4,
+        ocfCovers === false ? -4 : 0),
+      it('营收5年变动', revGrow == null ? '-' : fmtPct(revGrow), '≥ -20%（竞争地位）', 4,
+        revGrow == null ? 0 : (revGrow <= -0.5 ? -4 : revGrow <= -0.2 ? -2 : 0)),
+      it('毛利率5年变动', gMarginDelta == null ? '-' : fmtPct(gMarginDelta), '≥ -10pct（定价权）', 4,
+        gMarginDelta == null ? 0 : (gMarginDelta <= -0.2 ? -4 : gMarginDelta <= -0.1 ? -2 : 0))
+    ];
+
     // ---- 施洛斯烟蒂（资产折扣 + 低估值 + 低负债 + 股息）----
     var sItems = [
       it('市净率', fmtNum(pb), '≤ 0.75（资产折扣）', 25, lerpScore(pb, 0.75, 1.5, 25, 0)),
@@ -918,7 +994,7 @@
       it('市值 / 流动资产', (mcap == null ? '-' : fmtMoney(mcap)) + ' / ' + (ca == null ? '-' : fmtMoney(ca)), '市值 ≤ 流动资产', 10,
         (mcap != null && ca != null && ca > 0) ? (mcap <= ca ? 10 : lerpScore(mcap / ca, 1, 2, 10, 0)) : null)
     ];
-    var sTotal = sum(sItems.map(function (x) { return x.score; }));
+    var sTotal = sum(sItems.concat(riskItems).map(function (x) { return x.score; }));
 
     // ---- 巴菲特芒格（优质企业 + 护城河）----
     var moatItems = [
@@ -961,8 +1037,8 @@
         note: '格雷厄姆 net-net 思路：以低于净流动资产（流动资产-全部负债）2/3 的价格买入，赚取清算价值与市价之差。得分越高代表越接近“捡烟蒂”状态。' },
       grahamDef: { title: '防御型烟蒂 · 防御型投资者标准', total: gDTotal, items: gD,
         note: '对应《聪明的投资者》第 14 章防御型投资者选股标准（规模/流动比率/长期负债/盈利稳定/分红历史/盈利增长/估值）。规模为硬门槛（总资产≥100亿），关键安全项（流动比率<1、营运资本为负、近5年过半亏损、净利负增长）直接负分惩罚，比进取型更严格。' },
-      schloss: { title: '施洛斯烟蒂 · 资产折扣+低估值+低负债', total: sTotal, items: sItems,
-        note: '沃尔特·施洛斯风格：以低于净资产/流动资产的价格买入、负债极低、有股息，分散持有等待价值回归。' },
+      schloss: { title: '施洛斯烟蒂 · 资产折扣+低估值+低负债', total: sTotal, items: sItems.concat(riskItems),
+        note: '沃尔特·施洛斯风格：以低于净资产/流动资产的价格买入、负债极低、有股息，分散持有等待价值回归。风险扣分项为量化危险信号：净资产萎缩/扣非亏损、商誉无形与应收存货减值结构、有息负债攀升与利息覆盖不足、营收毛利率趋势溃败，数据不足不扣分；管理层掏空等无公开量化数据的信号未纳入。' },
       buffett: { title: '巴菲特芒格 · 优质企业合理价格+护城河', total: bTotal, items: bItems.concat(moatItems),
         note: moatNote }
     };
