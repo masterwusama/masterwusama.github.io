@@ -249,9 +249,9 @@
     var sc = state.scores[c.code] || null;
     var refs = sc ? sc.priceRefs : null;
     var cur = c.price;
-    var h = '<td class="c-name stick">' + c.name + '</td>' +
+    var h = '<td class="c-name stick" title="' + c.name + '">' + c.name + '</td>' +
       '<td class="c-code">' + c.code + '</td>' +
-      '<td class="c-industry">' + (c.industry || '-') + '</td>' +
+      '<td class="c-industry" title="' + (c.industry || '') + '">' + (c.industry || '-') + '</td>' +
       '<td class="c-num c-now">' + (cur == null ? '-' : fmtNum(cur)) + '</td>';
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;

@@ -23,24 +23,25 @@
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  min-width: 1600px;
+  min-width: 1220px;
   font-size: 12px;
   line-height: 1.5;
 }
 
 .stock-list-table th {
-  padding: 6px 10px;
+  padding: 6px 8px;
   background: #f0f3f7;
   color: #5a6577;
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.35;
   text-align: center;
   border-bottom: 1px solid #e1e1e1;
   border-right: 1px solid #e8ebf0;
 }
 
 .stock-list-table .th-g1 th {
-  padding: 8px 10px;
+  padding: 7px 8px;
   font-size: 13px;
 }
 
@@ -86,10 +87,18 @@
 }
 
 .stock-list-table td {
-  padding: 5px 10px;
+  padding: 5px 8px;
   border-bottom: 1px solid #f0f2f5;
   border-right: 1px solid #f4f6f9;
   white-space: nowrap;
+}
+
+/* 长文本列（名称/行业）：超宽省略号显示，悬停 title 查看全名 */
+.stock-list-table .c-name,
+.stock-list-table .c-industry {
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stock-row {
