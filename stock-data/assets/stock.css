@@ -93,12 +93,26 @@
   white-space: nowrap;
 }
 
-/* 长文本列（名称/行业）：超宽省略号显示，悬停 title 查看全名 */
+/* 名称/行业列允许自动换行（移动端不截断，长名完整展示） */
 .stock-list-table .c-name,
 .stock-list-table .c-industry {
-  max-width: 96px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* 宽屏自适应：≥1240px 主内容区按视口 92% 铺开（上限 1600px），大屏/4K 不再只有中间一条窄列。
+   规则一命中 Jekyll 渲染版（NexT 布局）；规则二命中独立形态（本地直接打开原始页，无 NexT 容器） */
+@media (min-width: 1240px) {
+  .header-inner, .container .main-inner, .footer-inner {
+    width: 92%;
+    max-width: 1600px;
+  }
+
+  body:not(:has(.container)) #stock-app {
+    width: 92%;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
 }
 
 .stock-row {
