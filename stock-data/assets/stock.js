@@ -172,7 +172,7 @@
       sortBtn('score-grahamDef', '格·防御') +
       sortBtn('score-schloss', '施洛斯') +
       sortBtn('score-buffett', '巴菲特') +
-      '<span class="s-sort-hint">点击表头任意列或下方按钮排序，再点同列切换升/降序</span></div>';
+      '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div>';
     // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看；
     // 子表头与基础列均可点击排序（data-sort 键：score-/buy-/sellC-/sellF- + 流派）
     html += '<div class="stock-table-wrap"><table class="stock-list-table"><thead>' +
@@ -188,7 +188,9 @@
       '</tr><tr class="th-g2">' +
       ['score', 'buy', 'sellC', 'sellF'].map(function (prefix) {
         return ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
-          return thSort(prefix + '-' + k, ['格进取', '格防御', '施洛斯', '巴菲特'][i]);
+          // 评分列按分数排；买入/卖出列按性价比（参考价÷现价倍数）排
+          return thSort(prefix + '-' + k, ['格进取', '格防御', '施洛斯', '巴菲特'][i], null, null,
+            prefix === 'score' ? null : '性价比');
         }).join('');
       }).join('') +
       '</tr></thead><tbody>';
@@ -288,12 +290,15 @@
       label + (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</button>';
   }
 
-  // 表头排序单元格 HTML（可点击；激活列高亮并显示箭头；cls 追加样式如 stick，attrs 追加属性如 rowspan）
-  function thSort(key, label, cls, attrs) {
+  // 表头排序单元格 HTML（可点击；激活列高亮并显示箭头；cls 追加样式如 stick，attrs 追加属性如 rowspan；
+  // hint 用于替换排序语义说明，如买入/卖出列按性价比排）
+  function thSort(key, label, cls, attrs, hint) {
     var active = state.sortKey === key;
+    var title = hint
+      ? '点击按' + label + '排序（' + hint + '），再点切换升/降序'
+      : '点击按' + label + '排序，再点切换升/降序';
     return '<th' + (attrs || '') + ' data-sort="' + key + '" class="th-sort' +
-      (active ? ' active' : '') + (cls ? ' ' + cls : '') +
-      '" title="点击按' + label + '排序，再点切换升/降序">' + label +
+      (active ? ' active' : '') + (cls ? ' ' + cls : '') + '" title="' + title + '">' + label +
       (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</th>';
   }
 
@@ -320,10 +325,15 @@
     var k = key.slice(key.indexOf('-') + 1);
     var r = refs[k];
     if (!r) return null;
-    if (key.indexOf('buy-') === 0) return r.buy;
-    if (key.indexOf('sellC-') === 0) return r.sellCons;
-    if (key.indexOf('sellF-') === 0) return r.sellFair;
+    if (key.indexOf('buy-') === 0) return ratio(r.buy, c.price);
+    if (key.indexOf('sellC-') === 0) return ratio(r.sellCons, c.price);
+    if (key.indexOf('sellF-') === 0) return ratio(r.sellFair, c.price);
     return null;
+  }
+
+  // 性价比 = 参考价 ÷ 现价（倍数）：越大说明相对现价的空间/折价越足；任一缺失返回 null
+  function ratio(a, b) {
+    return (a == null || b == null || b === 0) ? null : a / b;
   }
 
   // 按当前排序标准返回公司列表（无排序时保持原顺序；缺值排最后）
