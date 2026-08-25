@@ -8,7 +8,7 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var state = { companies: [], current: null, charts: [], view: 'year',
-    indexUpdatedAt: null, listScroll: 0, keyword: '',
+    indexUpdatedAt: null, listScroll: 0, keyword: '', tab: 'A',
     scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc' };
 
   // 10年期国债收益率参考值（用于股债利差对比，需手动定期更新）
@@ -135,8 +135,8 @@
   }
 
   function route() {
-    // 5~6 位代码：港股 5 位（00696），A 股 6 位（600873）
-    var m = location.hash.match(/^#\/(\d{5,6})$/);
+    // 代码：A 股 6 位数字（600873）/ 港股 5 位数字（00696）/ 美股 1~5 位字母数字（GOOGL、NVDA）
+    var m = location.hash.match(/^#\/([A-Za-z0-9]{1,6})$/);
     if (m) {
       // 进入详情前记录列表滚动位置，返回时恢复
       state.listScroll = window.scrollY;
@@ -159,12 +159,21 @@
     if (!state.scoresLoaded) fetchScores();
   }
 
-  // 渲染列表（搜索过滤 + 评分排序 + 宽表展示），重建 DOM 后重新绑定交互
+  // 渲染列表（市场 Tab 过滤 + 搜索过滤 + 评分排序 + 宽表展示），重建 DOM 后重新绑定交互
   function renderList() {
     var box = $('stock-list');
     var kw = (state.keyword || '').trim().toLowerCase();
-    var list = sortCompanies();
-    var html = '<div class="stock-search-wrap">' +
+    var list = sortCompanies().filter(function (c) { return c.market === state.tab; });
+    // 市场 Tab：A股/港股/美股 分流展示（带各市场数量），切换仅过滤不重拉数据
+    var tabLabels = { A: 'A股', HK: '港股', US: '美股' };
+    var html = '<div class="s-tabs" role="tablist">' +
+      ['A', 'HK', 'US'].map(function (m) {
+        var n = state.companies.filter(function (c) { return c.market === m; }).length;
+        return '<button class="s-tab' + (state.tab === m ? ' active' : '') + '" data-tab="' + m +
+          '" role="tab" aria-selected="' + (state.tab === m ? 'true' : 'false') + '">' +
+          tabLabels[m] + '<span class="s-tab-count">' + n + '</span></button>';
+      }).join('') + '</div>';
+    html += '<div class="stock-search-wrap">' +
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>';
     html += '<div class="s-sort">' +
@@ -218,6 +227,14 @@
         if (hit) shown++;
       });
       $('stock-search-empty').style.display = shown ? 'none' : '';
+    });
+
+    // 市场 Tab 切换：仅重渲染当前列表，保留搜索词与排序状态
+    box.querySelectorAll('.s-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.tab = btn.getAttribute('data-tab');
+        renderList();
+      });
     });
 
     // 排序：表头列与下方按钮共用同一逻辑（applySort），首次点击数值列降序、文本列升序
@@ -453,11 +470,15 @@
 
     var html = '';
 
-    // 头部
+    // 头部（市场徽标 + 货币单位：US→USD / HK→HKD / A→CNY）
+    var marketName = d.market === 'US' ? '美股' : d.market === 'HK' ? '港股' : 'A股';
+    var ccy = d.market === 'US' ? 'USD' : d.market === 'HK' ? 'HKD' : 'CNY';
     html += '<div class="stock-header">' +
       '<h2>' + d.name + '</h2>' +
+      '<span class="s-badge s-badge-' + (d.market || 'A') + '">' + marketName + '</span>' +
       '<span class="s-code">' + d.code + '</span>' +
       '<span class="s-price ' + cls(chg) + '">' + fmtNum(s.price) + '</span>' +
+      '<span class="s-ccy">' + ccy + '</span>' +
       '<span class="s-meta ' + cls(chg) + '">' +
       (chg == null ? '-' : (chg > 0 ? '+' : '') + (chg * 100).toFixed(2) + '%') + '</span>' +
       '<span class="s-meta">更新于 ' + fmtDate(s.time || d.updated_at) + '</span>' +
@@ -523,8 +544,9 @@
       '</div></div>' +
       '<div class="stock-compare-wrap"><table class="stock-compare" id="stock-compare-body"></table></div></div>';
 
-    // 三大报表
-    html += '<div class="stock-section"><h3>财务报表</h3>' +
+    // 三大报表（金额单位随市场：A/港股人民币元，美股美元）
+    html += '<div class="stock-section"><h3>财务报表' +
+      '<span class="s-ccy-note">（金额单位：' + (d.market === 'US' ? '美元' : '人民币元') + '）</span></h3>' +
       '<div class="stock-tabs">' +
       sheetTab('income', '利润表') + sheetTab('balance', '资产负债表') + sheetTab('cashflow', '现金流量表') +
       '<select id="stock-period"></select></div>' +

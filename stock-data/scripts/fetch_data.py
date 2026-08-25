@@ -235,11 +235,14 @@ def iso_or_none(v):
 
 
 def format_quote_time(raw):
-    """行情时间 → ISO：A 股 '20260807161442' / 港股 '2026/08/21 16:08:14'"""
+    """行情时间 → ISO：A 股 '20260807161442' / 港股 '2026/08/21 16:08:14' / 美股 '2026-08-25 16:00:01'"""
     s = str(raw).strip()
     if len(s) == 14 and s.isdigit():
         return f"{s[:4]}-{s[4:6]}-{s[6:8]}T{s[8:10]}:{s[10:12]}:{s[12:14]}+08:00"
     m = re.match(r"(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})", s)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}T{m.group(4)}:{m.group(5)}:{m.group(6)}+08:00"
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", s)
     if m:
         return f"{m.group(1)}-{m.group(2)}-{m.group(3)}T{m.group(4)}:{m.group(5)}:{m.group(6)}+08:00"
     return None
@@ -512,6 +515,184 @@ def fetch_company_hk(code: str, name: str):
     return result
 
 
+# ==================== 美股数据源（东财美股 + 腾讯行情） ====================
+# 东财美股三大报表为长表（科目×报告期），科目中文命名；财务指标仅年报口径
+# （美股财年统一映射 12-31，与 A 股 schema 对齐）。金额单位为美元；
+# 无分红/定期报告接口（前端已容错空列表）。
+
+# 财务指标映射：东财英文列 → 前端字段；比率类为百分数数值需 /100
+US_IND_MAP = {
+    "OPERATE_INCOME": "营业总收入",
+    "PARENT_HOLDER_NETPROFIT": "净利润",
+    "BASIC_EPS": "基本每股收益",
+}
+US_IND_PCT = {
+    "GROSS_PROFIT_RATIO": "销售毛利率",
+    "NET_PROFIT_RATIO": "销售净利率",
+    "ROE_AVG": "净资产收益率",
+    "ROA": "总资产净利率",
+    "DEBT_ASSET_RATIO": "资产负债率",
+}
+
+# 资产负债表科目映射：东财美股科目名 → 前端字段（未列出的科目保留原名）
+US_BALANCE_MAP = {
+    "现金及现金等价物": "货币资金",
+    "应收账款": "应收账款",
+    "存货": "存货",
+    "流动资产合计": "流动资产合计",
+    "物业、厂房及设备": "固定资产",
+    "无形资产": "无形资产",
+    "商誉": "商誉",
+    "总资产": "资产总计",
+    "短期债务": "短期借款",
+    "流动负债合计": "流动负债合计",
+    "长期负债": "长期借款",
+    "总负债": "负债合计",
+    "股东权益合计": "所有者权益(或股东权益)合计",
+    "归属于母公司股东权益": "归属于母公司股东权益合计",
+}
+
+# 利润表科目映射
+US_INCOME_MAP = {
+    "主营收入": "营业总收入",
+    "营业收入": "营业收入",
+    "营业成本": "营业成本",
+    "营业利润": "营业利润",
+    "归属于母公司股东净利润": "净利润",
+    "所得税": "所得税费用",
+}
+
+# 现金流量表科目映射（美股无“销售商品提供劳务收到的现金”，收现比留空）
+US_CASHFLOW_MAP = {
+    "经营活动产生的现金流量净额": "经营活动产生的现金流量净额",
+    "购买固定资产": "购建固定资产、无形资产和其他长期资产所支付的现金",
+    "购建无形资产及其他资产": "购建无形资产及其他资产支付的现金",
+    "现金及现金等价物期末余额": "期末现金及现金等价物余额",
+}
+
+
+def fiscal_year_end(date_str):
+    """美股财年统一映射 12-31：财年末在 1-6 月 → 上年 12-31，7-12 月 → 当年 12-31
+    （如 NVDA 2026-01-25 → 2025-12-31，保证前端年报序列按 12-31 对齐）"""
+    try:
+        y, m, _ = str(date_str).split("-")
+        y, m = int(y), int(m)
+        return f"{y - (1 if m <= 6 else 0)}-12-31"
+    except (ValueError, TypeError):
+        return date_str
+
+
+def fetch_us_report(code: str, kind: str, item_map: dict):
+    """东财美股三大报表：长表（科目×金额）→ 宽表（报告日 × 字段），按报告日倒序"""
+    df = ak.stock_financial_us_report_em(stock=code, symbol=kind, indicator="年报")
+    if df is None or df.empty:
+        return []
+    by_date = {}
+    for _, r in df.iterrows():
+        dt = fiscal_year_end(to_iso(str(r["REPORT_DATE"])[:10]))
+        if not dt:
+            continue
+        item = item_map.get(str(r["ITEM_NAME"]).strip(), str(r["ITEM_NAME"]).strip())
+        val = parse_number(r["AMOUNT"])
+        by_date.setdefault(dt, {})[item] = val
+    records = [{"报告日": dt, **fields} for dt, fields in by_date.items()]
+    records.sort(key=lambda r: r["报告日"], reverse=True)
+    return records[:MAX_PERIODS]
+
+
+def fetch_us_indicators(code: str):
+    """东财美股财务指标：仅年报口径（无季报），映射前端字段，按报告期倒序"""
+    df = ak.stock_financial_us_analysis_indicator_em(symbol=code)
+    if df is None or df.empty:
+        return []
+    df = df.sort_values("REPORT_DATE", ascending=True).reset_index(drop=True)
+    rows = []
+    for _, r in df.iterrows():
+        rec = {"报告期": fiscal_year_end(to_iso(str(r["REPORT_DATE"])[:10]))}
+        for en, zh in US_IND_MAP.items():
+            rec[zh] = parse_number(r[en])
+        for en, zh in US_IND_PCT.items():
+            rec[zh] = _pct(r[en])
+        rec["流动比率"] = parse_number(r["CURRENT_RATIO"])
+        # 美股仅年报（无单季口径），单季字段留空，前端季视图退化为报告期序列
+        rec["营业总收入_单季"] = None
+        rec["净利润_单季"] = None
+        rows.append(rec)
+    rows = rows[-MAX_PERIODS:]
+    return rows[::-1]
+
+
+def fetch_us_snapshot(code: str):
+    """美股快照：腾讯行情（价格/涨跌幅/时间/PE/市值，单位美元）。
+
+    腾讯美股字段：3=最新价、30=时间、32=涨跌幅%、39=PE(TTM)、44=流通市值(亿美元)、45=总市值(亿美元)；
+    无 PB 与换手率，留空。
+    """
+    url = f"http://qt.gtimg.cn/q=us{code}"
+    r = requests.get(url, timeout=10)
+    r.encoding = "gbk"
+    parts = r.text.strip().split(";")[0].split("~")
+    if len(parts) < 40:
+        return {}
+
+    def num(i):
+        try:
+            return float(parts[i])
+        except (ValueError, IndexError):
+            return None
+
+    return {
+        "name": parts[1].strip() or None,
+        "price": num(3),
+        "change_pct": None if num(32) is None else round(num(32) / 100.0, 6),
+        "pe_ttm": num(39),
+        "pb": None,
+        "market_cap": None if num(45) is None else round(num(45) * 1e8, 2),
+        "float_market_cap": None if num(44) is None else round(num(44) * 1e8, 2),
+        "turnover_rate": None,
+        "time": format_quote_time(parts[30]),
+    }
+
+
+def fetch_company_us(code: str, name: str):
+    """抓取美股公司：指标/三大报表/快照（东财 + 腾讯）；无分红与定期报告"""
+    result = {"code": code, "name": name, "market": "US"}
+    result["updated_at"] = datetime.now(CN_TZ).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+    errors = []
+    result["info"] = {}  # 东财美股无行业信息，留空
+
+    try:
+        result["indicators"] = fetch_us_indicators(code)
+    except Exception as e:
+        result["indicators"] = []
+        errors.append(f"indicators: {e}")
+    sleep_between()
+
+    for key, kind, item_map in (
+        ("income", "综合损益表", US_INCOME_MAP),
+        ("balance", "资产负债表", US_BALANCE_MAP),
+        ("cashflow", "现金流量表", US_CASHFLOW_MAP),
+    ):
+        try:
+            result[key] = fetch_us_report(code, kind, item_map)
+        except Exception as e:
+            result[key] = []
+            errors.append(f"{key}: {e}")
+        sleep_between()
+
+    try:
+        result["snapshot"] = fetch_us_snapshot(code)
+    except Exception as e:
+        result["snapshot"] = {}
+        errors.append(f"snapshot: {e}")
+    sleep_between()
+
+    result["dividends"] = []  # 美股无分红接口
+    result["reports"] = []  # 美股无定期报告接口
+    result["errors"] = errors if errors else None
+    return result
+
+
 def fetch_dividends(code: str):
     """巨潮分红历史（送股/转增/派息比例 + 关键日期），按公告日期倒序"""
     df = ak.stock_dividend_cninfo(symbol=code)
@@ -741,9 +922,11 @@ def fetch_reports(code: str):
 
 
 def fetch_company(code: str, name: str, market: str = "A"):
-    """按市场分流：A 股走同花顺/新浪/巨潮，港股走东财港股接口"""
+    """按市场分流：A 股走同花顺/新浪/巨潮，港股走东财港股接口，美股走东财美股接口"""
     if market == "HK":
         return fetch_company_hk(code, name)
+    if market == "US":
+        return fetch_company_us(code, name)
     return fetch_company_a(code, name)
 
 

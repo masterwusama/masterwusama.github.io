@@ -319,6 +319,33 @@
 
 .stock-header .s-meta b { color: #333; }
 
+/* 详情页市场徽标与货币单位 */
+.stock-header .s-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
+  align-self: center;
+}
+
+.stock-header .s-badge-A { background: #e35b5b; }
+
+.stock-header .s-badge-HK { background: #5b8ff9; }
+
+.stock-header .s-badge-US { background: #37a15a; }
+
+.stock-header .s-ccy {
+  font-size: 12px;
+  color: #999;
+}
+
+.stock-section h3 .s-ccy-note {
+  font-size: 12px;
+  font-weight: 400;
+  color: #999;
+  margin-left: 6px;
+}
+
 .stock-section {
   margin: 18px 0;
 }
@@ -849,6 +876,43 @@
 }
 
 /* ---- 列表页评分排序工具栏与分数徽章 ---- */
+/* 市场 Tab（A股/港股/美股 分流，带各市场数量） */
+.s-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.s-tab {
+  font-size: 13px;
+  color: #4a6076;
+  background: #f3f6fa;
+  border: 1px solid #e3e8f0;
+  border-radius: 16px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.s-tab:hover {
+  color: #2b7bd4;
+  border-color: #2b7bd4;
+}
+
+.s-tab.active {
+  background: #2b7bd4;
+  border-color: #2b7bd4;
+  color: #fff;
+}
+
+.s-tab-count {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 11px;
+  opacity: 0.65;
+}
+
 .s-sort {
   display: flex;
   flex-wrap: wrap;
