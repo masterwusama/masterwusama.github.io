@@ -103,7 +103,7 @@
 /* 宽屏自适应：≥1240px 主内容区按视口 92% 铺开（上限 1600px），大屏/4K 不再只有中间一条窄列。
    规则一命中 Jekyll 渲染版（NexT 布局）；规则二命中独立形态（本地直接打开原始页，无 NexT 容器） */
 @media (min-width: 1240px) {
-  .header-inner, .container .main-inner, .footer-inner {
+  .container .header-inner, .container .main-inner, .container .footer-inner {
     width: 92%;
     max-width: 1600px;
   }
