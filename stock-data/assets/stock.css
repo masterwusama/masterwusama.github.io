@@ -405,7 +405,9 @@
   border: 1px solid #eee;
   padding: 6px 10px;
   text-align: right;
-  white-space: nowrap;
+  /* 全部列允许换行：长指标名/表头完整展示，不再横向撑破容器 */
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* 首列（指标名）横向滚动时固定 */
@@ -948,13 +950,6 @@
     line-height: 1.5;
   }
 
-  /* 评分卡明细表格保持横向滚动（.stock-compare 已有 min-width + overflow） */
+  /* 评分卡明细表保持横向滚动（.stock-compare 已有 min-width + overflow） */
   .score-card .stock-compare-wrap { margin-top: 8px; }
-
-  /* 评分卡明细表“评判标准”列允许换行，窄屏下文字完整展示（其余数字列仍不折行） */
-  .score-card .stock-compare th:first-child,
-  .score-card .stock-compare td:first-child {
-    white-space: normal;
-    min-width: 96px;
-  }
 }
