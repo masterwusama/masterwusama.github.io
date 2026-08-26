@@ -1,4 +1,4 @@
-/* 股票分析模块 —— 加载 stock-data/data/*.json 并渲染
+/* 价值分析模块 —— 加载 stock-data/data/*.json 并渲染
  * 路由：#/600519 → 公司详情；无 hash → 公司列表
  */
 (function () {
