@@ -1011,6 +1011,27 @@
     margin: -4px 0 4px;
   }
 
+  /* 买入性价比排序分组分隔（移动端卡片流专用） */
+  .s-sort-divider {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .s-sort-divider::before {
+    content: '';
+    width: 1px;
+    height: 14px;
+    background: #dbe3ee;
+    margin: 0 8px;
+  }
+
+  .s-sort button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
   /* 宽表在移动端由卡片流取代（JS 渲染卡片），容器横向滚动规则仅作降级保底 */
   .stock-table-wrap {
     display: none;
@@ -1108,7 +1129,7 @@
   .sc-score.sc-bad .sc-v { color: #c0392b; }
   .sc-score.sc-na .sc-v { color: #9aa5b5; }
 
-  /* 买入参考一行四格（现价 ≤ 买入价整格绿底） */
+  /* 买/卖参考四列：每列含买入价 + 保守卖出 + 公允卖出（现价 ≤ 买入价整列绿底） */
   .sc-refs {
     display: flex;
     gap: 6px;
@@ -1123,21 +1144,37 @@
     color: #333;
     background: #f0f3f7;
     border-radius: 6px;
-    padding: 4px 2px;
+    padding: 5px 2px;
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .sc-ref em {
     font-style: normal;
     color: #94a3b8;
-    margin-right: 2px;
+    font-size: 10px;
+  }
+
+  .sc-ref .r-buy,
+  .sc-ref .r-sell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 卖出命中（现价 ≥ 卖出价）标红，与宽表 r-hit-s 语义一致 */
+  .sc-ref .r-sell.r-hit-s {
+    color: #c0392b;
+    font-weight: 600;
   }
 
   .sc-ref.sc-r-hit {
     background: #e7f6ec;
+  }
+
+  .sc-ref.sc-r-hit .r-buy {
     color: #15803d;
     font-weight: 600;
   }

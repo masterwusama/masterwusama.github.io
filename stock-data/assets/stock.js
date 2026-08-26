@@ -187,6 +187,12 @@
       sortBtn('score-grahamDef', '格·防御') +
       sortBtn('score-schloss', '施洛斯') +
       sortBtn('score-buffett', '巴菲特') +
+      // 移动端卡片流补充入口：按各策略买入性价比排序（参考价÷现价，倍数大在前）
+      (isMobile ? '<span class="s-sort-divider">买入性价比</span>' +
+        sortBtn('buy-grahamAgg', '进取买') +
+        sortBtn('buy-grahamDef', '防御买') +
+        sortBtn('buy-schloss', '施洛斯买') +
+        sortBtn('buy-buffett', '巴菲特买') : '') +
       '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
@@ -339,12 +345,22 @@
       return '<div class="sc-score sc-' + g + '"><span class="sc-k">' + names[i] + '</span>' +
         '<span class="sc-v" data-s="score-' + k + '">' + (v == null ? '-' : fmtNum(v)) + '</span></div>';
     }).join('') + '</div>';
-    // 买入参考一行四格（现价 ≤ 买入价时整格绿底）
+    // 买/卖参考四列：每列含买入价 + 保守卖出 + 公允卖出（现价 ≤ 买入价整列绿底，
+    // 现价 ≥ 卖出价对应值标红，与宽表 r-hit/r-hit-s 语义一致）
     h += '<div class="sc-refs">' + ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
-      var p = refs && refs[k] ? refs[k].buy : null;
-      var hit = p != null && cur != null && cur <= p ? ' sc-r-hit' : '';
-      return '<span class="sc-ref' + hit + '" data-s="buy-' + k + '"><em>' + names[i] + '</em>' +
-        (p == null ? '-' : fmtNum(p)) + '</span>';
+      var p = refs && refs[k] ? refs[k] : null;
+      var buy = p ? p.buy : null;
+      var sellC = p ? p.sellCons : null;
+      var sellF = p ? p.sellFair : null;
+      var hitB = buy != null && cur != null && cur <= buy;
+      var hitC = sellC != null && cur != null && cur >= sellC;
+      var hitF = sellF != null && cur != null && cur >= sellF;
+      return '<div class="sc-ref' + (hitB ? ' sc-r-hit' : '') + '" data-s="buy-' + k + '">' +
+        '<em>' + names[i] + '</em>' +
+        '<span class="r-buy' + (hitB ? ' r-hit' : '') + '">买 ' + (buy == null ? '-' : fmtNum(buy)) + '</span>' +
+        '<span class="r-sell' + (hitC ? ' r-hit-s' : '') + '">保卖 ' + (sellC == null ? '-' : fmtNum(sellC)) + '</span>' +
+        '<span class="r-sell' + (hitF ? ' r-hit-s' : '') + '">公卖 ' + (sellF == null ? '-' : fmtNum(sellF)) + '</span>' +
+        '</div>';
     }).join('') + '</div>';
     return h + '</div>';
   }
