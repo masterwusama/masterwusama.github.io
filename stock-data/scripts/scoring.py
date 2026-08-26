@@ -178,11 +178,14 @@ def value_analysis(d, now=None):
     }
 
 
-def value_scores(d, va, k=1.0):
+def value_scores(d, va, k=1.0, use_fundamental=False):
     """对应 JS valueScores —— 返回四大流派总分（满分 100）。
 
     k 为市值/估值缩放因子（默认 1=当前市值）：mcap/pe/pb 同乘 k、股息率除以 k，
     使总分随 k 单调变化，供价格参考二分反推使用（price_references）。
+    use_fundamental=True（仅二分反推）时 pb/pe 改用财报驱动每股量反推
+    （归母权益/股本、TTM净利/股本），使“现价×临界倍数”的现价因子精确抵消，
+    参考价只随财报变动；快照 pb/pe 仅 2 位小数，直接缩放会引入舍入漂移。
     """
     annual = annual_rows(d.get('indicators') or [])
     last = annual[-1] if annual else None
@@ -192,10 +195,32 @@ def value_scores(d, va, k=1.0):
     last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
     s = d.get('snapshot') or {}
     mcap, pe, pb = s.get('market_cap'), s.get('pe_ttm'), s.get('pb')
-    if k != 1.0:
-        mcap = mcap * k if mcap is not None else None
-        pe = pe * k if pe is not None else None
-        pb = pb * k if pb is not None else None
+    if k != 1.0 or use_fundamental:
+        p0 = s.get('price')
+        # 每股净资产优先用指标字段（数据源按财报算好、随财报更新），缺则财报权益/股本
+        bps_f = _latest_field(d.get('indicators') or [], '每股净资产')
+        shares_f = _share_count(d.get('balance') or [], (mcap / p0) if (mcap is not None and p0) else None, bps_f)
+        last_eq_v = None
+        if last_ba is not None:
+            last_eq_v = last_ba.get('归属于母公司股东权益合计')
+            if last_eq_v is None:
+                last_eq_v = last_ba.get('所有者权益(或股东权益)合计')
+        if shares_f:
+            # 快照 mcap 含舍入/滞后，改用财报股本×实时价（市值类价格项同样精确抵消）
+            mcap = shares_f * p0 * k
+            if bps_f is None and last_eq_v is not None:
+                bps_f = last_eq_v / shares_f
+            pb = (p0 * k / bps_f) if bps_f else (pb * k if pb is not None else None)
+            # 每股收益优先用基本每股收益字段做 TTM，缺则 TTM 净利/股本
+            eps_f = _eps_ttm_field(d.get('indicators') or [])
+            if eps_f is None:
+                ttm_f = _ttm_net_profit(d.get('indicators') or [])
+                eps_f = (ttm_f / shares_f) if ttm_f is not None else None
+            pe = (p0 * k / eps_f) if eps_f else (pe * k if pe is not None else None)
+        else:
+            mcap = mcap * k if mcap is not None else None
+            pe = pe * k if pe is not None else None
+            pb = pb * k if pb is not None else None
     div_consecutive = va['divConsecutive'] or 0
     # 股息率随假设价格反向缩放（仅施洛斯股息率项使用）
     div_yield = va['divYield']
@@ -457,6 +482,98 @@ def _fair_pe(net_cagr5):
     return max(8.0, min(25.0, net_cagr5 * 100.0))
 
 
+def _ttm_net_profit(rows):
+    """滚动 TTM 净利润（利润表为累计口径）：最新报告期累计 + 上年年报 - 上年同期累计；
+    最新报告期为年报时直接取年报数；任一要素缺失返回 None"""
+    by_date = {}
+    for r in (rows or []):
+        p = str(r.get('报告期') or '')
+        if len(p) >= 10:
+            by_date[p[:10]] = r.get('净利润')
+    if not by_date:
+        return None
+    latest_p = max(by_date)  # YYYY-MM-DD 字符串排序即时间序
+    cur = by_date[latest_p]
+    y, m, d = latest_p[:4], latest_p[5:7], latest_p[8:10]
+    if m == '12':
+        return cur
+    prev_ann = by_date.get(str(int(y) - 1) + '-12-31')
+    prev_same = by_date.get(str(int(y) - 1) + '-' + m + '-' + d)
+    if cur is None or prev_ann is None or prev_same is None:
+        return None
+    return cur + prev_ann - prev_same
+
+
+def _share_count(balance_rows, shares_fallback, bps_field=None):
+    """财报股本优先（最新年报实收资本，港股退而取股本），与快照股本偏差 >5% 视为面值异常/口径不同时回退。
+    仍不行时用归母权益/每股净资产反推（数据源口径、随财报更新）；
+    港股“股本”常为面值总额（面值 0.1/0.01/0.001 等），再按常见面值反推股数。
+    快照股本 mcap/price 随实时价抖动（含快照舍入/滞后），财报股本使每股量完全财报驱动"""
+    rows = [r for r in (balance_rows or []) if str(r.get('报告日') or '').endswith('12-31')]
+    row = None
+    if rows:
+        row = sorted(rows, key=lambda r: str(r.get('报告日')))[-1]
+    cap_cn = None
+    cap_hk = None
+    eq = None
+    if row:
+        cap_cn = row.get('实收资本(或股本)')
+        cap_hk = row.get('股本')
+        eq = row.get('归属于母公司股东权益合计')
+        if eq is None:
+            eq = row.get('所有者权益(或股东权益)合计')
+    for c in (cap_cn, cap_hk):
+        if c and shares_fallback and 0.95 <= c / shares_fallback <= 1.05:
+            return c
+    # 权益/每股净资产反推（每股净资产=权益/股数，数据源算好的财报口径）；偏差 25% 内视为同口径
+    if bps_field and eq and shares_fallback:
+        c2 = eq / bps_field
+        if 0.75 <= c2 / shares_fallback <= 1.25:
+            return c2
+    # 港股“股本”常为面值总额，按常见面值（0.1/0.01/0.001）反推股数；偏差 12% 内视为同口径
+    if cap_hk and shares_fallback:
+        for mul in (10, 100, 1000):
+            c3 = cap_hk * mul
+            if 0.88 <= c3 / shares_fallback <= 1.12:
+                return c3
+    return shares_fallback
+
+
+def _latest_field(rows, field):
+    """indicators 最新报告期字段值（该期缺失时回退到上一期有值的）"""
+    best = None
+    for r in (rows or []):
+        p = str(r.get('报告期') or '')
+        if len(p) >= 10 and (best is None or p > best[0]):
+            v = r.get(field)
+            if v is not None:
+                best = (p, v)
+    return best[1] if best else None
+
+
+def _eps_ttm_field(rows):
+    """基本每股收益字段（累计口径）滚动 TTM：最新累计 + 上年年报 - 上年同期累计；最新为年报时直接用年报值"""
+    by_date = {}
+    for r in (rows or []):
+        p = str(r.get('报告期') or '')
+        if len(p) >= 10:
+            by_date[p[:10]] = r.get('基本每股收益')
+    if not by_date:
+        return None
+    latest_p = max(by_date)
+    cur = by_date[latest_p]
+    if cur is None:
+        return None
+    y, m = latest_p[:4], latest_p[5:7]
+    if m == '12':
+        return cur
+    prev_ann = by_date.get(str(int(y) - 1) + '-12-31')
+    prev_same = by_date.get(str(int(y) - 1) + latest_p[4:10])
+    if prev_ann is None or prev_same is None:
+        return None
+    return cur + prev_ann - prev_same
+
+
 def _bisect_buy(score_fn, price0):
     """二分找总分 ≥ 目标的最大缩放因子 k，返回买入价 = price0×k；无解返回 None"""
     t_max = score_fn(1e-9)          # k→0：价格项全满分的上限
@@ -501,14 +618,31 @@ def price_references(d, va):
 
     ca, tl = g('流动资产合计'), g('负债合计')
     ncav = (ca - tl) if (ca is not None and tl is not None) else None
-    shares = mcap0 / price0 if mcap0 is not None else None
+    last_eq = None
+    if last_ba is not None:
+        last_eq = last_ba.get('归属于母公司股东权益合计')
+        if last_eq is None:
+            last_eq = last_ba.get('所有者权益(或股东权益)合计')
+    # 每股净资产优先用指标字段（数据源按财报算好、随财报更新，与实时价无关），
+    # 避免快照 pb/pe 舍入与 mcap 滞后导致参考价随行情漂移（财务无变化时参考价应不变）
+    bps = _latest_field(d.get('indicators') or [], '每股净资产')
+    # 股本优先用财报实收资本（最新年报），快照 mcap/price 会随实时价抖动（快照舍入/滞后）
+    shares = _share_count(d.get('balance') or [], mcap0 / price0 if mcap0 is not None else None, bps)
     ncav_ps = ncav / shares if (ncav is not None and shares) else None
-    bps = price0 / pb0 if (pb0 is not None and pb0 > 0) else None
-    eps_ttm = price0 / pe0 if (pe0 is not None and pe0 > 0) else None
+    if bps is None and last_eq is not None and shares:
+        bps = last_eq / shares
+    if bps is None:
+        bps = price0 / pb0 if (pb0 is not None and pb0 > 0) else None
+    eps_ttm = _eps_ttm_field(d.get('indicators') or [])
+    if eps_ttm is None:
+        ttm_net = _ttm_net_profit(d.get('indicators') or [])
+        eps_ttm = (ttm_net / shares) if (ttm_net is not None and shares) else None
+    if eps_ttm is None:
+        eps_ttm = price0 / pe0 if (pe0 is not None and pe0 > 0) else None
     fair_pe = _fair_pe(va.get('netCagr5'))
 
     def buy_of(key):
-        return _bisect_buy(lambda kk: value_scores(d, va, kk)[key], price0)
+        return _bisect_buy(lambda kk: value_scores(d, va, kk, use_fundamental=True)[key], price0)
 
     def clamp_buy(buy, anchor):
         """买入价不超过本流派估值锚（保守卖出价）：质量分托底时反推价可能高于锚位，

@@ -22,7 +22,8 @@ function extractFunc(name) {
   return SRC.slice(start, i + 1);
 }
 
-const NAMES = ['annualRows', 'sheetRowByDate', 'annualBalanceRows', 'cagr', 'perShareDiv',
+const NAMES = ['annualRows', 'ttmNetProfit', 'shareCount', 'latestField', 'epsTtmField',
+  'sheetRowByDate', 'annualBalanceRows', 'cagr', 'perShareDiv',
   'consecutiveDivYears', 'sum', 'recentDividends', 'lerpScore', 'it',
   'fmtNum', 'fmtMoney', 'fmtPct', 'fmtDate', 'valueAnalysis', 'valueScores',
   'fairPe', 'bisectBuy', 'priceReferences'];

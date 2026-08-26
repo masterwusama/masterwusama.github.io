@@ -67,6 +67,91 @@
       .sort(function (a, b) { return a['报告期'] < b['报告期'] ? -1 : 1; });
   }
 
+  // 滚动 TTM 净利润（利润表为累计口径）：最新累计 + 上年年报 - 上年同期累计；最新为年报时直接用年报数
+  function ttmNetProfit(indicators) {
+    var byDate = {}, latest = null, cur = null;
+    (indicators || []).forEach(function (r) {
+      var p = String(r['报告期'] || '').slice(0, 10);
+      if (p.length === 10) {
+        byDate[p] = r['净利润'];
+        if (latest == null || p > latest) { latest = p; cur = r['净利润']; }
+      }
+    });
+    if (!latest) return null;
+    var y = Number(latest.slice(0, 4)), m = latest.slice(5, 7);
+    if (m === '12') return cur;  // 最新报告期为年报
+    var prevAnn = byDate[String(y - 1) + '-12-31'];
+    var prevSame = byDate[String(y - 1) + latest.slice(4, 10)];
+    if (cur == null || prevAnn == null || prevSame == null) return null;
+    return cur + prevAnn - prevSame;
+  }
+
+  // 财报股本优先（最新年报实收资本，港股退而取股本），与快照股本偏差 >5% 视为面值异常/口径不同时回退。
+  // 仍不行时用归母权益/每股净资产反推（数据源口径、随财报更新）；
+  // 港股“股本”常为面值总额（面值 0.1/0.01/0.001 等），再按常见面值反推股数。
+  // 快照股本 mcap/price 随实时价抖动（含快照舍入/滞后），财报股本使每股量完全财报驱动
+  function shareCount(balance, sharesFallback, bpsField) {
+    var rows = (balance || []).filter(function (r) { return String(r['报告日'] || '').indexOf('12-31') >= 0; });
+    var row = null, eq = null, capCn = null, capHk = null;
+    if (rows.length) {
+      rows.sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+      row = rows[rows.length - 1];
+      capCn = row['实收资本(或股本)'];
+      capHk = row['股本'];
+      eq = row['归属于母公司股东权益合计'] != null ? row['归属于母公司股东权益合计'] : row['所有者权益(或股东权益)合计'];
+    }
+    if (capCn && sharesFallback && capCn / sharesFallback >= 0.95 && capCn / sharesFallback <= 1.05) return capCn;
+    if (capHk && sharesFallback && capHk / sharesFallback >= 0.95 && capHk / sharesFallback <= 1.05) return capHk;
+    // 权益/每股净资产反推（每股净资产=权益/股数，数据源算好的财报口径）；偏差 25% 内视为同口径
+    if (bpsField && eq && sharesFallback) {
+      var c2 = eq / bpsField;
+      if (c2 / sharesFallback >= 0.75 && c2 / sharesFallback <= 1.25) return c2;
+    }
+    // 港股“股本”常为面值总额，按常见面值（0.1/0.01/0.001）反推股数；偏差 12% 内视为同口径
+    if (capHk && sharesFallback) {
+      var muls = [10, 100, 1000];
+      for (var i = 0; i < muls.length; i++) {
+        var c3 = capHk * muls[i];
+        if (c3 / sharesFallback >= 0.88 && c3 / sharesFallback <= 1.12) return c3;
+      }
+    }
+    return sharesFallback;
+  }
+
+  // indicators 最新报告期字段值（该期缺失时回退到上一期有值的）
+  function latestField(indicators, field) {
+    var best = null;
+    (indicators || []).forEach(function (r) {
+      var p = String(r['报告期'] || '').slice(0, 10);
+      if (p.length === 10 && (best == null || p > best[0])) {
+        var v = r[field];
+        if (v != null) best = [p, v];
+      }
+    });
+    return best ? best[1] : null;
+  }
+
+  // 基本每股收益字段（累计口径）滚动 TTM：最新累计 + 上年年报 - 上年同期累计；最新为年报时直接用年报值
+  function epsTtmField(indicators) {
+    var byDate = {}, latest = null;
+    (indicators || []).forEach(function (r) {
+      var p = String(r['报告期'] || '').slice(0, 10);
+      if (p.length === 10) byDate[p] = r['基本每股收益'];
+    });
+    var dates = Object.keys(byDate);
+    if (!dates.length) return null;
+    dates.sort();
+    latest = dates[dates.length - 1];
+    var cur = byDate[latest];
+    if (cur == null) return null;
+    var y = Number(latest.slice(0, 4)), m = latest.slice(5, 7);
+    if (m === '12') return cur;
+    var prevAnn = byDate[String(y - 1) + '-12-31'];
+    var prevSame = byDate[String(y - 1) + latest.slice(4, 10)];
+    if (prevAnn == null || prevSame == null) return null;
+    return cur + prevAnn - prevSame;
+  }
+
   // 从三大报表列表中取指定报告日（YYYY-MM-DD）的行
   function sheetRowByDate(list, date) {
     list = list || [];
@@ -1075,7 +1160,9 @@
   // 三大流派评分汇总（格雷厄姆进取/防御、施洛斯、巴菲特芒格），以最新年报为基础
   // k 为市值/估值缩放因子（默认 1=当前市值）：mcap/pe/pb 同乘 k、股息率除以 k，
   // 使总分随 k 单调变化，供价格参考二分反推使用（priceReferences）
-  function valueScores(d, va, k) {
+  // useFundamental（仅二分反推）时 pb/pe 改用财报驱动每股量反推（归母权益/股本、TTM净利/股本），
+  // 使“现价×临界倍数”的现价因子精确抵消，参考价只随财报变动；快照 pb/pe 仅 2 位小数，直接缩放会引入舍入漂移
+  function valueScores(d, va, k, useFundamental) {
     if (k == null) k = 1;
     var annual = annualRows(d.indicators || []);
     var last = annual[annual.length - 1];
@@ -1085,10 +1172,32 @@
     var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
     var s = d.snapshot || {};
     var mcap = s.market_cap, pe = s.pe_ttm, pb = s.pb;
-    if (k !== 1) {
-      mcap = mcap != null ? mcap * k : null;
-      pe = pe != null ? pe * k : null;
-      pb = pb != null ? pb * k : null;
+    if (k !== 1 || useFundamental) {
+      var p0 = s.price;
+      // 每股净资产优先用指标字段（数据源按财报算好、随财报更新），缺则财报权益/股本
+      var bpsF = latestField(d.indicators, '每股净资产');
+      var sharesF = shareCount(d.balance, (mcap != null && p0 != null && p0 > 0) ? mcap / p0 : null, bpsF);
+      var lastEqV = null;
+      if (lastBa != null) {
+        lastEqV = lastBa['归属于母公司股东权益合计'] != null ? lastBa['归属于母公司股东权益合计'] : lastBa['所有者权益(或股东权益)合计'];
+      }
+      if (sharesF) {
+        // 快照 mcap 含舍入/滞后，改用财报股本×实时价（市值类价格项同样精确抵消）
+        mcap = sharesF * p0 * k;
+        if (bpsF == null && lastEqV != null) bpsF = lastEqV / sharesF;
+        pb = bpsF ? p0 * k / bpsF : (pb != null ? pb * k : null);
+        // 每股收益优先用基本每股收益字段做 TTM，缺则 TTM 净利/股本
+        var epsF = epsTtmField(d.indicators);
+        if (epsF == null) {
+          var ttmF = ttmNetProfit(d.indicators);
+          if (ttmF != null) epsF = ttmF / sharesF;
+        }
+        pe = epsF ? p0 * k / epsF : (pe != null ? pe * k : null);
+      } else {
+        mcap = mcap != null ? mcap * k : null;
+        pe = pe != null ? pe * k : null;
+        pb = pb != null ? pb * k : null;
+      }
     }
     var divConsecutive = va.divConsecutive || 0;
     // 股息率随假设价格反向缩放（仅施洛斯股息率项使用）
@@ -1367,13 +1476,24 @@
     var ca = lastBa ? lastBa['流动资产合计'] : null;
     var tl = lastBa ? lastBa['负债合计'] : null;
     var ncav = (ca != null && tl != null) ? ca - tl : null;
-    var shares = mcap0 != null ? mcap0 / price0 : null;
+    var lastEq = lastBa ? (lastBa['归属于母公司股东权益合计'] != null ? lastBa['归属于母公司股东权益合计'] : lastBa['所有者权益(或股东权益)合计']) : null;
+    // 每股净资产优先用指标字段（数据源按财报算好、随财报更新，与实时价无关），
+    // 避免快照 pb/pe 舍入与 mcap 滞后导致参考价随行情漂移（财务无变化时参考价应不变）
+    var bps = latestField(d.indicators, '每股净资产');
+    // 股本优先用财报实收资本（最新年报），快照 mcap/price 会随实时价抖动（快照舍入/滞后）
+    var shares = shareCount(d.balance, mcap0 != null ? mcap0 / price0 : null, bps);
     var ncavPs = (ncav != null && shares) ? ncav / shares : null;   // 每股净流动资产
-    var bps = (pb0 != null && pb0 > 0) ? price0 / pb0 : null;       // 每股净资产
-    var epsTtm = (pe0 != null && pe0 > 0) ? price0 / pe0 : null;    // TTM 每股收益
+    if (bps == null && lastEq != null && shares) bps = lastEq / shares;
+    if (bps == null && pb0 != null && pb0 > 0) bps = price0 / pb0;
+    var epsTtm = epsTtmField(d.indicators);
+    if (epsTtm == null) {
+      var ttmNet = ttmNetProfit(d.indicators);
+      if (ttmNet != null && shares) epsTtm = ttmNet / shares;
+    }
+    if (epsTtm == null && pe0 != null && pe0 > 0) epsTtm = price0 / pe0;
     var fpe = fairPe(va.netCagr5);
     function buyOf(key) {
-      return bisectBuy(function (kk) { return valueScores(d, va, kk)[key].total; }, price0);
+      return bisectBuy(function (kk) { return valueScores(d, va, kk, true)[key].total; }, price0);
     }
     // 买入价不超过本流派估值锚（保守卖出价）：质量分托底时反推价可能高于锚位，
     // 截断后仍满足“该价时评分≥90”且避免买入参考高于卖出参考的矛盾
