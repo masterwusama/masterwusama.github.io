@@ -12,6 +12,11 @@
 }
 
 /* ---- 公司列表宽表（双行分组表头，横向滚动 + 容器内垂直滚动，表头吸顶/名称列吸左） ---- */
+/* 移动端卡片流容器：默认隐藏，仅 ≤600px 显示（JS 同时切换渲染形态） */
+.stock-cards {
+  display: none;
+}
+
 .stock-table-wrap {
   overflow-x: auto;
   overflow-y: auto;
@@ -995,6 +1000,182 @@
 
 /* ---- 小屏适配（必须放在所有基础规则之后，避免同特异性规则被后定义覆盖） ---- */
 @media (max-width: 600px) {
+  /* 工具栏（Tab/搜索/排序）整组吸顶：滚动时切市场/搜索/排序无需回顶部 */
+  .s-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #fff;
+    padding: 6px 2px 8px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    margin: -4px 0 4px;
+  }
+
+  /* 宽表在移动端由卡片流取代（JS 渲染卡片），容器横向滚动规则仅作降级保底 */
+  .stock-table-wrap {
+    display: none;
+    max-height: none;
+  }
+
+  /* 卡片流：单指纵向滑动，零横向拖动 */
+  .stock-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stock-card {
+    border: 1px solid #e1e1e1;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .stock-card:active {
+    background: #f2f6fc;
+  }
+
+  .stock-card:focus-visible {
+    outline: 2px solid #5b8ff9;
+    outline-offset: -2px;
+  }
+
+  .sc-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .sc-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2d3d;
+  }
+
+  .sc-code {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .sc-industry {
+    font-size: 11px;
+    color: #94a3b8;
+    flex: 1 1 100%;
+    order: 3;
+  }
+
+  .sc-price {
+    margin-left: auto;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 评分四宫格（等级色沿用宽表 sc-good/mid/low/bad/na） */
+  .sc-scores {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .sc-score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #f7f9fc;
+    font-size: 12px;
+  }
+
+  .sc-k {
+    color: #7a8699;
+  }
+
+  .sc-v {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sc-score.sc-good .sc-v { color: #1e7e44; }
+  .sc-score.sc-mid .sc-v { color: #3f7fd9; }
+  .sc-score.sc-low .sc-v { color: #b07a10; }
+  .sc-score.sc-bad .sc-v { color: #c0392b; }
+  .sc-score.sc-na .sc-v { color: #9aa5b5; }
+
+  /* 买入参考一行四格（现价 ≤ 买入价整格绿底） */
+  .sc-refs {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .sc-ref {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    background: #f0f3f7;
+    border-radius: 6px;
+    padding: 4px 2px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sc-ref em {
+    font-style: normal;
+    color: #94a3b8;
+    margin-right: 2px;
+  }
+
+  .sc-ref.sc-r-hit {
+    background: #e7f6ec;
+    color: #15803d;
+    font-weight: 600;
+  }
+
+  /* 财务对比：核心组之外折叠 + 展开按钮 */
+  .stock-compare tr.cmp-more {
+    display: none;
+  }
+
+  .cmp-more-btn,
+  .d-more-btn {
+    display: block;
+    width: 100%;
+    margin: 8px 0 2px;
+    padding: 8px;
+    font-size: 13px;
+    color: #2b6cb0;
+    background: #f0f6ff;
+    border: 1px dashed #b7cdf0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .cmp-more-btn:active,
+  .d-more-btn:active {
+    background: #e3edfc;
+  }
+
+  /* 分红/报告折叠行 */
+  .stock-list-item.d-more {
+    display: none;
+  }
+
+  /* 图表在窄屏适度压缩，避免挤压下方内容 */
+  .stock-chart {
+    height: 260px;
+  }
+
   .stock-grid { grid-template-columns: 1fr; }
 
   /* 模块导航：单行横向滑动，避免换行成多行挤压内容区 */

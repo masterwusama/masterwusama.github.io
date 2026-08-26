@@ -11,6 +11,9 @@
     indexUpdatedAt: null, listScroll: 0, keyword: '', tab: 'A',
     scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc' };
 
+  // 移动端断点（与 CSS @media max-width:600px 保持一致）：宽表切换卡片流、详情长列表折叠
+  var mqMobile = window.matchMedia('(max-width: 600px)');
+
   // 10年期国债收益率参考值（用于股债利差对比，需手动定期更新）
   var BOND_10Y = 0.017;
 
@@ -166,25 +169,32 @@
     var list = sortCompanies().filter(function (c) { return c.market === state.tab; });
     // 市场 Tab：A股/港股/美股 分流展示（带各市场数量），切换仅过滤不重拉数据
     var tabLabels = { A: 'A股', HK: '港股', US: '美股' };
-    var html = '<div class="s-tabs" role="tablist">' +
+    var isMobile = mqMobile.matches;
+    // 工具栏（Tab/搜索/排序）：移动端整组吸顶，切市场/搜索/排序无需滚回顶部
+    var html = '<div class="s-toolbar">' +
+      '<div class="s-tabs" role="tablist">' +
       ['A', 'HK', 'US'].map(function (m) {
         var n = state.companies.filter(function (c) { return c.market === m; }).length;
         return '<button class="s-tab' + (state.tab === m ? ' active' : '') + '" data-tab="' + m +
           '" role="tab" aria-selected="' + (state.tab === m ? 'true' : 'false') + '">' +
           tabLabels[m] + '<span class="s-tab-count">' + n + '</span></button>';
-      }).join('') + '</div>';
-    html += '<div class="stock-search-wrap">' +
+      }).join('') + '</div>' +
+      '<div class="stock-search-wrap">' +
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
-      'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>';
-    html += '<div class="s-sort">' +
+      'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>' +
+      '<div class="s-sort">' +
       sortBtn('score-grahamAgg', '格·进取') +
       sortBtn('score-grahamDef', '格·防御') +
       sortBtn('score-schloss', '施洛斯') +
       sortBtn('score-buffett', '巴菲特') +
-      '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div>';
-    // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看；
-    // 子表头与基础列均可点击排序（data-sort 键：score-/buy-/sellC-/sellF- + 流派）
-    html += '<div class="stock-table-wrap"><table class="stock-list-table"><thead>' +
+      '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div>';
+    if (isMobile) {
+      // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
+      html += '<div class="stock-cards">' + list.map(cardHtml).join('') + '</div>';
+    } else {
+      // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看；
+      // 子表头与基础列均可点击排序（data-sort 键：score-/buy-/sellC-/sellF- + 流派）
+      html += '<div class="stock-table-wrap"><table class="stock-list-table"><thead>' +
       '<tr class="th-g1">' +
       thSort('name', '股票名称', 'stick', ' rowspan="2"') +
       thSort('code', '代码', null, ' rowspan="2"') +
@@ -211,6 +221,7 @@
         listCells(c) + '</tr>';
     });
     html += '</tbody></table></div>';
+    }
     html += '<div class="stock-hint" id="stock-search-empty" style="display:none">未找到匹配的公司</div>';
     html += '<div class="stock-list-foot">数据更新于 ' + fmtFullDate(state.indexUpdatedAt) + '</div>';
     box.innerHTML = html;
@@ -260,6 +271,14 @@
 
     // 从详情返回时恢复滚动位置
     if (state.listScroll) window.scrollTo(0, state.listScroll);
+
+    // 断点跨越（手机↔桌面）时切换列表形态；详情页不打扰
+    if (!state.mqBound) {
+      state.mqBound = true;
+      mqMobile.addEventListener('change', function () {
+        if (!state.current && state.companies.length) renderList();
+      });
+    }
   }
 
   // 单行 20 个单元格：名称/代码/行业/现价 + 评分4 + 买入4 + 保守卖出4 + 公允卖出4
@@ -296,6 +315,38 @@
       h += '<td class="c-num' + hit + '" data-s="sellF-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
     });
     return h;
+  }
+
+  // 移动端卡片：头部（名称/代码/行业/现价）+ 四流派评分四宫格 + 买入参考一行四格；
+  // 带 stock-row 类以复用搜索过滤/点击进详情/键盘可达的绑定逻辑
+  function cardHtml(c) {
+    var sc = state.scores[c.code] || null;
+    var refs = sc ? sc.priceRefs : null;
+    var cur = c.price;
+    var names = ['格进取', '格防御', '施洛斯', '巴菲特'];
+    var h = '<div class="stock-card stock-row" data-k="' + (c.name + ' ' + c.code).toLowerCase() +
+      '" data-code="' + c.code + '" data-price="' + (cur == null ? '' : cur) + '" tabindex="0" role="link">';
+    h += '<div class="sc-head">' +
+      '<span class="sc-name">' + c.name + '</span>' +
+      '<span class="sc-code">' + c.code + '</span>' +
+      '<span class="sc-industry">' + (c.industry || '-') + '</span>' +
+      '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
+      '</div>';
+    // 评分四宫格（等级色与宽表一致：sc-good/mid/low/bad/na）
+    h += '<div class="sc-scores">' + ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
+      var v = sc ? sc[k] : null;
+      var g = gradeOf(v);
+      return '<div class="sc-score sc-' + g + '"><span class="sc-k">' + names[i] + '</span>' +
+        '<span class="sc-v" data-s="score-' + k + '">' + (v == null ? '-' : fmtNum(v)) + '</span></div>';
+    }).join('') + '</div>';
+    // 买入参考一行四格（现价 ≤ 买入价时整格绿底）
+    h += '<div class="sc-refs">' + ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
+      var p = refs && refs[k] ? refs[k].buy : null;
+      var hit = p != null && cur != null && cur <= p ? ' sc-r-hit' : '';
+      return '<span class="sc-ref' + hit + '" data-s="buy-' + k + '"><em>' + names[i] + '</em>' +
+        (p == null ? '-' : fmtNum(p)) + '</span>';
+    }).join('') + '</div>';
+    return h + '</div>';
   }
 
   /* ---------------- 列表评分预载与排序 ---------------- */
@@ -552,33 +603,38 @@
       '<select id="stock-period"></select></div>' +
       '<table class="stock-table" id="stock-sheet-body"></table></div>';
 
-    // 分红历史（全量）
+    // 分红历史（全量；移动端默认前 5 条，其余折叠）
     var divs = d.dividends || [];
+    var foldDivs = mqMobile.matches && !state.detailExpanded;
     html += '<div class="stock-section"><h3>分红历史（' + divs.length + ' 条）</h3>';
-    divs.forEach(function (r) {
+    divs.forEach(function (r, i) {
       var desc = r.description || '';
       var extra = '';
       if (r.pay_date) extra += '派息日 ' + fmtDate(r.pay_date);
-      html += '<div class="stock-list-item">' +
+      html += '<div class="stock-list-item' + (foldDivs && i >= 5 ? ' d-more' : '') + '">' +
         '<span class="d-year">' + (r.year || '-') + '</span>' +
         '<span class="stock-badge">' + (r.type || '') + '</span>' +
         '<span class="d-desc">' + desc + '</span>' +
         (extra ? '<span class="d-date">' + extra + '</span>' : '') +
         '</div>';
     });
+    if (foldDivs && divs.length > 5) {
+      html += '<button type="button" class="d-more-btn" id="stock-divs-more">展开全部 ' + divs.length + ' 条</button>';
+    }
     html += '</div>';
 
-    // 定期报告
+    // 定期报告（移动端默认前 5 份，其余折叠）
     var reports = d.reports || [];
+    var foldReps = mqMobile.matches && !state.detailExpanded;
     html += '<div class="stock-section"><h3>定期报告（' + reports.length + ' 份）</h3>';
-    reports.forEach(function (r) {
+    reports.forEach(function (r, i) {
       var audit = '';
       // 审计信息：年报/半年报附事务所与意见类型（季报不审计，无该字段）
       if (r.audit_firm || r.audit_opinion) {
         audit = '<span class="d-audit">审计：' + (r.audit_firm || '—') +
           (r.audit_opinion ? ' · ' + r.audit_opinion : '') + '</span>';
       }
-      html += '<div class="stock-list-item">' +
+      html += '<div class="stock-list-item' + (foldReps && i >= 5 ? ' d-more' : '') + '">' +
         '<span class="stock-badge">' + r.category + '</span>' +
         '<span class="d-year">' + r.title + '</span>' +
         '<span class="d-date">' + fmtDate(r.date) + '</span>' +
@@ -587,6 +643,9 @@
         '<a href="' + r.detail_url + '" target="_blank" rel="noopener">详情</a>' +
         '</div>';
     });
+    if (foldReps && reports.length > 5) {
+      html += '<button type="button" class="d-more-btn" id="stock-reports-more">展开全部 ' + reports.length + ' 份</button>';
+    }
     html += '</div>';
     html += '</section>'; // 模块一结束
 
@@ -666,6 +725,22 @@
     initSheet(d);
     renderValueAnalysis(va);
     renderScores(sc);
+    bindMoreButtons();
+  }
+
+  // 移动端“展开全部”按钮：分红/定期报告各在其所属 section 内展开折叠项
+  function bindMoreButtons() {
+    var bind = function (id) {
+      var btn = $(id);
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        state.detailExpanded = true;
+        btn.parentNode.querySelectorAll('.d-more').forEach(function (el) { el.classList.remove('d-more'); });
+        btn.parentNode.removeChild(btn);
+      });
+    };
+    bind('stock-divs-more');
+    bind('stock-reports-more');
   }
 
   /* ---------------- 价值分析：核心计算与渲染 ---------------- */
@@ -1657,21 +1732,33 @@
     var html = '<thead><tr><th>指标</th><th>' + periodLabel(a) + '</th><th>' + periodLabel(b) +
       '</th><th>变化</th></tr></thead><tbody>';
 
-    var curGroup = null;
+    var curGroup = null, gIdx = -1;
+    // 移动端默认只展开前 2 组核心指标（规模成长/成长能力），其余折叠；桌面端全量；展开过则记住
+    var fold = mqMobile.matches && !state.compareExpanded;
     ANNUAL_METRICS.forEach(function (m) {
       if (m.group !== curGroup) {
         curGroup = m.group;
-        html += '<tr class="cmp-group"><td colspan="4">' + m.group + '</td></tr>';
+        gIdx++;
+        html += '<tr class="cmp-group' + (fold && gIdx >= 2 ? ' cmp-more' : '') + '"><td colspan="4">' + m.group + '</td></tr>';
       }
       var va = valOf(a, m), vb = valOf(b, m);
-      html += '<tr><td>' + m.label + '</td>' +
+      html += '<tr' + (fold && gIdx >= 2 ? ' class="cmp-more"' : '') + '><td>' + m.label + '</td>' +
         '<td>' + fmtMetric(va, m) + '</td>' +
         '<td>' + fmtMetric(vb, m) + '</td>' +
         '<td>' + fmtChange(va, vb, m) + '</td></tr>';
     });
     html += '</tbody>';
+    if (fold) html += '<button type="button" class="cmp-more-btn" id="stock-compare-more">展开全部指标</button>';
 
     $('stock-compare-body').innerHTML = html;
+    var moreBtn = $('stock-compare-more');
+    if (moreBtn) {
+      moreBtn.addEventListener('click', function () {
+        state.compareExpanded = true;
+        $('stock-compare-body').querySelectorAll('.cmp-more').forEach(function (tr) { tr.classList.remove('cmp-more'); });
+        moreBtn.parentNode.removeChild(moreBtn);
+      });
+    }
   }
 
   function fmtMetric(v, m) {
