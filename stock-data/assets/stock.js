@@ -9,7 +9,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var state = { companies: [], current: null, charts: [], view: 'year',
     indexUpdatedAt: null, listScroll: 0, keyword: '', tab: 'A',
-    scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc' };
+    scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc', sortOpen: false };
 
   // 移动端断点（与 CSS @media max-width:600px 保持一致）：宽表切换卡片流、详情长列表折叠
   var mqMobile = window.matchMedia('(max-width: 600px)');
@@ -182,7 +182,12 @@
       '<div class="stock-search-wrap">' +
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>' +
-      '<div class="s-sort">' +
+      '<div class="s-sort' + (isMobile && !state.sortOpen ? ' s-sort-folded' : '') + '">' +
+      // 移动端折叠面板：默认收起（仅一行摘要），点开才显示全部排序按钮，避免占用屏高
+      (isMobile ? '<button type="button" class="s-sort-toggle" id="stock-sort-toggle" ' +
+        'aria-expanded="' + (state.sortOpen ? 'true' : 'false') + '">' +
+        sortToggleLabel() + '</button>' : '') +
+      '<div class="s-sort-body">' +
       sortBtn('score-grahamAgg', '格·进取') +
       sortBtn('score-grahamDef', '格·防御') +
       sortBtn('score-schloss', '施洛斯') +
@@ -193,7 +198,7 @@
         sortBtn('buy-grahamDef', '防御买') +
         sortBtn('buy-schloss', '施洛斯买') +
         sortBtn('buy-buffett', '巴菲特买') : '') +
-      '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div>';
+      '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
       html += '<div class="stock-cards">' + list.map(cardHtml).join('') + '</div>';
@@ -254,11 +259,21 @@
       });
     });
 
-    // 排序：表头列与下方按钮共用同一逻辑（applySort），首次点击数值列降序、文本列升序
+    // 移动端排序面板展开/收起
+    var sortToggle = $('stock-sort-toggle');
+    if (sortToggle) {
+      sortToggle.addEventListener('click', function () {
+        state.sortOpen = !state.sortOpen;
+        renderList();
+      });
+    }
+
+    // 排序：表头列与下方按钮共用同一逻辑（applySort），首次点击数值列降序、文本列升序；
+    // 仅绑定 .s-sort-body 内按钮，避免命中折叠面板触发按钮（无 data-sort）
     box.querySelectorAll('thead th[data-sort]').forEach(function (th) {
       th.addEventListener('click', function () { applySort(th.getAttribute('data-sort')); });
     });
-    box.querySelectorAll('.s-sort button').forEach(function (btn) {
+    box.querySelectorAll('.s-sort-body button').forEach(function (btn) {
       btn.addEventListener('click', function () { applySort(btn.getAttribute('data-sort')); });
     });
 
@@ -372,6 +387,22 @@
     var active = state.sortKey === key;
     return '<button data-sort="' + key + '"' + (active ? ' class="active"' : '') + '>' +
       label + (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</button>';
+  }
+
+  // 排序项 → 展示名（折叠面板摘要用；含宽表表头入口的键）
+  var SORT_LABELS = {
+    'score-grahamAgg': '格·进取', 'score-grahamDef': '格·防御',
+    'score-schloss': '施洛斯', 'score-buffett': '巴菲特',
+    'buy-grahamAgg': '进取买', 'buy-grahamDef': '防御买',
+    'buy-schloss': '施洛斯买', 'buy-buffett': '巴菲特买',
+    'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价'
+  };
+
+  // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
+  function sortToggleLabel() {
+    if (state.sortOpen) return '收起排序 ▲';
+    var label = SORT_LABELS[state.sortKey];
+    return label ? '排序：' + label + (state.sortDir === 'desc' ? ' ↓' : ' ↑') + ' ▾' : '选择排序方式 ▾';
   }
 
   // 表头排序单元格 HTML（可点击；激活列高亮并显示箭头；cls 追加样式如 stick，attrs 追加属性如 rowspan；
