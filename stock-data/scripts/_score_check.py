@@ -44,6 +44,12 @@ for f in sorted(companies_dir.glob('*.json')):
             tol = 1e-9 if p is None else max(1e-9, abs(p) * 1e-9)
             if p is None or j is None or abs(p - j) > tol:
                 diffs.append((code, key + '.' + fld, p, j))
+    # 公允清算价值（每股）对比
+    p, j = py_refs.get('fairLiq'), js_refs.get('fairLiq')
+    if p is None and j is None:
+        pass
+    elif p is None or j is None or abs(p - j) > max(1e-9, abs(p or 0) * 1e-9):
+        diffs.append((code, 'fairLiq', p, j))
 
 if diffs:
     print('不一致 %d 处:' % len(diffs))

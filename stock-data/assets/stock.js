@@ -282,7 +282,9 @@
         sortBtn('buy-grahamAgg', '进取买') +
         sortBtn('buy-grahamDef', '防御买') +
         sortBtn('buy-schloss', '施洛斯买') +
-        sortBtn('buy-buffett', '巴菲特买') : '') +
+        sortBtn('buy-buffett', '巴菲特买') +
+        '<span class="s-sort-divider">清算价值</span>' +
+        sortBtn('liq', '清算价') : '') +
       '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
@@ -296,6 +298,7 @@
       thSort('code', '代码', null, ' rowspan="2"') +
       thSort('industry', '所属行业', null, ' rowspan="2"') +
       thSort('price', '现价', null, ' rowspan="2"') +
+      thSort('liq', '清算价值', null, ' rowspan="2"', '按每股公允清算价值排') +
       '<th colspan="4">四大流派评分</th>' +
       '<th colspan="4">建议买入参考</th>' +
       '<th colspan="4">保守卖出参考</th>' +
@@ -397,6 +400,11 @@
       '<td class="c-code">' + c.code + '</td>' +
       '<td class="c-industry" title="' + (c.industry || '') + '">' + (c.industry || '-') + '</td>' +
       '<td class="c-num c-now">' + (cur == null ? '-' : fmtNum(cur)) + '</td>';
+    // 公允清算价值（每股）：现价 ≤ 清算价（跌破清算价值）标绿
+    var liq = refs ? refs.fairLiq : null;
+    var liqHit = liq != null && cur != null && cur <= liq ? ' r-hit' : '';
+    h += '<td class="c-num' + liqHit + '" data-s="liq" title="公允清算价值估算：(流动资产合计-负债合计)/股本">' +
+      (liq == null ? '-' : fmtNum(liq)) + '</td>';
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;
       var g = gradeOf(v);
@@ -437,6 +445,14 @@
       '<span class="sc-code">' + c.code + '</span>' +
       '<span class="sc-industry">' + (c.industry || '-') + '</span>' +
       '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
+      '</div>';
+    // 公允清算价值（每股）：现价 ≤ 清算价标绿（跌破清算价值）
+    var liq = refs ? refs.fairLiq : null;
+    var liqHit = liq != null && cur != null && cur <= liq;
+    h += '<div class="sc-liq' + (liqHit ? ' sc-liq-hit' : '') + '" title="公允清算价值估算：(流动资产合计-负债合计)/股本">' +
+      '<em>公允清算价值</em>' +
+      '<span class="sc-liq-v" data-s="liq">' + (liq == null ? '-' : fmtNum(liq)) + '</span>' +
+      (liqHit ? '<b>跌破清算价</b>' : '') +
       '</div>';
     // 评分四宫格（等级色与宽表一致：sc-good/mid/low/bad/na）
     h += '<div class="sc-scores">' + ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
@@ -480,7 +496,7 @@
     'score-schloss': '施洛斯', 'score-buffett': '巴菲特',
     'buy-grahamAgg': '进取买', 'buy-grahamDef': '防御买',
     'buy-schloss': '施洛斯买', 'buy-buffett': '巴菲特买',
-    'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价'
+    'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值'
   };
 
   // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
@@ -517,6 +533,10 @@
   function sortVal(c, key) {
     if (key === 'name' || key === 'code' || key === 'industry') return c[key] || '';
     if (key === 'price') return c.price;
+    if (key === 'liq') {
+      var sc0 = state.scores[c.code];
+      return sc0 && sc0.priceRefs ? sc0.priceRefs.fairLiq : null;
+    }
     var sc = state.scores[c.code];
     if (!sc) return null;
     if (key.indexOf('score-') === 0) return sc[key.slice(6)];
@@ -591,6 +611,20 @@
         p = sc ? sc[k] : null;
         td.className = 'c-num sc-' + gradeOf(p);
         td.title = gradeText(gradeOf(p));
+      } else if (kind === 'liq') {
+        // 公允清算价值：现价 ≤ 清算价（跌破清算价值）标绿；宽表 td 与移动端卡片 span 共用
+        p = refs ? refs.fairLiq : null;
+        var liqHit2 = p != null && cur != null && cur <= p;
+        if (td.tagName === 'TD') {
+          td.className = 'c-num' + (liqHit2 ? ' r-hit' : '');
+        } else {
+          var liqBox = td.closest('.sc-liq');
+          if (liqBox) {
+            liqBox.classList.toggle('sc-liq-hit', liqHit2);
+            var liqTag = liqBox.querySelector('b');
+            if (liqTag) liqTag.textContent = liqHit2 ? '跌破清算价' : '';
+          }
+        }
       } else {
         if (refs && refs[k]) p = refs[k][kind === 'buy' ? 'buy' : kind === 'sellC' ? 'sellCons' : 'sellFair'];
         var hit = '';
@@ -698,6 +732,8 @@
       kv('市净率', fmtNum(s.pb)) +
       kv('总市值', fmtMoney(s.market_cap)) +
       kv('流通市值', fmtMoney(s.float_market_cap)) +
+      kv('公允清算价值', '<span title="(流动资产合计-负债合计)/财报股本，格雷厄姆清算口径，随财报更新">' +
+        (sc.priceRefs && sc.priceRefs.fairLiq != null ? fmtNum(sc.priceRefs.fairLiq) : '-') + '</span>') +
       kv('当前股息率', fmtPct(va.divYield)) +
       divBox +
       '</div></div>';
@@ -1459,13 +1495,14 @@
     return price0 * lo;
   }
 
-  // 四大流派买入/保守卖出/公允卖出价格参考（对应 scoring.py price_references）
+  // 公允清算价值 + 四大流派买入/保守卖出/公允卖出价格参考（对应 scoring.py price_references）
+  // fairLiq = 每股公允清算价值（流动资产合计-负债合计）/财报股本，格雷厄姆清算口径
   function priceReferences(d, va) {
     var s = d.snapshot || {};
     var price0 = s.price, mcap0 = s.market_cap, pe0 = s.pe_ttm, pb0 = s.pb;
-    var none = { buy: null, sellCons: null, sellFair: null };
+    var none = { fairLiq: null, buy: null, sellCons: null, sellFair: null };
     if (price0 == null || price0 <= 0) {
-      return { grahamAgg: none, grahamDef: none, schloss: none, buffett: none };
+      return { fairLiq: null, grahamAgg: none, grahamDef: none, schloss: none, buffett: none };
     }
     // ---- 基础量（最新年报资产负债表）----
     var annual = annualRows(d.indicators || []);
@@ -1506,6 +1543,7 @@
     var sCons = (bps != null && bps > 0) ? bps : null;
     var bCons = epsTtm != null ? fpe * epsTtm : null;
     return {
+      fairLiq: (ncavPs != null && ncavPs > 0) ? ncavPs : null,
       grahamAgg: {
         buy: clampBuy(buyOf('grahamAgg'), gACons),
         sellCons: gACons,

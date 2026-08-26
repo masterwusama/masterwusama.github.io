@@ -596,12 +596,14 @@ def _bisect_buy(score_fn, price0):
 
 
 def price_references(d, va):
-    """对应 JS priceReferences：四大流派买入/保守卖出/公允卖出价格参考"""
+    """对应 JS priceReferences：公允清算价值 + 四大流派买入/保守卖出/公允卖出价格参考
+    fairLiq = 每股公允清算价值（流动资产合计-负债合计）/财报股本，格雷厄姆清算口径"""
     s = d.get('snapshot') or {}
     price0, mcap0 = s.get('price'), s.get('market_cap')
     pe0, pb0 = s.get('pe_ttm'), s.get('pb')
     if price0 is None or price0 <= 0:
-        return {'grahamAgg': {'buy': None, 'sellCons': None, 'sellFair': None},
+        return {'fairLiq': None,
+                'grahamAgg': {'buy': None, 'sellCons': None, 'sellFair': None},
                 'grahamDef': {'buy': None, 'sellCons': None, 'sellFair': None},
                 'schloss': {'buy': None, 'sellCons': None, 'sellFair': None},
                 'buffett': {'buy': None, 'sellCons': None, 'sellFair': None}}
@@ -657,6 +659,7 @@ def price_references(d, va):
     b_cons = (fair_pe * eps_ttm) if eps_ttm is not None else None
 
     return {
+        'fairLiq': ncav_ps if (ncav_ps is not None and ncav_ps > 0) else None,
         'grahamAgg': {
             'buy': clamp_buy(buy_of('grahamAgg'), gA_cons),
             'sellCons': gA_cons,
