@@ -11,9 +11,12 @@
   font-size: 14px;
 }
 
-/* ---- 公司列表宽表（双行分组表头，横向滚动，名称列吸顶/吸左） ---- */
+/* ---- 公司列表宽表（双行分组表头，横向滚动 + 容器内垂直滚动，表头吸顶/名称列吸左） ---- */
 .stock-table-wrap {
   overflow-x: auto;
+  overflow-y: auto;
+  /* 容器内滚动使表头 sticky 生效；高度受视口限制（4K 大屏也强制滚动，保证表头固定可见） */
+  max-height: min(60vh, 640px);
   border: 1px solid #e1e1e1;
   border-radius: 6px;
   background: #fff;
@@ -66,10 +69,16 @@
   color: #2b6cb0;
 }
 
-/* 表头垂直吸顶（页面内滚动时保持可见）；名称列额外吸左 */
-.stock-list-table thead th {
+/* 表头垂直吸顶：由 thead 整体承担（双行表头一次吸顶，避免逐 th top:0 相互重叠）；
+   名称列（.stick）额外横向吸左。注意 .stock-table-wrap 必须有纵向滚动（max-height+overflow-y）
+   否则 sticky 参照系退化为容器自身，页面滚动时不会固定。 */
+.stock-list-table thead {
   position: sticky;
   top: 0;
+  z-index: 3;
+}
+
+.stock-list-table thead th {
   z-index: 3;
 }
 
