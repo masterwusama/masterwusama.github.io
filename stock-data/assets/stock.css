@@ -31,7 +31,7 @@
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  min-width: 1220px;
+  min-width: 960px;
   font-size: 12px;
   line-height: 1.5;
 }
@@ -43,9 +43,14 @@
   font-weight: 600;
   white-space: normal;
   line-height: 1.35;
-  text-align: center;
+  text-align: right;
   border-bottom: 1px solid #e1e1e1;
   border-right: 1px solid #e8ebf0;
+}
+
+/* 跨列组头居中对齐（“四大流派评分”“价格参考”） */
+.stock-list-table th[colspan] {
+  text-align: center;
 }
 
 .stock-list-table .th-g1 th {
@@ -95,6 +100,12 @@
   text-align: left;
 }
 
+/* 代码/行业列表头左对齐，与数据列方向一致 */
+.stock-list-table th.c-code,
+.stock-list-table th.c-industry {
+  text-align: left;
+}
+
 .stock-list-table thead .stick {
   background: #f0f3f7;
   z-index: 4;
@@ -112,6 +123,13 @@
 .stock-list-table .c-industry {
   white-space: normal;
   word-break: break-word;
+}
+
+/* 行业列宽度约束：避免 auto layout 把富余宽度全灌给唯一可换行列，导致横向溢出 */
+.stock-list-table th.c-industry,
+.stock-list-table td.c-industry {
+  width: 100px;
+  max-width: 120px;
 }
 
 /* 宽屏自适应：≥1240px 主内容区按视口 92% 铺开（上限 1600px），大屏/4K 不再只有中间一条窄列。
@@ -185,6 +203,50 @@
   color: #c2492e;
   font-weight: 700;
   background: rgba(232, 104, 74, 0.1);
+}
+
+/* 价格参考合并列（桌面宽表）：每流派一列，单元格内竖排 买→保守→公允 三档，
+   买入/卖出 8 列降为 4 列；买价为主行，卖价为小字辅行 */
+.stock-list-table .c-ref {
+  padding: 3px 8px;
+  vertical-align: middle;
+  line-height: 1.35;
+}
+
+/* 流派列之间留白分隔，替代密集竖线 */
+.stock-list-table th.c-ref-h,
+.stock-list-table td.c-ref {
+  border-left: 3px solid #f0f3f7;
+}
+
+.stock-list-table .c-ref .rf-buy {
+  display: block;
+  font-weight: 600;
+}
+
+.stock-list-table .c-ref .rf-sell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-size: 11px;
+  color: #8a94a6;
+  font-weight: 400;
+}
+
+/* 保守/公允纵向两行，均可点击排序（手型光标在整块卖价区域生效） */
+.stock-list-table .c-ref .sl-c,
+.stock-list-table .c-ref .sl-f {
+  display: block;
+}
+
+.stock-list-table .c-ref .rf-sell {
+  cursor: pointer;
+}
+
+.stock-list-table .c-ref .sl-f:empty::after {
+  content: '-';
+  color: #cbd5e1;
 }
 
 /* ---- 公司卡片列表（旧版卡片视图样式保留备用） ---- */

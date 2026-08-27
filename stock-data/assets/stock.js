@@ -286,32 +286,30 @@
         '<span class="s-sort-divider">清算价值</span>' +
         sortBtn('liq', '清算价') +
         sortBtn('netcash', '净现金率') : '') +
-      '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
+      '<span class="s-sort-hint">评分列按分数排，买入/卖出参考列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
       html += '<div class="stock-cards">' + list.map(cardHtml).join('') + '</div>';
     } else {
-      // 宽表：双行分组表头（评分/买入参考/保守卖出/公允卖出四组 × 四流派），横向滚动查看；
-      // 子表头与基础列均可点击排序（data-sort 键：score-/buy-/sellC-/sellF- + 流派）
+      // 宽表：列数从简——买入/卖出参考按流派合并为单列（单元格内竖排 买→保→公 三档，18列降为14列）；
+      // 列头按买入性价比排序，点卖出小字按保守价排序（data-sort 键：score-/buy-/sellC- + 流派）
+      var SCHOOLS = ['grahamAgg', 'grahamDef', 'schloss', 'buffett'];
       html += '<div class="stock-table-wrap"><table class="stock-list-table"><thead>' +
       '<tr class="th-g1">' +
       thSort('name', '股票名称', 'stick', ' rowspan="2"') +
-      thSort('code', '代码', null, ' rowspan="2"') +
-      thSort('industry', '所属行业', null, ' rowspan="2"') +
+      thSort('code', '代码', 'c-code', ' rowspan="2"') +
+      thSort('industry', '所属行业', 'c-industry', ' rowspan="2"') +
       thSort('price', '现价', null, ' rowspan="2"') +
       thSort('liq', '清算价值', null, ' rowspan="2"', '按每股公允清算价值排') +
       thSort('netcash', '净现金/市值', null, ' rowspan="2"', '(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值，最近一期财报；鼠标悬停单元格可看代入值') +
       '<th colspan="4">四大流派评分</th>' +
-      '<th colspan="4">建议买入参考</th>' +
-      '<th colspan="4">保守卖出参考</th>' +
-      '<th colspan="4">公允卖出参考</th>' +
+      '<th colspan="4" title="每列自上而下：买入参考 / 保守卖出参考 / 公允卖出参考（小字）；现价进入买区绿底、卖区红字">价格参考（买 / 保卖 / 公卖）</th>' +
       '</tr><tr class="th-g2">' +
-      ['score', 'buy', 'sellC', 'sellF'].map(function (prefix) {
-        return ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
-          // 评分列按分数排；买入/卖出列按性价比（参考价÷现价倍数）排
-          return thSort(prefix + '-' + k, ['格进取', '格防御', '施洛斯', '巴菲特'][i], null, null,
-            prefix === 'score' ? null : '性价比');
-        }).join('');
+      SCHOOLS.map(function (k, i) {
+        return thSort('score-' + k, ['格进取', '格防御', '施洛斯', '巴菲特'][i]);
+      }).join('') +
+      SCHOOLS.map(function (k, i) {
+        return thSort('buy-' + k, ['格进取', '格防御', '施洛斯', '巴菲特'][i], 'c-ref-h', '', '按买入性价比排；点格内卖出小字按卖出价排');
       }).join('') +
       '</tr></thead><tbody>';
     list.forEach(function (c) {
@@ -388,6 +386,14 @@
       });
     });
 
+    // 合并参考格内卖出小字：分别按保守/公允价排序（列头本身按买入价排），不触发行进详情
+    box.querySelectorAll('td .sl-c[data-sort], td .sl-f[data-sort]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        applySort(el.getAttribute('data-sort'));
+      });
+    });
+
     // 从详情返回时恢复滚动位置
     if (state.listScroll) window.scrollTo(0, state.listScroll);
 
@@ -400,7 +406,7 @@
     }
   }
 
-  // 单行 20 个单元格：名称/代码/行业/现价 + 评分4 + 买入4 + 保守卖出4 + 公允卖出4
+  // 单行 10 个单元格：名称/代码/行业/现价/清算/净现金 ＋ 评分4 ＋ 价格参考4（每流派买/保/公合并单列）
   // data-s 标记供降级路径 fillRowScores 渐进重填；价格与现价对照着色（买区绿/卖区红）
   function listCells(c) {
     var sc = state.scores[c.code] || null;
@@ -428,22 +434,24 @@
       h += '<td class="c-num sc-' + g + '" data-s="score-' + k + '" title="' + gradeText(g) + '">' +
         (v == null ? '-' : fmtNum(v)) + '</td>';
     });
-    // 买入参考：现价 ≤ 买入价（进入买入区）标绿
+    // 价格参考合并列：每流派一列，竖排 买→保守→公允；现价 ≤ 买价整列绿底，≥ 卖出价对应行红字
+    var schoolNames = { grahamAgg: '格·进取', grahamDef: '格·防御', schloss: '施洛斯', buffett: '巴菲特' };
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
-      var p = refs && refs[k] ? refs[k].buy : null;
-      var hit = p != null && cur != null && cur <= p ? ' r-hit' : '';
-      h += '<td class="c-num' + hit + '" data-s="buy-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
-    });
-    // 保守卖出：现价 ≥ 卖出价（进入卖出区）标红
-    ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
-      var p = refs && refs[k] ? refs[k].sellCons : null;
-      var hit = p != null && cur != null && cur >= p ? ' r-hit-s' : '';
-      h += '<td class="c-num' + hit + '" data-s="sellC-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
-    });
-    ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
-      var p = refs && refs[k] ? refs[k].sellFair : null;
-      var hit = p != null && cur != null && cur >= p ? ' r-hit-s' : '';
-      h += '<td class="c-num' + hit + '" data-s="sellF-' + k + '">' + (p == null ? '-' : fmtNum(p)) + '</td>';
+      var p = refs && refs[k] ? refs[k] : null;
+      var buy = p ? p.buy : null;
+      var pC = p ? p.sellCons : null;
+      var pF = p ? p.sellFair : null;
+      var hitB = buy != null && cur != null && cur <= buy ? ' r-hit' : '';
+      var hitC = pC != null && cur != null && cur >= pC;
+      var hitF = pF != null && cur != null && cur >= pF;
+      h += '<td class="c-num c-ref' + hitB + '" data-s="buy-' + k + '" ' +
+        'title="' + schoolNames[k] + '：买 ' + (buy == null ? '-' : fmtNum(buy)) + ' / 保卖 ' + (pC == null ? '-' : fmtNum(pC)) + ' / 公卖 ' + (pF == null ? '-' : fmtNum(pF)) + '">' +
+        '<span class="rf-buy">' + (buy == null ? '-' : fmtNum(buy)) + '</span>' +
+        '<span class="rf-sell">' +
+          '<span class="sl-c' + (hitC ? ' r-hit-s' : '') + '" data-s="sellC-' + k + '" data-sort="sellC-' + k + '" title="保守卖出参考，点击按保守价排序">' + (pC == null ? '-' : fmtNum(pC)) + '</span>' +
+          '<span class="sl-f' + (hitF ? ' r-hit-s' : '') + '" data-s="sellF-' + k + '" data-sort="sellF-' + k + '" title="公允卖出参考，点击按公允价排序">' + (pF == null ? '' : fmtNum(pF)) + '</span>' +
+        '</span>' +
+        '</td>';
     });
     return h;
   }
@@ -521,6 +529,10 @@
     'score-schloss': '施洛斯', 'score-buffett': '巴菲特',
     'buy-grahamAgg': '进取买', 'buy-grahamDef': '防御买',
     'buy-schloss': '施洛斯买', 'buy-buffett': '巴菲特买',
+    'sellC-grahamAgg': '进取保卖', 'sellC-grahamDef': '防御保卖',
+    'sellC-schloss': '施洛斯保卖', 'sellC-buffett': '巴菲特保卖',
+    'sellF-grahamAgg': '进取公卖', 'sellF-grahamDef': '防御公卖',
+    'sellF-schloss': '施洛斯公卖', 'sellF-buffett': '巴菲特公卖',
     'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值',
     'netcash': '净现金/市值'
   };
@@ -535,7 +547,9 @@
   // 表头排序单元格 HTML（可点击；激活列高亮并显示箭头；cls 追加样式如 stick，attrs 追加属性如 rowspan；
   // hint 用于替换排序语义说明，如买入/卖出列按性价比排）
   function thSort(key, label, cls, attrs, hint) {
-    var active = state.sortKey === key;
+    // 合并参考格内点卖出小字按 sellC-/sellF- 排序时，归一到 buy- 键，高亮仍落在该流派列头
+    var normKey = (state.sortKey || '').replace(/^sell[CcFf]-/, 'buy-');
+    var active = key === normKey;
     var title = hint
       ? '点击按' + label + '排序（' + hint + '），再点切换升/降序'
       : '点击按' + label + '排序，再点切换升/降序';
@@ -676,9 +690,29 @@
           if (kind === 'buy' && cur <= p) hit = ' r-hit';
           if (kind !== 'buy' && cur >= p) hit = ' r-hit-s';
         }
-        td.className = 'c-num' + hit;
+        if (kind === 'buy') {
+          // 合并参考格：重建三档内容，保留 c-ref 结构类，现价换档后重新着色
+          var r = refs && refs[k] ? refs[k] : null;
+          var b = r ? r.buy : null;
+          var pc = r ? r.sellCons : null;
+          var pf = r ? r.sellFair : null;
+          var hb = b != null && cur != null && cur <= b ? ' r-hit' : '';
+          var hc = pc != null && cur != null && cur >= pc;
+          var hf = pf != null && cur != null && cur >= pf;
+          td.className = 'c-num c-ref' + hb;
+          td.innerHTML = '<span class="rf-buy">' + (b == null ? '-' : fmtNum(b)) + '</span>' +
+            '<span class="rf-sell">' +
+            '<span class="sl-c' + (hc ? ' r-hit-s' : '') + '" data-s="sellC-' + k + '" data-sort="sellC-' + k + '" title="保守卖出参考，点击按保守价排序">' + (pc == null ? '-' : fmtNum(pc)) + '</span>' +
+            '<span class="sl-f' + (hf ? ' r-hit-s' : '') + '" data-s="sellF-' + k + '" data-sort="sellF-' + k + '" title="公允卖出参考，点击按公允价排序">' + (pf == null ? '' : fmtNum(pf)) + '</span>' +
+            '</span>';
+          return;
+        }
+        // 降级路径单次命中 sellC/sellF span（buy 分支已重建整格，此处仅兜底刷色）：
+        // 只切换命中类，保留 sl-c/sl-f 结构类
+        td.classList.remove('r-hit', 'r-hit-s');
+        if (hit) td.classList.add(hit.trim());
+        td.innerHTML = p == null ? (td.classList.contains('sl-f') ? '' : '-') : fmtNum(p);
       }
-      td.innerHTML = p == null ? '-' : fmtNum(p);
     });
   }
 
