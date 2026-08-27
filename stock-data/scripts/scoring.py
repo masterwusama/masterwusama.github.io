@@ -47,7 +47,8 @@ def annual_balance_rows(rows):
 
 
 def cagr(cur, prev, years):
-    if cur is None or prev is None or prev <= 0 or not years:
+    # cur ≤ 0 时负基数开小数次方为复数，无实数解，返回 None（与 JS 一致）
+    if cur is None or prev is None or prev <= 0 or cur <= 0 or not years:
         return None
     return (cur / prev) ** (1.0 / years) - 1.0
 
@@ -686,9 +687,11 @@ def price_references(d, va):
         return buy
 
     gA_cons = ncav_ps if (ncav_ps is not None and ncav_ps > 0) else None
-    gD_cons = (15.0 * eps_ttm) if (eps_ttm is not None and eps_ttm > 0) else None
+    # TTM 每股亏损（≤0）时基于 EPS 的估值锚无意义，锚位与买入价一并置空（避免负价/误导价）
+    eps_ok = eps_ttm is not None and eps_ttm > 0
+    gD_cons = (15.0 * eps_ttm) if eps_ok else None
     s_cons = bps if (bps is not None and bps > 0) else None
-    b_cons = (fair_pe * eps_ttm) if eps_ttm is not None else None
+    b_cons = (fair_pe * eps_ttm) if eps_ok else None
 
     return {
         'fairLiq': ncav_ps if (ncav_ps is not None and ncav_ps > 0) else None,
@@ -700,9 +703,9 @@ def price_references(d, va):
             'sellFair': (1.5 * ncav_ps) if (ncav_ps is not None and ncav_ps > 0) else None,
         },
         'grahamDef': {
-            'buy': clamp_buy(buy_of('grahamDef'), gD_cons),
+            'buy': clamp_buy(buy_of('grahamDef'), gD_cons) if eps_ok else None,
             'sellCons': gD_cons,
-            'sellFair': (20.0 * eps_ttm) if (eps_ttm is not None and eps_ttm > 0) else None,
+            'sellFair': (20.0 * eps_ttm) if eps_ok else None,
         },
         'schloss': {
             'buy': clamp_buy(buy_of('schloss'), s_cons),
@@ -710,9 +713,9 @@ def price_references(d, va):
             'sellFair': (1.5 * bps) if (bps is not None and bps > 0) else None,
         },
         'buffett': {
-            'buy': clamp_buy((fair_pe * eps_ttm * 2.0 / 3.0) if eps_ttm is not None else None, b_cons),
+            'buy': clamp_buy(fair_pe * eps_ttm * 2.0 / 3.0, b_cons) if eps_ok else None,
             'sellCons': b_cons,
-            'sellFair': (fair_pe * eps_ttm * 1.3) if eps_ttm is not None else None,
+            'sellFair': (fair_pe * eps_ttm * 1.3) if eps_ok else None,
         },
     }
 

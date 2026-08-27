@@ -20,6 +20,7 @@ stock-data/_check*
 stock-data/_dump_out.txt
 stock-data/_test_annual.pdf
 stock-data/assets/echarts.min.js
+stock-data/scripts/_score_check_funcs.js
 
 # D&D 文字冒险素材与未授权文本（不入库）
 dnd-table/de-src/

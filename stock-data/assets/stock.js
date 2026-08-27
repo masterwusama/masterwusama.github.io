@@ -168,9 +168,9 @@
       .sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
   }
 
-  // 复合增长率：cur 较 prev 跨越 years 年
+  // 复合增长率：cur 较 prev 跨越 years 年；任一端 ≤ 0 时比率开小数次方无实数解，返回 null
   function cagr(cur, prev, years) {
-    if (cur == null || prev == null || prev <= 0 || !years) return null;
+    if (cur == null || prev == null || prev <= 0 || cur <= 0 || !years) return null;
     return Math.pow(cur / prev, 1 / years) - 1;
   }
 
@@ -1890,7 +1890,9 @@
     var gACons = (ncavPs != null && ncavPs > 0) ? ncavPs : null;
     var gDCons = (epsTtm != null && epsTtm > 0) ? 15 * epsTtm : null;
     var sCons = (bps != null && bps > 0) ? bps : null;
-    var bCons = epsTtm != null ? fpe * epsTtm : null;
+    // TTM 每股亏损（≤0）时基于 EPS 的估值锚无意义，锚位与买入价一并置空（避免负价/误导价）
+    var epsOk = epsTtm != null && epsTtm > 0;
+    var bCons = epsOk ? fpe * epsTtm : null;
     return {
       fairLiq: (ncavPs != null && ncavPs > 0) ? ncavPs : null,
       netCashRatio: netCashRatio,
@@ -1901,9 +1903,9 @@
         sellFair: (ncavPs != null && ncavPs > 0) ? 1.5 * ncavPs : null
       },
       grahamDef: {
-        buy: clampBuy(buyOf('grahamDef'), gDCons),
+        buy: epsOk ? clampBuy(buyOf('grahamDef'), gDCons) : null,
         sellCons: gDCons,
-        sellFair: (epsTtm != null && epsTtm > 0) ? 20 * epsTtm : null
+        sellFair: epsOk ? 20 * epsTtm : null
       },
       schloss: {
         buy: clampBuy(buyOf('schloss'), sCons),
@@ -1911,9 +1913,9 @@
         sellFair: (bps != null && bps > 0) ? 1.5 * bps : null
       },
       buffett: {
-        buy: clampBuy(epsTtm != null ? fpe * epsTtm * 2 / 3 : null, bCons),
+        buy: epsOk ? clampBuy(fpe * epsTtm * 2 / 3, bCons) : null,
         sellCons: bCons,
-        sellFair: epsTtm != null ? fpe * epsTtm * 1.3 : null
+        sellFair: epsOk ? fpe * epsTtm * 1.3 : null
       }
     };
   }
