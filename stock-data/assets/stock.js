@@ -287,7 +287,9 @@
         sortBtn('liq', '清算价') +
         sortBtn('netcash', '净现金率') +
         '<span class="s-sort-divider">造假风险</span>' +
-        sortBtn('fraud', '造假分') : '') +
+        sortBtn('fraud', '造假分') +
+        '<span class="s-sort-divider">管理水平</span>' +
+        sortBtn('mgmt', '管理分') : '') +
       '<span class="s-sort-hint">评分列按分数排，买入/卖出参考列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
@@ -305,6 +307,7 @@
       thSort('liq', '清算价值', null, ' rowspan="2"', '按每股公允清算价值排') +
       thSort('netcash', '净现金/市值', null, ' rowspan="2"', '(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值，最近一期财报；鼠标悬停单元格可看代入值') +
       thSort('fraud', '造假风险', null, ' rowspan="2"', '财报造假可能性评分（0-100，越高越可疑）；点击按分数排序') +
+      thSort('mgmt', '管理水平', null, ' rowspan="2"', '管理层管理水平评分（0-100，越高越好）；点击按分数排序') +
       '<th colspan="4">四大流派评分</th>' +
       '<th colspan="4" title="每列自上而下：买入参考 / 保守卖出参考 / 公允卖出参考（小字）；现价进入买区绿底、卖区红字">价格参考（买 / 保卖 / 公卖）</th>' +
       '</tr><tr class="th-g2">' +
@@ -436,6 +439,11 @@
     h += '<td class="c-num sc-' + fraudGradeOf(fraud) + '" data-s="fraud" ' +
       'title="财报造假可能性 ' + (fraud == null ? '-' : fmtNum(fraud)) + ' 分（0-100，越高越可疑）：净现背离/高应计/应收存货增速背离/毛利率逆势上升/其他应收占用等量化红旗加权">' +
       (fraud == null ? '-' : fmtNum(fraud)) + '</td>';
+    // 管理水平（百分制，越高越好）：等级色与价值评分同向，与详情页管理分圆徽一致
+    var mgmt = sc ? sc.mgmt : null;
+    h += '<td class="c-num sc-' + gradeOf(mgmt) + '" data-s="mgmt" ' +
+      'title="管理层管理水平 ' + (mgmt == null ? '-' : fmtNum(mgmt)) + ' 分（0-100，越高越好）：费用纪律/资产周转/资本回报/成长质量/营运资金/现金流质量/股东回报/治理诚信加权">' +
+      (mgmt == null ? '-' : fmtNum(mgmt)) + '</td>';
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;
       var g = gradeOf(v);
@@ -480,6 +488,7 @@
       '<span class="sc-industry">' + (c.industry || '-') + '</span>' +
       '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
       '<span class="sc-fraud sc-' + fraudGradeOf(sc ? sc.fraud : null) + '" data-s="fraud" title="财报造假可能性（0-100，越高越可疑）"><em>造假</em><b>' + (sc && sc.fraud != null ? fmtNum(sc.fraud) : '-') + '</b></span>' +
+      '<span class="sc-mgmt sc-' + gradeOf(sc ? sc.mgmt : null) + '" data-s="mgmt" title="管理层管理水平评分（0-100，越高越好）"><em>管理</em><b>' + (sc && sc.mgmt != null ? fmtNum(sc.mgmt) : '-') + '</b></span>' +
       '</div>';
     // 公允清算价值 + 净现金/市值 并排（移动端半行各一块，样式复用 sc-liq）
     var liq = refs ? refs.fairLiq : null;
@@ -544,7 +553,7 @@
     'sellF-grahamAgg': '进取公卖', 'sellF-grahamDef': '防御公卖',
     'sellF-schloss': '施洛斯公卖', 'sellF-buffett': '巴菲特公卖',
     'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值',
-    'netcash': '净现金/市值', 'fraud': '造假风险'
+    'netcash': '净现金/市值', 'fraud': '造假风险', 'mgmt': '管理水平'
   };
 
   // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
@@ -595,6 +604,10 @@
       var scF = state.scores[c.code];
       return scF && scF.fraud != null ? scF.fraud : null;
     }
+    if (key === 'mgmt') {
+      var scM = state.scores[c.code];
+      return scM && scM.mgmt != null ? scM.mgmt : null;
+    }
     var sc = state.scores[c.code];
     if (!sc) return null;
     if (key.indexOf('score-') === 0) return sc[key.slice(6)];
@@ -644,11 +657,14 @@
             var v = valueScores(d, va);
             var fa = null;
             try { fa = fraudAnalysis(d); } catch (e) { /* 造假分缺失不影响评分 */ }
+            var ma = null;
+            try { ma = managementAnalysis(d); } catch (e) { /* 管理分缺失不影响评分 */ }
             state.scores[c.code] = {
               grahamAgg: v.grahamAgg.total, grahamDef: v.grahamDef.total,
               schloss: v.schloss.total, buffett: v.buffett.total,
               priceRefs: priceReferences(d, va),
-              fraud: fa ? fa.total : null
+              fraud: fa ? fa.total : null,
+              mgmt: ma ? ma.total : null
             };
           } catch (e) { /* 单家计算失败不影响其他公司 */ }
           fillRowScores(c.code);
@@ -712,6 +728,20 @@
           td.classList.add('sc-' + fg);
           var fb = td.querySelector('b');
           if (fb) fb.textContent = p == null ? '-' : fmtNum(p);
+        }
+        return;
+      } else if (kind === 'mgmt') {
+        // 管理水平：方向与价值评分同向（越高越好），复用等级色；移动端徽标同造假分处理
+        p = sc ? sc.mgmt : null;
+        var mg = gradeOf(p);
+        if (td.tagName === 'TD') {
+          td.className = 'c-num sc-' + mg;
+          td.innerHTML = p == null ? '-' : fmtNum(p);
+        } else {
+          td.classList.remove('sc-good', 'sc-mid', 'sc-low', 'sc-bad', 'sc-na');
+          td.classList.add('sc-' + mg);
+          var mb = td.querySelector('b');
+          if (mb) mb.textContent = p == null ? '-' : fmtNum(p);
         }
         return;
       } else {
@@ -831,6 +861,7 @@
       '<a href="#sec-schloss" data-scroll="sec-schloss">④ 施洛斯烟蒂</a>' +
       '<a href="#sec-buffett" data-scroll="sec-buffett">⑤ 巴菲特芒格</a>' +
       '<a href="#sec-fraud" data-scroll="sec-fraud">⑥ 造假风险</a>' +
+      '<a href="#sec-mgmt" data-scroll="sec-mgmt">⑦ 管理水平</a>' +
       '</nav>';
 
     // ---- 模块一：基础财务信息（估值快照/趋势图/财务对比/报表/分红/定期报告）----
@@ -1011,6 +1042,10 @@
     html += '<section id="sec-fraud" class="stock-section va-module"><h2 class="va-module-title"><span>⑥</span>财务报表造假可能性分析</h2>' +
       '<div class="score-card" id="stock-score-fraud"></div></section>';
 
+    // ---- 模块七：管理层管理水平评分（8 维百分制加权，越高越好）----
+    html += '<section id="sec-mgmt" class="stock-section va-module"><h2 class="va-module-title"><span>⑦</span>管理层管理水平评分</h2>' +
+      '<div class="score-card" id="stock-score-mgmt"></div></section>';
+
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
     bindComparePicks();
@@ -1023,6 +1058,9 @@
     var fa = fraudAnalysis(d);
     var fraudEl = $('stock-score-fraud');
     if (fraudEl) fraudEl.innerHTML = fraudCard(fa);
+    var ma = managementAnalysis(d);
+    var mgmtEl = $('stock-score-mgmt');
+    if (mgmtEl) mgmtEl.innerHTML = managementCard(ma);
     bindMoreButtons();
   }
 
@@ -1715,6 +1753,115 @@
       '<thead><tr><th>红旗指标</th><th>当前值</th><th>安全阈值</th><th>严重度</th><th>得分</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
       '<p class="score-note">' + fa.note + '</p>';
+  }
+
+  // ---- 管理层管理水平评分（融合 DEA 投入产出效率思想的 8 维百分制加权）----
+  // 分数越高管理水平越好（与价值评分同向）；数据不足该项不计分不误伤。
+  // 纯 DEA 相对效率依赖同行业样本且为黑盒无法逐项展示，故采用其“投入→产出”效率内核的透明加权替代。
+  function managementAnalysis(d) {
+    var annual = annualRows(d.indicators || []);
+    var last = annual.length ? annual[annual.length - 1] : null;
+    var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
+    var lastYear = lastDate ? lastDate.slice(0, 4) : null;
+    var incList = (d.income || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var baList = (d.balance || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var cfList = (d.cashflow || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var lastInc = lastDate ? sheetRowByDate(incList, lastDate) : null;
+    var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
+
+    var rev = last ? last['营业总收入'] : (lastInc ? lastInc['营业总收入'] : null);
+    var sellExp = lastInc ? lastInc['销售费用'] : null;
+    var admExp = lastInc ? lastInc['管理费用'] : null;
+    var finExp = lastInc ? lastInc['财务费用'] : null;
+    var assets = lastBa ? lastBa['资产总计'] : null;
+    var ar = lastBa ? lastBa['应收账款'] : null;
+    var inv = lastBa ? lastBa['存货'] : null;
+    var roe = last ? (last['净资产收益率'] != null ? last['净资产收益率'] : last['净资产收益率-摊薄']) : null;
+    var eps = last ? last['基本每股收益'] : null;
+
+    // 1. 三费率（销售＋管理＋财务费用）÷营收，越低越好（费用纪律/代理成本控制）
+    var feeSum = (sellExp != null || admExp != null || finExp != null)
+      ? (sellExp || 0) + (admExp || 0) + (finExp || 0) : null;
+    var feeRatio = (feeSum != null && rev != null && rev > 0) ? feeSum / rev : null;
+
+    // 2. 总资产周转率 = 营收 ÷ 总资产（资产运营效率）
+    var turnover = (rev != null && assets != null && assets > 0) ? rev / assets : null;
+
+    // 4. 营收约 5 年 CAGR（成长质量；取不晚于 lastYear-5 的最近年报作基期，缺则用最早年报）
+    var revCagr = null;
+    if (annual.length >= 2 && lastYear != null) {
+      var base = null;
+      for (var i = annual.length - 2; i >= 0; i--) {
+        var yy = Number(String(annual[i]['报告期']).slice(0, 4));
+        if (yy <= Number(lastYear) - 5) { base = annual[i]; break; }
+      }
+      if (!base) base = annual[0];
+      var span = Number(lastYear) - Number(String(base['报告期']).slice(0, 4));
+      if (span > 0) revCagr = cagr(rev, base['营业总收入'], span);
+    }
+
+    // 5. 营运资金占用（应收＋存货）÷营收，越低越好（回款与库存管理）
+    var wc = (ar != null && inv != null && rev != null && rev > 0) ? (ar + inv) / rev : null;
+
+    // 6. 近 5 年累计净现比（累计经营现金流 ÷ 累计净利润，现金流质量）
+    var sumNet = 0, sumOcf = 0, hit = false;
+    annual.slice(-5).forEach(function (r) {
+      var cfRow = sheetRowByDate(cfList, String(r['报告期']).slice(0, 10));
+      var n = r['净利润'], o = cfRow ? cfRow['经营活动产生的现金流量净额'] : null;
+      if (n != null && o != null) { sumNet += n; sumOcf += o; hit = true; }
+    });
+    var cashRatio = (hit && sumNet > 0) ? sumOcf / sumNet : null;
+
+    // 7. 现金分红率 = 最近一次每股分红 ÷ 最近年报每股收益（股东回报意愿）；异常高（>150%）视为口径不可比置空
+    var payout = null;
+    var divs = (d.dividends || []).filter(function (x) { return x.bonus_per_10 != null && x.bonus_per_10 > 0; });
+    if (divs.length && eps != null && eps > 0) {
+      payout = (divs[0].bonus_per_10 / 10) / eps;
+      if (payout > 1.5) payout = null;
+    }
+
+    // 8. 治理与诚信（造假风险反向）：造假分越低越诚信，管理越透明
+    var fraud = null;
+    try { fraud = fraudAnalysis(d).total; } catch (e) { /* 造假分缺失不影响其余维度 */ }
+
+    var items = [
+      it('费用纪律：三费率（销售＋管理＋财务费用）÷营收', fmtPct(feeRatio), '≤ 10%', 15, lerpScore(feeRatio, 0.10, 0.30, 15, 0)),
+      it('资产运营：总资产周转率（营收÷总资产）', turnover == null ? '-' : fmtNum(turnover), '≥ 1.0', 10, lerpScore(turnover, 0.2, 1.0, 0, 10)),
+      it('资本回报：净资产收益率（年报）', fmtPct(roe), '≥ 15%', 20, lerpScore(roe, 0, 0.15, 0, 20)),
+      it('成长质量：营收约5年CAGR', fmtPct(revCagr), '≥ 10%', 10, lerpScore(revCagr, 0, 0.10, 0, 10)),
+      it('营运资金：（应收＋存货）÷营收', fmtPct(wc), '≤ 15%', 10, lerpScore(wc, 0.15, 0.45, 10, 0)),
+      it('现金流质量：近5年累计净现比（经营现金流÷净利润）', cashRatio == null ? '-' : fmtNum(cashRatio), '≥ 1.0', 15, lerpScore(cashRatio, 0, 1.0, 0, 15)),
+      it('股东回报：现金分红率（每股分红÷每股收益）', fmtPct(payout), '≥ 50%', 10, lerpScore(payout, 0, 0.50, 0, 10)),
+      it('治理诚信：财报造假风险反向（100−造假分）', fraud == null ? '-' : fmtNum(fraud), '造假分 0（最诚信）', 10, fraud == null ? null : lerpScore(fraud, 0, 100, 10, 0))
+    ];
+    var avail = items.filter(function (x) { return x.score != null; });
+    var total = avail.length ? Math.min(100, avail.reduce(function (s, x) { return s + x.score; }, 0)) : null;
+    return {
+      title: '管理层管理水平 · 投入产出效率量化',
+      basis: '评分基准：' + (lastYear || '-') + ' 年报（比率类按年报口径，成长/现金流按近5年累计，分红取最近一次）',
+      total: total == null ? null : Math.round(total * 10) / 10,
+      items: items,
+      note: '借鉴 DEA 数据包络分析的“投入→产出”效率思想，将管理层能力拆为 8 个可量化维度加权 0~100 分：费用纪律/资产周转/资本回报/成长质量/营运资金/现金流质量/股东回报/治理诚信，分数越高管理水平越好。纯 DEA 相对效率依赖同行业大样本且为黑盒、无法逐项展示，故采用其效率内核的透明加权替代；数据不足的项不计分不误伤。本分为量化参考，需结合公司治理结构、股权激励、管理层履历等定性信息综合判断。'
+    };
+  }
+
+  // 管理层评分卡（与 scoreCard 同构，等级方向高分=好=绿；符合度列 = 得分/权重）
+  function managementCard(ma) {
+    var g = gradeOf(ma.total);
+    var rows = ma.items.map(function (x) {
+      var mCls = x.match == null ? 'sc-na' : x.match >= 0.99 ? 'sc-good' : x.match >= 0.5 ? 'sc-mid' : 'sc-low';
+      var mTxt = x.match == null ? '-' : (x.match * 100).toFixed(0) + '%';
+      return '<tr><td>' + x.std + '</td><td class="v">' + x.val + '</td><td class="v">' + x.thr + '</td>' +
+        '<td class="v ' + mCls + '">' + mTxt + '</td>' +
+        '<td class="v"><b>' + (x.score == null ? '-' : fmtNum(x.score)) + '</b> / ' + x.max + '</td></tr>';
+    }).join('');
+    return '<div class="score-card-head"><h4>' + ma.title + '</h4>' +
+      '<div class="score-circle va-grade-' + g + '"><span>管理分</span><b>' + (ma.total == null ? '-' : fmtNum(ma.total)) + '</b><i>' + gradeText(g) + '</i></div></div>' +
+      '<p class="score-basis">' + ma.basis + '</p>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare">' +
+      '<thead><tr><th>评判维度</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>' +
+      '<p class="score-note">' + ma.note + '</p>';
   }
 
   // ---- 价格参考（买入/保守卖出/公允卖出）----

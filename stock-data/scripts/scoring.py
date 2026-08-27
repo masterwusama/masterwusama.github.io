@@ -819,10 +819,104 @@ def fraud_analysis(d):
     return math.floor(total * 10 + 0.5) / 10.0
 
 
+def management_analysis(d):
+    """对应 JS managementAnalysis —— 管理层管理水平评分（0~100，越高越好）。
+    融合 DEA 投入产出效率思想的 8 维透明加权：费用纪律/资产周转/资本回报/成长质量/
+    营运资金/现金流质量/股东回报/治理诚信；数据不足项不计分不误伤。"""
+    annual = annual_rows(d.get('indicators') or [])
+    last = annual[-1] if annual else None
+    last_date = str(last.get('报告期') or '')[:10] if last else None
+    last_year = int(last_date[:4]) if last_date else None
+    inc_list = sorted(d.get('income') or [], key=lambda r: str(r.get('报告日') or ''))
+    ba_list = sorted(d.get('balance') or [], key=lambda r: str(r.get('报告日') or ''))
+    cf_list = sorted(d.get('cashflow') or [], key=lambda r: str(r.get('报告日') or ''))
+    last_inc = sheet_row_by_date(inc_list, last_date) if last_date else None
+    last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
+
+    if last:
+        rev = last.get('营业总收入')
+        roe = last.get('净资产收益率')
+        if roe is None:
+            roe = last.get('净资产收益率-摊薄')
+        eps = last.get('基本每股收益')
+    else:
+        rev = last_inc.get('营业总收入') if last_inc else None
+        roe = None
+        eps = None
+    sell_exp = last_inc.get('销售费用') if last_inc else None
+    adm_exp = last_inc.get('管理费用') if last_inc else None
+    fin_exp = last_inc.get('财务费用') if last_inc else None
+    assets = last_ba.get('资产总计') if last_ba else None
+    ar = last_ba.get('应收账款') if last_ba else None
+    inv = last_ba.get('存货') if last_ba else None
+
+    # 1. 三费率：任一费用存在则缺失项按 0 计（与 JS (x||0) 一致）
+    fees = [sell_exp, adm_exp, fin_exp]
+    fee_sum = sum(f for f in fees if f is not None) if any(f is not None for f in fees) else None
+    fee_ratio = fee_sum / rev if (fee_sum is not None and rev is not None and rev > 0) else None
+    # 2. 总资产周转率 = 营收 ÷ 总资产
+    turnover = rev / assets if (rev is not None and assets is not None and assets > 0) else None
+    # 4. 营收约 5 年 CAGR：取不晚于 last_year-5 的最近年报作基期，缺则用最早年报（跳过末期本身）
+    rev_cagr = None
+    if len(annual) >= 2 and last_year is not None:
+        base = None
+        for r in reversed(annual[:-1]):
+            yy = int(str(r.get('报告期') or '')[:4])
+            if yy <= last_year - 5:
+                base = r
+                break
+        if base is None:
+            base = annual[0]
+        span = last_year - int(str(base.get('报告期') or '')[:4])
+        if span > 0:
+            rev_cagr = cagr(rev, base.get('营业总收入'), span)
+    # 5. 营运资金占用（应收＋存货）÷ 营收
+    wc = (ar + inv) / rev if (ar is not None and inv is not None and rev is not None and rev > 0) else None
+    # 6. 近 5 年累计净现比（累计经营现金流 ÷ 累计净利润）
+    sum_net, sum_ocf, hit = 0.0, 0.0, False
+    for r in annual[-5:]:
+        cf = sheet_row_by_date(cf_list, str(r.get('报告期') or '')[:10])
+        n = r.get('净利润')
+        o = cf.get('经营活动产生的现金流量净额') if cf else None
+        if n is not None and o is not None:
+            sum_net += n
+            sum_ocf += o
+            hit = True
+    cash_ratio = sum_ocf / sum_net if (hit and sum_net > 0) else None
+    # 7. 现金分红率 = 最近一次每股分红 ÷ 最近年报每股收益；>150% 视为口径不可比置空（数据按日期倒序）
+    payout = None
+    divs = [r for r in (d.get('dividends') or [])
+            if r.get('bonus_per_10') is not None and r.get('bonus_per_10') > 0]
+    if divs and eps is not None and eps > 0:
+        payout = (divs[0]['bonus_per_10'] / 10.0) / eps
+        if payout > 1.5:
+            payout = None
+    # 8. 治理诚信：造假风险分反向（越低越诚信）
+    fraud = fraud_analysis(d)
+
+    scores = [
+        lerp_score(fee_ratio, 0.10, 0.30, 15, 0),   # 费用纪律，15 分（越低越好）
+        lerp_score(turnover, 0.2, 1.0, 0, 10),      # 资产周转，10 分（越高越好）
+        lerp_score(roe, 0, 0.15, 0, 20),            # 资本回报，20 分（越高越好）
+        lerp_score(rev_cagr, 0, 0.10, 0, 10),       # 成长质量，10 分（越高越好）
+        lerp_score(wc, 0.15, 0.45, 10, 0),          # 营运资金占用，10 分（越低越好）
+        lerp_score(cash_ratio, 0, 1.0, 0, 15),      # 现金流质量，15 分（越高越好）
+        lerp_score(payout, 0, 0.50, 0, 10),         # 股东回报，10 分（越高越好）
+        None if fraud is None else lerp_score(fraud, 0, 100, 10, 0),  # 治理诚信，10 分（造假分越低越好）
+    ]
+    avail = [s for s in scores if s is not None]
+    if not avail:
+        return None
+    total = min(100.0, sum(avail))
+    # 与 JS Math.round(total*10)/10 一致（Python round 为银行家舍入，不能直接用）
+    return math.floor(total * 10 + 0.5) / 10.0
+
+
 def compute_scores(company, now=None):
-    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 dict（供 index.json 直接使用）"""
+    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 + 管理分 dict（供 index.json 直接使用）"""
     va = value_analysis(company, now)
     scores = value_scores(company, va)
     scores['priceRefs'] = price_references(company, va)
     scores['fraud'] = fraud_analysis(company)
+    scores['mgmt'] = management_analysis(company)
     return scores

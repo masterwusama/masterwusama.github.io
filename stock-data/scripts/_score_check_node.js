@@ -26,7 +26,7 @@ const NAMES = ['annualRows', 'ttmNetProfit', 'shareCount', 'latestField', 'epsTt
   'sheetRowByDate', 'annualBalanceRows', 'cagr', 'perShareDiv',
   'consecutiveDivYears', 'sum', 'recentDividends', 'lerpScore', 'it',
   'fmtNum', 'fmtMoney', 'fmtPct', 'fmtDate', 'valueAnalysis', 'valueScores',
-  'fairPe', 'bisectBuy', 'priceReferences', 'fraudAnalysis'];
+  'fairPe', 'bisectBuy', 'priceReferences', 'fraudAnalysis', 'managementAnalysis'];
 
 let code = SRC.match(/var BOND_10Y = [\d.]+;/)[0] + '\n';
 for (const n of NAMES) {
@@ -34,10 +34,10 @@ for (const n of NAMES) {
   if (!f) throw new Error('missing function: ' + n);
   code += f + '\n';
 }
-code += '\nmodule.exports = { valueAnalysis: valueAnalysis, valueScores: valueScores, priceReferences: priceReferences, fraudAnalysis: fraudAnalysis };\n';
+code += '\nmodule.exports = { valueAnalysis: valueAnalysis, valueScores: valueScores, priceReferences: priceReferences, fraudAnalysis: fraudAnalysis, managementAnalysis: managementAnalysis };\n';
 fs.writeFileSync(path.join(__dirname, '_score_check_funcs.js'), code);
 
-const { valueAnalysis, valueScores, priceReferences, fraudAnalysis } = require('./_score_check_funcs.js');
+const { valueAnalysis, valueScores, priceReferences, fraudAnalysis, managementAnalysis } = require('./_score_check_funcs.js');
 const DATA = path.join(__dirname, '..', 'data', 'companies');
 const out = {};
 for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
@@ -46,10 +46,12 @@ for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
     const va = valueAnalysis(d);
     const sc = valueScores(d, va);
     const fa = fraudAnalysis(d);
+    const ma = managementAnalysis(d);
     out[d.code] = {
       grahamAgg: sc.grahamAgg.total, grahamDef: sc.grahamDef.total, schloss: sc.schloss.total, buffett: sc.buffett.total,
       priceRefs: priceReferences(d, va),
-      fraud: fa.total
+      fraud: fa.total,
+      mgmt: ma ? ma.total : null
     };
   } catch (e) {
     out[d.code] = { error: String(e) };
