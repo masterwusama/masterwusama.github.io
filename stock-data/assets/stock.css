@@ -1314,18 +1314,10 @@
     text-overflow: ellipsis;
   }
 
-  /* 卖出命中（现价 ≥ 卖出价）标红，与宽表 r-hit-s 语义一致 */
+  /* 卖出命中（现价 ≥ 卖出价）标红，与宽表 r-hit-s 语义一致；
+     买入命中（现价 ≤ 买价）由全局 .r-hit 只标绿买入价本身，卖价小字保持中性 */
   .sc-ref .r-sell.r-hit-s {
     color: #c0392b;
-    font-weight: 600;
-  }
-
-  .sc-ref.sc-r-hit {
-    background: #e7f6ec;
-  }
-
-  .sc-ref.sc-r-hit .r-buy {
-    color: #15803d;
     font-weight: 600;
   }
 

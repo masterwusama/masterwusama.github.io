@@ -442,7 +442,8 @@
       h += '<td class="c-num sc-' + g + '" data-s="score-' + k + '" title="' + gradeText(g) + '">' +
         (v == null ? '-' : fmtNum(v)) + '</td>';
     });
-    // 价格参考合并列：每流派一列，竖排 买→保守→公允；现价 ≤ 买价整列绿底，≥ 卖出价对应行红字
+    // 价格参考合并列：每流派一列，竖排 买→保守→公允；现价 ≤ 买价只标绿买入价，
+    // 现价 ≥ 卖出价对应行标红，其余中性不染色（避免整格绿底染到卖价小字）
     var schoolNames = { grahamAgg: '格·进取', grahamDef: '格·防御', schloss: '施洛斯', buffett: '巴菲特' };
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var p = refs && refs[k] ? refs[k] : null;
@@ -452,9 +453,9 @@
       var hitB = buy != null && cur != null && cur <= buy ? ' r-hit' : '';
       var hitC = pC != null && cur != null && cur >= pC;
       var hitF = pF != null && cur != null && cur >= pF;
-      h += '<td class="c-num c-ref' + hitB + '" data-s="buy-' + k + '" ' +
+      h += '<td class="c-num c-ref" data-s="buy-' + k + '" ' +
         'title="' + schoolNames[k] + '：买 ' + (buy == null ? '-' : fmtNum(buy)) + ' / 保卖 ' + (pC == null ? '-' : fmtNum(pC)) + ' / 公卖 ' + (pF == null ? '-' : fmtNum(pF)) + '">' +
-        '<span class="rf-buy">' + (buy == null ? '-' : fmtNum(buy)) + '</span>' +
+        '<span class="rf-buy' + hitB + '">' + (buy == null ? '-' : fmtNum(buy)) + '</span>' +
         '<span class="rf-sell">' +
           '<span class="sl-c' + (hitC ? ' r-hit-s' : '') + '" data-s="sellC-' + k + '" data-sort="sellC-' + k + '" title="保守卖出参考，点击按保守价排序">' + (pC == null ? '-' : fmtNum(pC)) + '</span>' +
           '<span class="sl-f' + (hitF ? ' r-hit-s' : '') + '" data-s="sellF-' + k + '" data-sort="sellF-' + k + '" title="公允卖出参考，点击按公允价排序">' + (pF == null ? '' : fmtNum(pF)) + '</span>' +
@@ -503,8 +504,8 @@
       return '<div class="sc-score sc-' + g + '"><span class="sc-k">' + names[i] + '</span>' +
         '<span class="sc-v" data-s="score-' + k + '">' + (v == null ? '-' : fmtNum(v)) + '</span></div>';
     }).join('') + '</div>';
-    // 买/卖参考四列：每列含买入价 + 保守卖出 + 公允卖出（现价 ≤ 买入价整列绿底，
-    // 现价 ≥ 卖出价对应值标红，与宽表 r-hit/r-hit-s 语义一致）
+    // 买/卖参考四列：每列含买入价 + 保守卖出 + 公允卖出（现价 ≤ 买入价只标绿买入价，
+    // 现价 ≥ 卖出价对应值标红，其余中性不染色，与宽表语义一致）
     h += '<div class="sc-refs">' + ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
       var p = refs && refs[k] ? refs[k] : null;
       var buy = p ? p.buy : null;
@@ -513,7 +514,7 @@
       var hitB = buy != null && cur != null && cur <= buy;
       var hitC = sellC != null && cur != null && cur >= sellC;
       var hitF = sellF != null && cur != null && cur >= sellF;
-      return '<div class="sc-ref' + (hitB ? ' sc-r-hit' : '') + '" data-s="buy-' + k + '">' +
+      return '<div class="sc-ref" data-s="buy-' + k + '">' +
         '<em>' + names[i] + '</em>' +
         '<span class="r-buy' + (hitB ? ' r-hit' : '') + '">买 ' + (buy == null ? '-' : fmtNum(buy)) + '</span>' +
         '<span class="r-sell' + (hitC ? ' r-hit-s' : '') + '">保卖 ' + (sellC == null ? '-' : fmtNum(sellC)) + '</span>' +
@@ -721,7 +722,8 @@
           if (kind !== 'buy' && cur >= p) hit = ' r-hit-s';
         }
         if (kind === 'buy') {
-          // 合并参考格：重建三档内容，保留 c-ref 结构类，现价换档后重新着色
+          // 合并参考格：绿标只落在买入价上，不污染卖价小字；宽表 td 重建三档结构，
+          // 移动端 sc-ref 块保留原结构仅刷三个价位的类与文本（避免降级路径破坏卡片布局）
           var r = refs && refs[k] ? refs[k] : null;
           var b = r ? r.buy : null;
           var pc = r ? r.sellCons : null;
@@ -729,12 +731,24 @@
           var hb = b != null && cur != null && cur <= b ? ' r-hit' : '';
           var hc = pc != null && cur != null && cur >= pc;
           var hf = pf != null && cur != null && cur >= pf;
-          td.className = 'c-num c-ref' + hb;
-          td.innerHTML = '<span class="rf-buy">' + (b == null ? '-' : fmtNum(b)) + '</span>' +
-            '<span class="rf-sell">' +
-            '<span class="sl-c' + (hc ? ' r-hit-s' : '') + '" data-s="sellC-' + k + '" data-sort="sellC-' + k + '" title="保守卖出参考，点击按保守价排序">' + (pc == null ? '-' : fmtNum(pc)) + '</span>' +
-            '<span class="sl-f' + (hf ? ' r-hit-s' : '') + '" data-s="sellF-' + k + '" data-sort="sellF-' + k + '" title="公允卖出参考，点击按公允价排序">' + (pf == null ? '' : fmtNum(pf)) + '</span>' +
-            '</span>';
+          if (td.tagName === 'TD') {
+            td.className = 'c-num c-ref';
+            td.innerHTML = '<span class="rf-buy' + hb + '">' + (b == null ? '-' : fmtNum(b)) + '</span>' +
+              '<span class="rf-sell">' +
+              '<span class="sl-c' + (hc ? ' r-hit-s' : '') + '" data-s="sellC-' + k + '" data-sort="sellC-' + k + '" title="保守卖出参考，点击按保守价排序">' + (pc == null ? '-' : fmtNum(pc)) + '</span>' +
+              '<span class="sl-f' + (hf ? ' r-hit-s' : '') + '" data-s="sellF-' + k + '" data-sort="sellF-' + k + '" title="公允卖出参考，点击按公允价排序">' + (pf == null ? '' : fmtNum(pf)) + '</span>' +
+              '</span>';
+          } else {
+            var ms = td.querySelectorAll('span');
+            if (ms.length >= 3) {
+              ms[0].className = 'r-buy' + hb;
+              ms[0].textContent = '买 ' + (b == null ? '-' : fmtNum(b));
+              ms[1].className = 'r-sell' + (hc ? ' r-hit-s' : '');
+              ms[1].textContent = '保卖 ' + (pc == null ? '-' : fmtNum(pc));
+              ms[2].className = 'r-sell' + (hf ? ' r-hit-s' : '');
+              ms[2].textContent = '公卖 ' + (pf == null ? '-' : fmtNum(pf));
+            }
+          }
           return;
         }
         // 降级路径单次命中 sellC/sellF span（buy 分支已重建整格，此处仅兜底刷色）：
