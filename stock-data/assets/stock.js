@@ -284,7 +284,8 @@
         sortBtn('buy-schloss', '施洛斯买') +
         sortBtn('buy-buffett', '巴菲特买') +
         '<span class="s-sort-divider">清算价值</span>' +
-        sortBtn('liq', '清算价') : '') +
+        sortBtn('liq', '清算价') +
+        sortBtn('netcash', '净现金率') : '') +
       '<span class="s-sort-hint">评分列按分数排，买入/卖出列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
@@ -299,6 +300,7 @@
       thSort('industry', '所属行业', null, ' rowspan="2"') +
       thSort('price', '现价', null, ' rowspan="2"') +
       thSort('liq', '清算价值', null, ' rowspan="2"', '按每股公允清算价值排') +
+      thSort('netcash', '净现金/市值', null, ' rowspan="2"', '(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值，最近一期财报；鼠标悬停单元格可看代入值') +
       '<th colspan="4">四大流派评分</th>' +
       '<th colspan="4">建议买入参考</th>' +
       '<th colspan="4">保守卖出参考</th>' +
@@ -378,6 +380,14 @@
       });
     });
 
+    // 净现金/市值单元格（宽表 td 与移动卡片 div）：点击弹出代入计算式，不触发行进详情
+    box.querySelectorAll('[data-s="netcash"]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        showNetFormulaPop(el);
+      });
+    });
+
     // 从详情返回时恢复滚动位置
     if (state.listScroll) window.scrollTo(0, state.listScroll);
 
@@ -405,6 +415,13 @@
     var liqHit = liq != null && cur != null && cur <= liq ? ' r-hit' : '';
     h += '<td class="c-num' + liqHit + '" data-s="liq" title="公允清算价值估算：(流动资产合计-负债合计)/股本">' +
       (liq == null ? '-' : fmtNum(liq)) + '</td>';
+    // 净现金/市值：分子随最近一期财报更新，分母随行情快照；悬停看公式，点击弹代入计算式
+    var ncr = refs ? refs.netCashRatio : null;
+    var ncrTitle = netCashFormula(refs) ||
+      '净现金/市值：(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值（最近一期财报），≥100% 表示扣除全部负债后的类现金仍高于市值';
+    h += '<td class="c-num' + (ncr != null && ncr >= 1 ? ' r-hit' : '') + '" data-s="netcash" ' +
+      'title="' + ncrTitle + '">' +
+      (ncr == null ? '-' : (ncr * 100).toFixed(1) + '%') + '</td>';
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;
       var g = gradeOf(v);
@@ -446,14 +463,22 @@
       '<span class="sc-industry">' + (c.industry || '-') + '</span>' +
       '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
       '</div>';
-    // 公允清算价值（每股）：现价 ≤ 清算价标绿（跌破清算价值）
+    // 公允清算价值 + 净现金/市值 并排（移动端半行各一块，样式复用 sc-liq）
     var liq = refs ? refs.fairLiq : null;
     var liqHit = liq != null && cur != null && cur <= liq;
-    h += '<div class="sc-liq' + (liqHit ? ' sc-liq-hit' : '') + '" title="公允清算价值估算：(流动资产合计-负债合计)/股本">' +
-      '<em>公允清算价值</em>' +
-      '<span class="sc-liq-v" data-s="liq">' + (liq == null ? '-' : fmtNum(liq)) + '</span>' +
-      (liqHit ? '<b>跌破清算价</b>' : '') +
-      '</div>';
+    var ncrC = refs ? refs.netCashRatio : null;
+    // 移动端无 hover：净现金块点按弹代入计算式浮层；初始提示写公式模板
+    h += '<div class="sc-duo">' +
+      '<div class="sc-liq' + (liqHit ? ' sc-liq-hit' : '') + '" title="公允清算价值估算：(流动资产合计-负债合计)/股本">' +
+        '<em>清算价值</em>' +
+        '<span class="sc-liq-v" data-s="liq">' + (liq == null ? '-' : fmtNum(liq)) + '</span>' +
+        (liqHit ? '<b>跌破</b>' : '') +
+      '</div>' +
+      '<div class="sc-liq sc-net-tap" data-s="netcash" title="(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值，点击看代入值">' +
+        '<em>净现金/市值</em>' +
+        '<span>' + (ncrC == null ? '-' : (ncrC * 100).toFixed(1) + '%') + '</span>' +
+      '</div>' +
+    '</div>';
     // 评分四宫格（等级色与宽表一致：sc-good/mid/low/bad/na）
     h += '<div class="sc-scores">' + ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].map(function (k, i) {
       var v = sc ? sc[k] : null;
@@ -496,7 +521,8 @@
     'score-schloss': '施洛斯', 'score-buffett': '巴菲特',
     'buy-grahamAgg': '进取买', 'buy-grahamDef': '防御买',
     'buy-schloss': '施洛斯买', 'buy-buffett': '巴菲特买',
-    'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值'
+    'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值',
+    'netcash': '净现金/市值'
   };
 
   // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
@@ -536,6 +562,10 @@
     if (key === 'liq') {
       var sc0 = state.scores[c.code];
       return sc0 && sc0.priceRefs ? sc0.priceRefs.fairLiq : null;
+    }
+    if (key === 'netcash') {
+      var scN = state.scores[c.code];
+      return scN && scN.priceRefs ? scN.priceRefs.netCashRatio : null;
     }
     var sc = state.scores[c.code];
     if (!sc) return null;
@@ -622,9 +652,23 @@
           if (liqBox) {
             liqBox.classList.toggle('sc-liq-hit', liqHit2);
             var liqTag = liqBox.querySelector('b');
-            if (liqTag) liqTag.textContent = liqHit2 ? '跌破清算价' : '';
+            if (liqTag) liqTag.textContent = liqHit2 ? '跌破' : '';
           }
         }
+      } else if (kind === 'netcash') {
+        // 净现金/市值：分支内完成格式化不走通用 fmtNum；宽表 td 同步刷新代入公式提示，
+        // 移动端 data-s 在卡片 div 上，只更新内部 span 文本避免覆盖结构
+        p = refs ? refs.netCashRatio : null;
+        var ncrTxt = p == null ? '-' : (p * 100).toFixed(1) + '%';
+        if (td.tagName === 'TD') {
+          var ncrF = netCashFormula(refs);
+          td.innerHTML = ncrTxt;
+          td.setAttribute('title', ncrF || '净现金/市值：(类现金加权−负债合计)/总市值');
+        } else {
+          var ncrSp = td.querySelector('span');
+          if (ncrSp) ncrSp.textContent = ncrTxt;
+        }
+        return;
       } else {
         if (refs && refs[k]) p = refs[k][kind === 'buy' ? 'buy' : kind === 'sellC' ? 'sellCons' : 'sellFair'];
         var hit = '';
@@ -1472,6 +1516,82 @@
   // 卖出价：锚定各流派核心估值指标的阈值倍数（不随质量分托底失真）。
   // ⚠ 二分循环调用 valueScores，本函数绝不可在 valueScores 内部调用（防递归），由 renderDetail 单独挂载。
 
+  // 类现金加权口径（与 scoring.py 一致）：科目键 → [展示名, 折算系数]
+  var NET_CASH_W = [
+    ['cash', '货币资金', 1],
+    ['fin', '交易性金融资产', 0.7],
+    ['notes', '应收票据', 0.4],
+    ['otherCA', '其他流动资产', 0.3]
+  ];
+
+  // 净现金/市值 代入计算式（多行文本，桌面 title 与移动端点击浮层共用）；无明细返回空串
+  function netCashFormula(refs) {
+    var c = refs && refs.netCashCalc;
+    if (!c || !c.mcap) return '';
+    var wSum = 0, items = [];
+    NET_CASH_W.forEach(function (it) {
+      var v = c[it[0]];
+      if (v == null) return;               // 缺失科目不参与折算也不展示
+      wSum += v * it[2];
+      items.push(it[1] + fmtMoney(v) + '×' + it[2]);
+    });
+    var lines = [
+      '净现金/市值 ＝（' + items.join(' ＋ ') + ' − 负债合计' + fmtMoney(c.tl) + '）÷ 总市值' + fmtMoney(c.mcap),
+      '＝ (' + fmtMoney(wSum) + ' − ' + fmtMoney(c.tl) + ') ÷ ' + fmtMoney(c.mcap) +
+        ' ＝ ' + ((wSum - c.tl) / c.mcap * 100).toFixed(1) + '%'
+    ];
+    if (c.report) lines.push('资产负债表：' + c.report);
+    return lines.join('\n');
+  }
+
+  // 点击处弹出代入计算式浮层（桌面/移动端共用；点空白处或滚动时关闭）
+  function showNetFormulaPop(anchor) {
+    var row = anchor.closest('.stock-row');
+    if (!row) return;
+    var code = row.getAttribute('data-code');
+    var sc = state.scores[code];
+    var text = sc ? netCashFormula(sc.priceRefs) : '';
+    if (!text) return;
+    var name = null;
+    state.companies.forEach(function (cc) { if (cc.code === code) name = cc.name; });
+    if (name) text = name + '\n' + text;
+    var pop = document.getElementById('sc-net-pop');
+    if (!pop) {
+      pop = document.createElement('div');
+      pop.id = 'sc-net-pop';
+      pop.className = 'sc-net-pop';
+      pop.addEventListener('click', function (e) { e.stopPropagation(); });
+      document.body.appendChild(pop);
+    }
+    pop.textContent = text;
+    pop.style.display = 'block';
+    var r = anchor.getBoundingClientRect();
+    var pw = Math.min(window.innerWidth - 16, 460), ph = pop.offsetHeight;
+    var x = Math.min(Math.max(8, r.left + r.width / 2 - pw / 2), window.innerWidth - pw - 8);
+    var y = (r.bottom + ph + 12 > window.innerHeight) ? Math.max(8, r.top - ph - 10) : r.bottom + 10;
+    pop.style.left = x + 'px';
+    pop.style.top = y + 'px';
+    setTimeout(function () {
+      document.addEventListener('click', closeNetFormulaPop);
+      document.addEventListener('keydown', escNetFormulaPop);
+      window.addEventListener('resize', closeNetFormulaPop);
+      window.addEventListener('scroll', closeNetFormulaPop, true);
+    }, 0);
+  }
+
+  function escNetFormulaPop(e) {
+    if (e.key === 'Escape') closeNetFormulaPop();
+  }
+
+  function closeNetFormulaPop() {
+    var pop = document.getElementById('sc-net-pop');
+    if (pop) pop.style.display = 'none';
+    document.removeEventListener('click', closeNetFormulaPop);
+    document.removeEventListener('keydown', escNetFormulaPop);
+    window.removeEventListener('resize', closeNetFormulaPop);
+    window.removeEventListener('scroll', closeNetFormulaPop, true);
+  }
+
   // 巴菲特合理市盈率 = 净利5年CAGR×100，夹在 [8, 25]；无数据取 15
   function fairPe(netCagr5) {
     if (netCagr5 == null) return 15;
@@ -1497,12 +1617,13 @@
 
   // 公允清算价值 + 四大流派买入/保守卖出/公允卖出价格参考（对应 scoring.py price_references）
   // fairLiq = 每股公允清算价值（流动资产合计-负债合计）/财报股本，格雷厄姆清算口径
+  // netCashRatio = 净现金/市值（最近一期财报 加权类现金−负债合计 ÷ 快照总市值）
   function priceReferences(d, va) {
     var s = d.snapshot || {};
     var price0 = s.price, mcap0 = s.market_cap, pe0 = s.pe_ttm, pb0 = s.pb;
     var none = { fairLiq: null, buy: null, sellCons: null, sellFair: null };
     if (price0 == null || price0 <= 0) {
-      return { fairLiq: null, grahamAgg: none, grahamDef: none, schloss: none, buffett: none };
+      return { fairLiq: null, netCashRatio: null, netCashCalc: null, grahamAgg: none, grahamDef: none, schloss: none, buffett: none };
     }
     // ---- 基础量（最新年报资产负债表）----
     var annual = annualRows(d.indicators || []);
@@ -1528,6 +1649,28 @@
       if (ttmNet != null && shares) epsTtm = ttmNet / shares;
     }
     if (epsTtm == null && pe0 != null && pe0 > 0) epsTtm = price0 / pe0;
+    // 净现金/市值：最近一期财报（加权类现金 − 负债合计）÷ 快照总市值；
+    // 类现金保守折算：货币资金×1.0 ＋ 交易性金融资产×0.7 ＋ 应收票据×0.4 ＋ 其他流动资产×0.3；
+    // 分子随财报更新（含季报），分母随行情快照，缺失科目按 0 折入
+    var lastBaAll = baList[baList.length - 1];
+    function gv(key) {
+      var v = lastBaAll ? lastBaAll[key] : null;
+      return (typeof v === 'number') ? v : null;
+    }
+    var cashV = gv('货币资金');
+    var finV = gv('交易性金融资产');
+    var notesV = gv('应收票据');
+    var otherV = gv('其他流动资产');
+    var tlLatest = gv('负债合计');
+    function wgt(v, k) { return v != null ? v * k : 0; }
+    var weightedCash = wgt(cashV, 1) + wgt(finV, 0.7) + wgt(notesV, 0.4) + wgt(otherV, 0.3);
+    var hasCore = cashV != null && tlLatest != null && mcap0;
+    var netCashRatio = hasCore ? (weightedCash - tlLatest) / mcap0 : null;
+    var netCashCalc = hasCore ? {
+      cash: cashV, fin: finV, notes: notesV, otherCA: otherV,
+      tl: tlLatest, mcap: mcap0,
+      report: String(lastBaAll['报告日'] || '').slice(0, 10) || null
+    } : null;
     var fpe = fairPe(va.netCagr5);
     function buyOf(key) {
       return bisectBuy(function (kk) { return valueScores(d, va, kk, true)[key].total; }, price0);
@@ -1544,6 +1687,8 @@
     var bCons = epsTtm != null ? fpe * epsTtm : null;
     return {
       fairLiq: (ncavPs != null && ncavPs > 0) ? ncavPs : null,
+      netCashRatio: netCashRatio,
+      netCashCalc: netCashCalc,
       grahamAgg: {
         buy: clampBuy(buyOf('grahamAgg'), gACons),
         sellCons: gACons,

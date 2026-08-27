@@ -50,6 +50,27 @@ for f in sorted(companies_dir.glob('*.json')):
         pass
     elif p is None or j is None or abs(p - j) > max(1e-9, abs(p or 0) * 1e-9):
         diffs.append((code, 'fairLiq', p, j))
+    # 净现金/市值（比率）对比
+    p, j = py_refs.get('netCashRatio'), js_refs.get('netCashRatio')
+    if p is None and j is None:
+        pass
+    elif p is None or j is None or abs(p - j) > max(1e-9, abs(p or 0) * 1e-9):
+        diffs.append((code, 'netCashRatio', p, j))
+    # 净现金/市值 代入明细（字典）逐字段对比
+    pc, jc = py_refs.get('netCashCalc'), js_refs.get('netCashCalc')
+    if pc is None and jc is None:
+        pass
+    elif (pc is None) != (jc is None):
+        diffs.append((code, 'netCashCalc', bool(pc), bool(jc)))
+    else:
+        for k in ('cash', 'fin', 'notes', 'otherCA', 'tl', 'mcap', 'report'):
+            pv, jv = pc.get(k), jc.get(k)
+            if pv == jv:
+                continue
+            if (isinstance(pv, (int, float)) and isinstance(jv, (int, float))
+                    and abs(pv - jv) <= max(1e-6, abs(pv or 0) * 1e-9)):
+                continue
+            diffs.append((code, 'netCashCalc.' + k, pv, jv))
 
 if diffs:
     print('不一致 %d 处:' % len(diffs))
@@ -57,7 +78,7 @@ if diffs:
         print(f'  {code} {key}: Python={p} JS={j}')
     sys.exit(1)
 else:
-    print('全部一致: %d 家 × (4 项分数 + 12 项价格参考) 完全相同' % len(js_scores))
+    print('全部一致: %d 家 × (4 项分数 + 价格参考含净现金代入明细) 完全相同' % len(js_scores))
     print('示例 3 家:')
     for f in sorted(companies_dir.glob('*.json'))[:3]:
         d = json.loads(f.read_text(encoding='utf-8'))

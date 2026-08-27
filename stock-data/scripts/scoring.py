@@ -603,6 +603,8 @@ def price_references(d, va):
     pe0, pb0 = s.get('pe_ttm'), s.get('pb')
     if price0 is None or price0 <= 0:
         return {'fairLiq': None,
+                'netCashRatio': None,
+                'netCashCalc': None,
                 'grahamAgg': {'buy': None, 'sellCons': None, 'sellFair': None},
                 'grahamDef': {'buy': None, 'sellCons': None, 'sellFair': None},
                 'schloss': {'buy': None, 'sellCons': None, 'sellFair': None},
@@ -641,6 +643,35 @@ def price_references(d, va):
         eps_ttm = (ttm_net / shares) if (ttm_net is not None and shares) else None
     if eps_ttm is None:
         eps_ttm = price0 / pe0 if (pe0 is not None and pe0 > 0) else None
+    # 净现金/市值：最近一期财报（加权类现金 − 负债合计）÷ 快照总市值；
+    # 类现金保守折算：货币资金×1.0 ＋ 交易性金融资产×0.7 ＋ 应收票据×0.4 ＋ 其他流动资产×0.3；
+    # 分子随财报更新（含季报），分母随行情快照，缺失科目按 0 折入
+    latest_ba = ba_list[-1] if ba_list else None
+
+    def gb(key):
+        v = latest_ba.get(key) if latest_ba else None
+        return v if isinstance(v, (int, float)) else None
+
+    cash_v = gb('货币资金')
+    fin_v = gb('交易性金融资产')
+    notes_v = gb('应收票据')
+    other_v = gb('其他流动资产')
+    tl_latest = gb('负债合计')
+
+    def gw(v, k):
+        return (v * k) if v is not None else 0.0
+
+    weighted_cash = gw(cash_v, 1.0) + gw(fin_v, 0.7) + gw(notes_v, 0.4) + gw(other_v, 0.3)
+    has_core = (cash_v is not None and tl_latest is not None and mcap0)
+    net_cash_ratio = ((weighted_cash - tl_latest) / mcap0) if has_core else None
+    net_cash_calc = ({'cash': cash_v,
+                      'fin': fin_v,
+                      'notes': notes_v,
+                      'otherCA': other_v,
+                      'tl': tl_latest,
+                      'mcap': mcap0,
+                      'report': str(latest_ba.get('报告日') or '')[:10] or None}
+                     if has_core else None)
     fair_pe = _fair_pe(va.get('netCagr5'))
 
     def buy_of(key):
@@ -660,6 +691,8 @@ def price_references(d, va):
 
     return {
         'fairLiq': ncav_ps if (ncav_ps is not None and ncav_ps > 0) else None,
+        'netCashRatio': net_cash_ratio,
+        'netCashCalc': net_cash_calc,
         'grahamAgg': {
             'buy': clamp_buy(buy_of('grahamAgg'), gA_cons),
             'sellCons': gA_cons,

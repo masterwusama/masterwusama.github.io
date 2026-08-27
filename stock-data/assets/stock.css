@@ -1178,6 +1178,19 @@
   }
 
   /* 公允清算价值（移动端卡片）：现价跌破清算价时整行绿底 */
+  /* 卡片双指标并排：清算价值 + 净现金/市值 各占半行 */
+  .sc-duo {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+  
+  .sc-duo .sc-liq {
+      flex: 1;
+      min-width: 0;
+      margin-top: 0;
+    }
+  
   .sc-liq {
     display: flex;
     align-items: center;
@@ -1318,4 +1331,29 @@
 
   /* 评分卡明细表保持横向滚动（.stock-compare 已有 min-width + overflow） */
   .score-card .stock-compare-wrap { margin-top: 8px; }
+}
+
+/* 净现金块可点（移动端卡片）：手势提示，点击弹代入计算式浮层 */
+.sc-net-tap {
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(37, 99, 235, 0.12);
+}
+
+/* 代入计算式浮层：桌面/移动端共用（fixed 定位由 JS 计算，须置于顶层作用域） */
+.sc-net-pop {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  max-width: min(92vw, 460px);
+  padding: 10px 13px;
+  background: #24292f;
+  color: #e6edf3;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.9;
+  white-space: pre-line;
+  word-break: break-all;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  font-variant-numeric: tabular-nums;
+  cursor: default;
 }
