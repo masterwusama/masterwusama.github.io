@@ -289,7 +289,9 @@
         '<span class="s-sort-divider">造假风险</span>' +
         sortBtn('fraud', '造假分') +
         '<span class="s-sort-divider">管理水平</span>' +
-        sortBtn('mgmt', '管理分') : '') +
+        sortBtn('mgmt', '管理分') +
+        '<span class="s-sort-divider">周期位置</span>' +
+        sortBtn('cycle', '周期分') : '') +
       '<span class="s-sort-hint">评分列按分数排，买入/卖出参考列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
@@ -308,6 +310,7 @@
       thSort('netcash', '净现金/市值', null, ' rowspan="2"', '(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值，最近一期财报；鼠标悬停单元格可看代入值') +
       thSort('fraud', '造假风险', null, ' rowspan="2"', '财报造假可能性评分（0-100，越高越可疑）；点击按分数排序') +
       thSort('mgmt', '管理水平', null, ' rowspan="2"', '管理层管理水平评分（0-100，越高越好）；点击按分数排序') +
+            thSort('cycle', '周期位置', null, ' rowspan="2"', '周期位置评分（0-100，越低越接近周期底部）；非周期性行业不打分显示“非周期”；点击按分数排序（升序=更近底部）') +
       '<th colspan="4">四大流派评分</th>' +
       '<th colspan="4" title="每列自上而下：买入参考 / 保守卖出参考 / 公允卖出参考（小字）；现价进入买区绿底、卖区红字">价格参考（买 / 保卖 / 公卖）</th>' +
       '</tr><tr class="th-g2">' +
@@ -444,6 +447,16 @@
     h += '<td class="c-num sc-' + gradeOf(mgmt) + '" data-s="mgmt" ' +
       'title="管理层管理水平 ' + (mgmt == null ? '-' : fmtNum(mgmt)) + ' 分（0-100，越高越好）：费用纪律/资产周转/资本回报/成长质量/营运资金/现金流质量/股东回报/治理诚信加权">' +
       (mgmt == null ? '-' : fmtNum(mgmt)) + '</td>';
+          // 周期位置（百分制，越低越接近底部）：非周期性行业显示“非周期”灰色；周期性低分=机会=绿（同造假分方向）
+          var cyc = sc ? sc.cycle : null;
+          var isCyc = sc ? sc.cyclical === true : false;
+          if (!isCyc && sc && sc.cyclical === false) {
+            h += '<td class="c-num sc-na" data-s="cycle" title="非周期性/弱周期行业（周期强度 < 40），不适用周期位置评分">非周期</td>';
+          } else {
+            h += '<td class="c-num sc-' + fraudGradeOf(cyc) + '" data-s="cycle" ' +
+              'title="周期位置 ' + (cyc == null ? '-' : fmtNum(cyc)) + ' 分（0-100，越低越接近周期底部）：利润/毛利率/营收位置 + 同比动能 + 现金流 + 库存/资本开支周期 + 单季环比加权">' +
+              (cyc == null ? '-' : fmtNum(cyc)) + '</td>';
+          }
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;
       var g = gradeOf(v);
@@ -489,6 +502,9 @@
       '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
       '<span class="sc-fraud sc-' + fraudGradeOf(sc ? sc.fraud : null) + '" data-s="fraud" title="财报造假可能性（0-100，越高越可疑）"><em>造假</em><b>' + (sc && sc.fraud != null ? fmtNum(sc.fraud) : '-') + '</b></span>' +
       '<span class="sc-mgmt sc-' + gradeOf(sc ? sc.mgmt : null) + '" data-s="mgmt" title="管理层管理水平评分（0-100，越高越好）"><em>管理</em><b>' + (sc && sc.mgmt != null ? fmtNum(sc.mgmt) : '-') + '</b></span>' +
+      (sc && sc.cyclical === false
+        ? '<span class="sc-cycle sc-na" data-s="cycle" title="非周期性/弱周期行业，不适用周期位置评分"><em>周期</em><b>非周期</b></span>'
+        : '<span class="sc-cycle sc-' + fraudGradeOf(sc ? sc.cycle : null) + '" data-s="cycle" title="周期位置评分（0-100，越低越接近周期底部）"><em>周期</em><b>' + (sc && sc.cycle != null ? fmtNum(sc.cycle) : '-') + '</b></span>') +
       '</div>';
     // 公允清算价值 + 净现金/市值 并排（移动端半行各一块，样式复用 sc-liq）
     var liq = refs ? refs.fairLiq : null;
@@ -553,7 +569,7 @@
     'sellF-grahamAgg': '进取公卖', 'sellF-grahamDef': '防御公卖',
     'sellF-schloss': '施洛斯公卖', 'sellF-buffett': '巴菲特公卖',
     'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值',
-    'netcash': '净现金/市值', 'fraud': '造假风险', 'mgmt': '管理水平'
+    'netcash': '净现金/市值', 'fraud': '造假风险', 'mgmt': '管理水平', 'cycle': '周期位置'
   };
 
   // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
@@ -608,6 +624,10 @@
       var scM = state.scores[c.code];
       return scM && scM.mgmt != null ? scM.mgmt : null;
     }
+    if (key === 'cycle') {
+      var scC = state.scores[c.code];
+      return scC && scC.cycle != null ? scC.cycle : null;  // 非周期性公司为 null 排最后
+    }
     var sc = state.scores[c.code];
     if (!sc) return null;
     if (key.indexOf('score-') === 0) return sc[key.slice(6)];
@@ -659,12 +679,16 @@
             try { fa = fraudAnalysis(d); } catch (e) { /* 造假分缺失不影响评分 */ }
             var ma = null;
             try { ma = managementAnalysis(d); } catch (e) { /* 管理分缺失不影响评分 */ }
+            var ca = null;
+            try { ca = cycleAnalysis(d); } catch (e) { /* 周期分缺失不影响评分 */ }
             state.scores[c.code] = {
               grahamAgg: v.grahamAgg.total, grahamDef: v.grahamDef.total,
               schloss: v.schloss.total, buffett: v.buffett.total,
               priceRefs: priceReferences(d, va),
               fraud: fa ? fa.total : null,
-              mgmt: ma ? ma.total : null
+              mgmt: ma ? ma.total : null,
+              cycle: ca ? ca.total : null,
+              cyclical: ca ? ca.cyclical : null
             };
           } catch (e) { /* 单家计算失败不影响其他公司 */ }
           fillRowScores(c.code);
@@ -742,6 +766,22 @@
           td.classList.add('sc-' + mg);
           var mb = td.querySelector('b');
           if (mb) mb.textContent = p == null ? '-' : fmtNum(p);
+        }
+        return;
+      } else if (kind === 'cycle') {
+        // 周期位置：低分=接近底部=机会=绿（同造假分方向）；非周期性显示“非周期”灰（移动端徽标保持结构）
+        p = sc ? sc.cycle : null;
+        var nonCyc = sc && sc.cyclical === false;
+        var cg = nonCyc ? 'na' : fraudGradeOf(p);
+        if (td.tagName === 'TD') {
+          td.className = 'c-num sc-' + cg;
+          td.innerHTML = nonCyc ? '非周期' : (p == null ? '-' : fmtNum(p));
+          if (nonCyc) td.setAttribute('title', '非周期性/弱周期行业（周期强度 < 40），不适用周期位置评分');
+        } else {
+          td.classList.remove('sc-good', 'sc-mid', 'sc-low', 'sc-bad', 'sc-na');
+          td.classList.add('sc-' + cg);
+          var cb = td.querySelector('b');
+          if (cb) cb.textContent = nonCyc ? '非周期' : (p == null ? '-' : fmtNum(p));
         }
         return;
       } else {
@@ -862,6 +902,7 @@
       '<a href="#sec-buffett" data-scroll="sec-buffett">⑤ 巴菲特芒格</a>' +
       '<a href="#sec-fraud" data-scroll="sec-fraud">⑥ 造假风险</a>' +
       '<a href="#sec-mgmt" data-scroll="sec-mgmt">⑦ 管理水平</a>' +
+      '<a href="#sec-cycle" data-scroll="sec-cycle">⑧ 周期位置</a>' +
       '</nav>';
 
     // ---- 模块一：基础财务信息（估值快照/趋势图/财务对比/报表/分红/定期报告）----
@@ -1046,6 +1087,10 @@
     html += '<section id="sec-mgmt" class="stock-section va-module"><h2 class="va-module-title"><span>⑦</span>管理层管理水平评分</h2>' +
       '<div class="score-card" id="stock-score-mgmt"></div></section>';
 
+    // ---- 模块八：周期位置（周期性判定 + 底部概率，分数越低越接近底部，非周期不打分）----
+    html += '<section id="sec-cycle" class="stock-section va-module"><h2 class="va-module-title"><span>⑧</span>周期位置 · 周期性行业判定</h2>' +
+      '<div class="score-card" id="stock-score-cycle"></div></section>';
+
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
     bindComparePicks();
@@ -1061,6 +1106,9 @@
     var ma = managementAnalysis(d);
     var mgmtEl = $('stock-score-mgmt');
     if (mgmtEl) mgmtEl.innerHTML = managementCard(ma);
+    var ca = cycleAnalysis(d);
+    var cycleEl = $('stock-score-cycle');
+    if (cycleEl) cycleEl.innerHTML = cycleCard(ca);
     bindMoreButtons();
   }
 
@@ -1862,6 +1910,172 @@
       '<thead><tr><th>评判维度</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
       '<p class="score-note">' + ma.note + '</p>';
+  }
+
+  // ---- 周期性行业判定 + 周期位置评分（0~100，分数越低越接近周期底部）----
+  // 两阶段：①周期强度 0~100（净利波动40 + 深度下滑频率35 + 毛利率波动25），≥40 判为周期性；
+  // ②周期性公司才打周期位置分（利润/毛利率/营收位置 + 同比动能 + 现金流 + 库存/资本开支周期 + 单季环比）。
+  function cycleAnalysis(d) {
+    var annual = annualRows(d.indicators || []);
+    var cfList = (d.cashflow || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var baList = (d.balance || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var last = annual.length ? annual[annual.length - 1] : null;
+    var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
+    var lastYear = lastDate ? Number(lastDate.slice(0, 4)) : null;
+
+    // ---- 阶段一：周期强度判定（样本标准差，窗口取近 5 年年报）----
+    var w5 = annual.slice(-5);
+    var nets = w5.map(function (r) { return r['净利润']; }).filter(function (v) { return v != null; });
+    var gms = w5.map(function (r) { return r['销售毛利率']; }).filter(function (v) { return v != null; });
+    function sd(arr) {
+      if (arr.length < 2) return null;
+      var m = arr.reduce(function (s, x) { return s + x; }, 0) / arr.length;
+      var v = arr.reduce(function (s, x) { return s + (x - m) * (x - m); }, 0) / (arr.length - 1);
+      return Math.sqrt(v);
+    }
+    // 1a 净利变异系数 = 标准差 ÷ |均值|（均值取绝对值防近零放大；全亏取各年绝对值均值）
+    var cvNet = null;
+    if (nets.length >= 3) {
+      var meanNet = nets.reduce(function (s, x) { return s + x; }, 0) / nets.length;
+      var denom = Math.abs(meanNet);
+      if (denom === 0) denom = nets.reduce(function (s, x) { return s + Math.abs(x); }, 0) / nets.length;
+      if (denom > 0) cvNet = sd(nets) / denom;
+    }
+    // 1b 利润深度下滑频率：年度净利同比 ≤ -30% 的年数（同比自算，与报表口径一致）
+    var drops = 0, yoyHist = [], hitDrop = false;
+    for (var ci = 1; ci < annual.length; ci++) {
+      var nCur = annual[ci]['净利润'], nPre = annual[ci - 1]['净利润'];
+      var yoy = (nCur != null && nPre != null && nPre > 0) ? nCur / nPre - 1 : null;
+      if (yoy != null) { yoyHist.push(yoy); hitDrop = true; if (yoy <= -0.3) drops++; }
+    }
+    // 1c 毛利率波动 = 年度毛利率标准差（价格驱动型周期行业毛利率大起大落）
+    var gmSd = gms.length >= 3 ? sd(gms) : null;
+
+    var cItems = [
+      it('净利润波动：年度净利变异系数（标准差÷|均值|）', cvNet == null ? '-' : fmtNum(cvNet), '≥ 1.2 强周期', 40, lerpScore(cvNet, 0.3, 1.2, 0, 40)),
+      it('利润深度下滑：年度净利同比≤-30% 的年数', hitDrop ? drops + ' 年' : '-', '≥ 2 年', 35, hitDrop ? lerpScore(drops, 0, 2, 0, 35) : null),
+      it('毛利率波动：年度毛利率标准差', gmSd == null ? '-' : (gmSd * 100).toFixed(1) + ' pct', '≥ 10 pct', 25, lerpScore(gmSd, 0.03, 0.10, 0, 25))
+    ];
+    var cAvail = cItems.filter(function (x) { return x.score != null; });
+    var cyc = cAvail.length ? Math.min(100, cAvail.reduce(function (s, x) { return s + x.score; }, 0)) : null;
+    cyc = cyc == null ? null : Math.round(cyc * 10) / 10;
+    var cyclical = cyc != null && cyc >= 40;
+
+    if (!cyclical) {
+      return {
+        cyclical: false, cyclicalScore: cyc, cyclicalItems: cItems, total: null, items: [],
+        title: '周期位置 · 周期性行业判定与底部概率量化',
+        basis: cyc == null ? '样本不足：年报数据少于 3 期，无法判定周期性' :
+          '周期强度 ' + fmtNum(cyc) + ' < 40，判定为非周期性/弱周期行业',
+        note: '周期强度由近 5 年年报的净利润变异系数（40 分）+ 利润深度下滑频率（35 分）+ 毛利率波动（25 分）构成；≥ 40 判为周期性行业才进行周期位置打分。已知局限：判定基于约 5 年财务样本，近 5 年处于单边景气期的典型周期股（如上行期的资源股）波动特征不明显会被判为“非周期”，若窗口恰好覆盖单边行情也可能误判，需结合行业属性（如公用事业/消费/医药通常弱周期，钢铁/有色/化工/航运/造纸通常强周期）复核。'
+      };
+    }
+
+    // ---- 阶段二：周期位置评分（分数越低越接近周期底部）----
+    function pctOf(v, arr) {
+      var vs = arr.filter(function (x) { return x != null; });
+      if (v == null || vs.length < 2) return null;
+      var mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs);
+      return mx === mn ? 0.5 : (v - mn) / (mx - mn);
+    }
+    var netLast = last ? last['净利润'] : null;
+    var revLast = last ? last['营业总收入'] : null;
+    var gmLast = last ? last['销售毛利率'] : null;
+    // 2a/2c/2d 利润/毛利率/营收在近 5 年区间的位置（越接近最低越接近底部）
+    var netPct = pctOf(netLast, nets);
+    var gmPct = pctOf(gmLast, gms);
+    var revs = w5.map(function (r) { return r['营业总收入']; });
+    var revPct = pctOf(revLast, revs);
+    // 2b 最新年报净利同比（深负=底部区域，过热=远离底部）
+    var netYoy = yoyHist.length ? yoyHist[yoyHist.length - 1] : null;
+    // 2e 最新年报净现比（底部常伴随现金流恶化）
+    var lastCf = lastDate ? sheetRowByDate(cfList, lastDate) : null;
+    var ocfLast = lastCf ? lastCf['经营活动产生的现金流量净额'] : null;
+    var ncr = (netLast != null && ocfLast != null && netLast > 0) ? ocfLast / netLast : null;
+    // 2f 存货同比（去库存 → 接近底部）
+    var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
+    var prevDate = annual.length >= 2 ? String(annual[annual.length - 2]['报告期']).slice(0, 10) : null;
+    var prevBa = prevDate ? sheetRowByDate(baList, prevDate) : null;
+    var invNow = lastBa ? lastBa['存货'] : null;
+    var invPrev = prevBa ? prevBa['存货'] : null;
+    var invGrow = (invNow != null && invPrev != null && invPrev > 0) ? invNow / invPrev - 1 : null;
+    // 2g 资本开支强度 = 当年购建支出 ÷ 近 3 年均值（收缩 → 供给出清接近底部）
+    var CAPEX_K = '购建固定资产、无形资产和其他长期资产所支付的现金';
+    var annualCf = cfList.filter(function (r) { return String(r['报告日'] || '').slice(5) === '12-31'; });
+    var capexNow = lastCf ? lastCf[CAPEX_K] : null;
+    var capexPrev = annualCf.slice(-4, -1).map(function (r) { return r[CAPEX_K]; }).filter(function (v) { return v != null; });
+    var capexRatio = null;
+    if (capexNow != null && capexPrev.length >= 2) {
+      var capexAvg = capexPrev.reduce(function (s, x) { return s + x; }, 0) / capexPrev.length;
+      if (capexAvg > 0) capexRatio = capexNow / capexAvg;
+    }
+    // 2h 最新单季营收环比（仍在回落 → 未到底；环比回升 → 开始离开底部）
+    var qRows = (d.indicators || []).filter(function (r) { return String(r['报告期'] || '').slice(5) !== '12-31'; })
+      .sort(function (a, b) { return String(a['报告期']) < String(b['报告期']) ? -1 : 1; });
+    var qrev = qRows.map(function (r) { return r['营业总收入_单季']; });
+    var qoq = (qrev.length >= 2 && qrev[qrev.length - 2] != null && qrev[qrev.length - 2] > 0 && qrev[qrev.length - 1] != null)
+      ? qrev[qrev.length - 1] / qrev[qrev.length - 2] - 1 : null;
+
+    var items = [
+      it('利润位置：最新年报净利在近' + w5.length + '年区间的位置', netLast == null ? '-' : fmtMoney(netLast), '接近最低分→底部', 25, netPct == null ? null : netPct * 25),
+      it('利润动能：最新年报净利同比', netYoy == null ? '-' : fmtPct(netYoy), '≤ -50% 底部', 15, lerpScore(netYoy, -0.50, 0.30, 0, 15)),
+      it('毛利率位置：最新年报毛利率在近' + w5.length + '年区间的位置', gmLast == null ? '-' : fmtPct(gmLast), '接近最低分→底部', 15, gmPct == null ? null : gmPct * 15),
+      it('营收位置：最新年报营收在近' + w5.length + '年区间的位置', revLast == null ? '-' : fmtMoney(revLast), '接近最低分→底部', 10, revPct == null ? null : revPct * 10),
+      it('现金流压力：最新年报净现比（经营现金流÷净利润）', ncr == null ? '-' : fmtNum(ncr), '≤ 0 底部', 10, lerpScore(ncr, 0, 1.2, 0, 10)),
+      it('库存周期：存货同比（去库存→接近底部）', invGrow == null ? '-' : fmtPct(invGrow), '≤ -10% 去库存', 10, lerpScore(invGrow, -0.10, 0.20, 0, 10)),
+      it('资本开支周期：当年购建支出÷近3年均值（收缩→出清）', capexRatio == null ? '-' : fmtNum(capexRatio), '≤ 0.7 收缩', 10, lerpScore(capexRatio, 0.7, 1.3, 0, 10)),
+      it('单季环比：最新单季营收环比（回升→离开底部）', qoq == null ? '-' : fmtPct(qoq), '≤ -10% 仍在探底', 10, lerpScore(qoq, -0.10, 0.05, 0, 10))
+    ];
+    var avail = items.filter(function (x) { return x.score != null; });
+    var total = avail.length ? Math.min(100, avail.reduce(function (s, x) { return s + x.score; }, 0)) : null;
+    return {
+      cyclical: true, cyclicalScore: cyc, cyclicalItems: cItems,
+      total: total == null ? null : Math.round(total * 10) / 10,
+      items: items,
+      title: '周期位置 · 周期性行业判定与底部概率量化',
+      basis: '周期强度 ' + fmtNum(cyc) + '（≥ 40 判为周期性）；位置评分基准：' + (lastYear || '-') + ' 年报 + 最新单季',
+      note: '两阶段量化：①周期强度（净利变异系数 40 + 深度下滑频率 35 + 毛利率波动 25，≥ 40 判为周期性，非周期性不打分）；②周期位置 0~100，分数越低越接近周期底部（利润/毛利率/营收处于历史低位、同比深负、现金流承压、去库存、资本开支收缩、单季仍在回落均为底部特征）。已知局限：基于约 5 年样本的相对位置，近 5 年单边景气期的典型周期股会被判为“非周期”；无历史市价分位数据故未纳入估值维度；周期位置低≠立即反转，需结合行业供需与产能数据确认，仅供研究参考。'
+    };
+  }
+
+  // 周期位置等级（分数越低越接近底部=机会=绿，方向同造假分）与文案
+  function cycleGradeText(g) {
+    return { good: '底部区域', mid: '磨底过渡', low: '周期中段', bad: '景气偏高', na: '不适用' }[g];
+  }
+
+  // 周期评分卡：非周期性公司显示判定依据表；周期性公司另加周期强度表 + 8 维位置表（低分=绿）
+  function cycleCard(ca) {
+    function dimRows(items) {
+      return items.map(function (x) {
+        var mCls = x.match == null ? 'sc-na' : x.match >= 0.99 ? 'sc-good' : x.match >= 0.5 ? 'sc-mid' : 'sc-low';
+        var mTxt = x.match == null ? '-' : (x.match * 100).toFixed(0) + '%';
+        return '<tr><td>' + x.std + '</td><td class="v">' + x.val + '</td><td class="v">' + x.thr + '</td>' +
+          '<td class="v ' + mCls + '">' + mTxt + '</td>' +
+          '<td class="v"><b>' + (x.score == null ? '-' : fmtNum(x.score)) + '</b> / ' + x.max + '</td></tr>';
+      }).join('');
+    }
+    var head;
+    if (!ca.cyclical) {
+      head = '<div class="score-circle va-grade-na"><span>周期</span><b>非周期</b><i>不适用</i></div>';
+    } else {
+      var g = fraudGradeOf(ca.total);
+      head = '<div class="score-circle va-grade-' + g + '"><span>周期位</span><b>' + (ca.total == null ? '-' : fmtNum(ca.total)) + '</b><i>' + cycleGradeText(g) + '</i></div>';
+    }
+    var tableHead = '<thead><tr><th>指标</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>';
+    var h = '<div class="score-card-head"><h4>' + ca.title + '</h4>' + head + '</div>' +
+      '<p class="score-basis">' + ca.basis + '</p>';
+    if (ca.cyclical) {
+      h += '<div class="stock-compare-wrap"><h4 style="margin:8px 0 4px">阶段一：周期强度判定（' + (ca.cyclicalScore == null ? '-' : fmtNum(ca.cyclicalScore)) + ' / 40 即判为周期性）</h4>' +
+        '<table class="stock-compare">' + tableHead + '<tbody>' + dimRows(ca.cyclicalItems) + '</tbody></table></div>';
+    }
+    if (ca.items.length) {
+      h += '<div class="stock-compare-wrap"><h4 style="margin:8px 0 4px">阶段二：周期位置评分（分数越低越接近周期底部）</h4>' +
+        '<table class="stock-compare">' + tableHead + '<tbody>' + dimRows(ca.items) + '</tbody></table></div>';
+    } else {
+      h += '<div class="stock-compare-wrap"><h4 style="margin:8px 0 4px">阶段一：周期强度判定明细</h4>' +
+        '<table class="stock-compare">' + tableHead + '<tbody>' + dimRows(ca.cyclicalItems) + '</tbody></table></div>';
+    }
+    return h + '<p class="score-note">' + ca.note + '</p>';
   }
 
   // ---- 价格参考（买入/保守卖出/公允卖出）----

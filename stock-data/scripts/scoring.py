@@ -912,11 +912,133 @@ def management_analysis(d):
     return math.floor(total * 10 + 0.5) / 10.0
 
 
+def cycle_analysis(d):
+    """对应 JS cycleAnalysis —— 周期性行业判定 + 周期位置评分（0~100，越低越接近底部）。
+    阶段一：周期强度（净利变异系数 40 + 深度下滑频率 35 + 毛利率波动 25），≥ 40 判为周期性；
+    阶段二：仅周期性公司打周期位置分；非周期性返回 {'cyclical': False, 'total': None}。"""
+    annual = annual_rows(d.get('indicators') or [])
+    cf_list = sorted(d.get('cashflow') or [], key=lambda r: str(r.get('报告日') or ''))
+    ba_list = sorted(d.get('balance') or [], key=lambda r: str(r.get('报告日') or ''))
+    last = annual[-1] if annual else None
+    last_date = str(last.get('报告期') or '')[:10] if last else None
+
+    # ---- 阶段一：周期强度判定（样本标准差，窗口取近 5 年年报）----
+    w5 = annual[-5:]
+    nets = [r.get('净利润') for r in w5 if r.get('净利润') is not None]
+    gms = [r.get('销售毛利率') for r in w5 if r.get('销售毛利率') is not None]
+
+    def sd(arr):
+        if len(arr) < 2:
+            return None
+        m = sum(arr) / len(arr)
+        v = sum((x - m) ** 2 for x in arr) / (len(arr) - 1)
+        return math.sqrt(v)
+
+    # 1a 净利变异系数 = 标准差 ÷ |均值|（均值取绝对值防近零放大；全亏取各年绝对值均值）
+    cv_net = None
+    if len(nets) >= 3:
+        denom = abs(sum(nets) / len(nets))
+        if denom == 0:
+            denom = sum(abs(x) for x in nets) / len(nets)
+        if denom > 0:
+            cv_net = sd(nets) / denom
+    # 1b 利润深度下滑频率：年度净利同比 ≤ -30% 的年数（同比自算，与报表口径一致）
+    drops, yoy_hist, hit_drop = 0, [], False
+    for ci in range(1, len(annual)):
+        n_cur, n_pre = annual[ci].get('净利润'), annual[ci - 1].get('净利润')
+        yoy = (n_cur / n_pre - 1.0) if (n_cur is not None and n_pre is not None and n_pre > 0) else None
+        if yoy is not None:
+            yoy_hist.append(yoy)
+            hit_drop = True
+            if yoy <= -0.3:
+                drops += 1
+    # 1c 毛利率波动 = 年度毛利率标准差（价格驱动型周期行业毛利率大起大落）
+    gm_sd = sd(gms) if len(gms) >= 3 else None
+
+    c_scores = [
+        lerp_score(cv_net, 0.3, 1.2, 0, 40),                        # 净利变异系数，40 分
+        lerp_score(drops, 0, 2, 0, 35) if hit_drop else None,       # 深度下滑年数，35 分
+        lerp_score(gm_sd, 0.03, 0.10, 0, 25),                       # 毛利率波动，25 分
+    ]
+    c_avail = [s for s in c_scores if s is not None]
+    cyc = min(100.0, sum(c_avail)) if c_avail else None
+    cyc = None if cyc is None else math.floor(cyc * 10 + 0.5) / 10.0
+    cyclical = cyc is not None and cyc >= 40
+    if not cyclical:
+        return {'cyclical': False, 'cyclicalScore': cyc, 'total': None}
+
+    # ---- 阶段二：周期位置评分（分数越低越接近周期底部）----
+    def pct_of(v, arr):
+        vs = [x for x in arr if x is not None]
+        if v is None or len(vs) < 2:
+            return None
+        mn, mx = min(vs), max(vs)
+        return 0.5 if mx == mn else (v - mn) / (mx - mn)
+
+    net_last = last.get('净利润') if last else None
+    rev_last = last.get('营业总收入') if last else None
+    gm_last = last.get('销售毛利率') if last else None
+    net_pct = pct_of(net_last, nets)
+    gm_pct = pct_of(gm_last, gms)
+    rev_pct = pct_of(rev_last, [r.get('营业总收入') for r in w5])
+    net_yoy = yoy_hist[-1] if yoy_hist else None
+    # 最新年报净现比（底部常伴随现金流恶化）
+    last_cf = sheet_row_by_date(cf_list, last_date) if last_date else None
+    ocf_last = last_cf.get('经营活动产生的现金流量净额') if last_cf else None
+    ncr = ocf_last / net_last if (net_last is not None and ocf_last is not None and net_last > 0) else None
+    # 存货同比（去库存 → 接近底部）
+    last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
+    prev_date = str(annual[-2].get('报告期') or '')[:10] if len(annual) >= 2 else None
+    prev_ba = sheet_row_by_date(ba_list, prev_date) if prev_date else None
+    inv_now = last_ba.get('存货') if last_ba else None
+    inv_prev = prev_ba.get('存货') if prev_ba else None
+    inv_grow = (inv_now / inv_prev - 1.0) if (inv_now is not None and inv_prev is not None and inv_prev > 0) else None
+    # 资本开支强度 = 当年购建支出 ÷ 近 3 年均值（收缩 → 供给出清接近底部）
+    CAPEX_K = '购建固定资产、无形资产和其他长期资产所支付的现金'
+    annual_cf = [r for r in cf_list if str(r.get('报告日') or '')[5:] == '12-31']
+    capex_now = last_cf.get(CAPEX_K) if last_cf else None
+    capex_prev = [r.get(CAPEX_K) for r in annual_cf[-4:-1] if r.get(CAPEX_K) is not None]
+    capex_ratio = None
+    if capex_now is not None and len(capex_prev) >= 2:
+        capex_avg = sum(capex_prev) / len(capex_prev)
+        if capex_avg > 0:
+            capex_ratio = capex_now / capex_avg
+    # 最新单季营收环比（仍在回落 → 未到底；环比回升 → 开始离开底部）
+    q_rows = sorted([r for r in (d.get('indicators') or [])
+                     if str(r.get('报告期') or '')[5:] != '12-31'],
+                    key=lambda r: str(r.get('报告期') or ''))
+    qrev = [r.get('营业总收入_单季') for r in q_rows]
+    qoq = None
+    if len(qrev) >= 2 and qrev[-2] is not None and qrev[-2] > 0 and qrev[-1] is not None:
+        qoq = qrev[-1] / qrev[-2] - 1.0
+
+    scores = [
+        None if net_pct is None else net_pct * 25,                 # 利润位置，25 分（越低越近底部）
+        lerp_score(net_yoy, -0.50, 0.30, 0, 15),                   # 利润动能，15 分（深负=底部）
+        None if gm_pct is None else gm_pct * 15,                   # 毛利率位置，15 分（越低越近底部）
+        None if rev_pct is None else rev_pct * 10,                 # 营收位置，10 分（越低越近底部）
+        lerp_score(ncr, 0, 1.2, 0, 10),                            # 现金流压力，10 分（≤ 0 底部）
+        lerp_score(inv_grow, -0.10, 0.20, 0, 10),                  # 库存周期，10 分（去库存→底部）
+        lerp_score(capex_ratio, 0.7, 1.3, 0, 10),                  # 资本开支周期，10 分（收缩→出清）
+        lerp_score(qoq, -0.10, 0.05, 0, 10),                       # 单季环比，10 分（仍在探底→低分）
+    ]
+    avail = [s for s in scores if s is not None]
+    if not avail:
+        return {'cyclical': True, 'cyclicalScore': cyc, 'total': None}
+    total = min(100.0, sum(avail))
+    # 与 JS Math.round(total*10)/10 一致（Python round 为银行家舍入，不能直接用）
+    return {'cyclical': True, 'cyclicalScore': cyc,
+            'total': math.floor(total * 10 + 0.5) / 10.0}
+
+
 def compute_scores(company, now=None):
-    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 + 管理分 dict（供 index.json 直接使用）"""
+    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 + 管理分 + 周期分 dict（供 index.json 直接使用）"""
     va = value_analysis(company, now)
     scores = value_scores(company, va)
     scores['priceRefs'] = price_references(company, va)
     scores['fraud'] = fraud_analysis(company)
     scores['mgmt'] = management_analysis(company)
+    ca = cycle_analysis(company)
+    scores['cycle'] = ca['total']
+    scores['cyclical'] = ca['cyclical']
     return scores

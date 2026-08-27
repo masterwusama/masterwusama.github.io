@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.path.insert(0, str(Path(__file__).parent))
-from scoring import compute_scores  # noqa: E402
+from scoring import compute_scores, cycle_analysis  # noqa: E402
 
 BASE = Path(__file__).parent.parent
 companies_dir = BASE / 'data' / 'companies'
@@ -83,6 +83,19 @@ for f in sorted(companies_dir.glob('*.json')):
         pass
     elif p is None or j is None or abs(p - j) > 1e-9:
         diffs.append((code, 'mgmt', p, j))
+    # 周期模块对比：周期性判定（bool）+ 周期强度分 + 周期位置分（同口径）
+    if py.get('cyclical') != js.get('cyclical'):
+        diffs.append((code, 'cyclical', py.get('cyclical'), js.get('cyclical')))
+    p, j = py.get('cycle'), js.get('cycle')
+    if p is None and j is None:
+        pass
+    elif p is None or j is None or abs(p - j) > 1e-9:
+        diffs.append((code, 'cycle', p, j))
+    p, j = cycle_analysis(d)['cyclicalScore'], js.get('cyclicalScore')
+    if p is None and j is None:
+        pass
+    elif p is None or j is None or abs(p - j) > 1e-9:
+        diffs.append((code, 'cyclicalScore', p, j))
 
 if diffs:
     print('不一致 %d 处:' % len(diffs))
@@ -90,7 +103,7 @@ if diffs:
         print(f'  {code} {key}: Python={p} JS={j}')
     sys.exit(1)
 else:
-    print('全部一致: %d 家 × (4 项分数 + 价格参考含净现金代入明细 + 造假分 + 管理分) 完全相同' % len(js_scores))
+    print('全部一致: %d 家 × (4 项分数 + 价格参考含净现金代入明细 + 造假分 + 管理分 + 周期判定/强度/位置) 完全相同' % len(js_scores))
     print('示例 3 家:')
     for f in sorted(companies_dir.glob('*.json'))[:3]:
         d = json.loads(f.read_text(encoding='utf-8'))
