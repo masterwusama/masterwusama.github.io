@@ -71,6 +71,12 @@ for f in sorted(companies_dir.glob('*.json')):
                     and abs(pv - jv) <= max(1e-6, abs(pv or 0) * 1e-9)):
                 continue
             diffs.append((code, 'netCashCalc.' + k, pv, jv))
+    # 造假风险分对比（百分制，舍入后一位小数，容差 1e-9）
+    p, j = py.get('fraud'), js.get('fraud')
+    if p is None and j is None:
+        pass
+    elif p is None or j is None or abs(p - j) > 1e-9:
+        diffs.append((code, 'fraud', p, j))
 
 if diffs:
     print('不一致 %d 处:' % len(diffs))

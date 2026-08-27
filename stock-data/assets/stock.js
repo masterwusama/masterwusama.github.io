@@ -285,7 +285,9 @@
         sortBtn('buy-buffett', '巴菲特买') +
         '<span class="s-sort-divider">清算价值</span>' +
         sortBtn('liq', '清算价') +
-        sortBtn('netcash', '净现金率') : '') +
+        sortBtn('netcash', '净现金率') +
+        '<span class="s-sort-divider">造假风险</span>' +
+        sortBtn('fraud', '造假分') : '') +
       '<span class="s-sort-hint">评分列按分数排，买入/卖出参考列按性价比排（参考价 ÷ 现价，倍数大在前），再点同列切换升/降序</span></div></div></div>';
     if (isMobile) {
       // 移动端卡片流：名称/代码/行业/现价 + 四流派评分四宫格 + 买入参考，零横向拖动
@@ -302,6 +304,7 @@
       thSort('price', '现价', null, ' rowspan="2"') +
       thSort('liq', '清算价值', null, ' rowspan="2"', '按每股公允清算价值排') +
       thSort('netcash', '净现金/市值', null, ' rowspan="2"', '(货币资金×100%＋交易性金融资产×70%＋应收票据×40%＋其他流动资产×30%−负债合计)÷总市值，最近一期财报；鼠标悬停单元格可看代入值') +
+      thSort('fraud', '造假风险', null, ' rowspan="2"', '财报造假可能性评分（0-100，越高越可疑）；点击按分数排序') +
       '<th colspan="4">四大流派评分</th>' +
       '<th colspan="4" title="每列自上而下：买入参考 / 保守卖出参考 / 公允卖出参考（小字）；现价进入买区绿底、卖区红字">价格参考（买 / 保卖 / 公卖）</th>' +
       '</tr><tr class="th-g2">' +
@@ -428,6 +431,11 @@
     h += '<td class="c-num' + (ncr != null && ncr >= 1 ? ' r-hit' : '') + '" data-s="netcash" ' +
       'title="' + ncrTitle + '">' +
       (ncr == null ? '-' : (ncr * 100).toFixed(1) + '%') + '</td>';
+    // 造假风险（百分制，越高风险越大）：等级色与详情页造假分圆徽一致
+    var fraud = sc ? sc.fraud : null;
+    h += '<td class="c-num sc-' + fraudGradeOf(fraud) + '" data-s="fraud" ' +
+      'title="财报造假可能性 ' + (fraud == null ? '-' : fmtNum(fraud)) + ' 分（0-100，越高越可疑）：净现背离/高应计/应收存货增速背离/毛利率逆势上升/其他应收占用等量化红旗加权">' +
+      (fraud == null ? '-' : fmtNum(fraud)) + '</td>';
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;
       var g = gradeOf(v);
@@ -470,6 +478,7 @@
       '<span class="sc-code">' + c.code + '</span>' +
       '<span class="sc-industry">' + (c.industry || '-') + '</span>' +
       '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
+      '<span class="sc-fraud sc-' + fraudGradeOf(sc ? sc.fraud : null) + '" data-s="fraud" title="财报造假可能性（0-100，越高越可疑）"><em>造假</em><b>' + (sc && sc.fraud != null ? fmtNum(sc.fraud) : '-') + '</b></span>' +
       '</div>';
     // 公允清算价值 + 净现金/市值 并排（移动端半行各一块，样式复用 sc-liq）
     var liq = refs ? refs.fairLiq : null;
@@ -534,7 +543,7 @@
     'sellF-grahamAgg': '进取公卖', 'sellF-grahamDef': '防御公卖',
     'sellF-schloss': '施洛斯公卖', 'sellF-buffett': '巴菲特公卖',
     'name': '名称', 'code': '代码', 'industry': '行业', 'price': '现价', 'liq': '清算价值',
-    'netcash': '净现金/市值'
+    'netcash': '净现金/市值', 'fraud': '造假风险'
   };
 
   // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
@@ -580,6 +589,10 @@
     if (key === 'netcash') {
       var scN = state.scores[c.code];
       return scN && scN.priceRefs ? scN.priceRefs.netCashRatio : null;
+    }
+    if (key === 'fraud') {
+      var scF = state.scores[c.code];
+      return scF && scF.fraud != null ? scF.fraud : null;
     }
     var sc = state.scores[c.code];
     if (!sc) return null;
@@ -628,10 +641,13 @@
           try {
             var va = valueAnalysis(d);
             var v = valueScores(d, va);
+            var fa = null;
+            try { fa = fraudAnalysis(d); } catch (e) { /* 造假分缺失不影响评分 */ }
             state.scores[c.code] = {
               grahamAgg: v.grahamAgg.total, grahamDef: v.grahamDef.total,
               schloss: v.schloss.total, buffett: v.buffett.total,
-              priceRefs: priceReferences(d, va)
+              priceRefs: priceReferences(d, va),
+              fraud: fa ? fa.total : null
             };
           } catch (e) { /* 单家计算失败不影响其他公司 */ }
           fillRowScores(c.code);
@@ -681,6 +697,20 @@
         } else {
           var ncrSp = td.querySelector('span');
           if (ncrSp) ncrSp.textContent = ncrTxt;
+        }
+        return;
+      } else if (kind === 'fraud') {
+        // 造假风险：PC 宽表 td 重设等级色；移动端 .sc-fraud 徽标保留结构类只换等级色与数值
+        p = sc ? sc.fraud : null;
+        var fg = fraudGradeOf(p);
+        if (td.tagName === 'TD') {
+          td.className = 'c-num sc-' + fg;
+          td.innerHTML = p == null ? '-' : fmtNum(p);
+        } else {
+          td.classList.remove('sc-good', 'sc-mid', 'sc-low', 'sc-bad', 'sc-na');
+          td.classList.add('sc-' + fg);
+          var fb = td.querySelector('b');
+          if (fb) fb.textContent = p == null ? '-' : fmtNum(p);
         }
         return;
       } else {
@@ -786,6 +816,7 @@
       '<a href="#sec-graham" data-scroll="sec-graham">③ 格雷厄姆烟蒂</a>' +
       '<a href="#sec-schloss" data-scroll="sec-schloss">④ 施洛斯烟蒂</a>' +
       '<a href="#sec-buffett" data-scroll="sec-buffett">⑤ 巴菲特芒格</a>' +
+      '<a href="#sec-fraud" data-scroll="sec-fraud">⑥ 造假风险</a>' +
       '</nav>';
 
     // ---- 模块一：基础财务信息（估值快照/趋势图/财务对比/报表/分红/定期报告）----
@@ -962,6 +993,10 @@
     html += '<section id="sec-buffett" class="stock-section va-module"><h2 class="va-module-title"><span>⑤</span>巴菲特芒格价值标准评判</h2>' +
       '<div class="score-card" id="stock-score-buffett"></div></section>';
 
+    // ---- 模块六：财务报表造假可能性分析（量化红旗筛查，百分制越高风险越大）----
+    html += '<section id="sec-fraud" class="stock-section va-module"><h2 class="va-module-title"><span>⑥</span>财务报表造假可能性分析</h2>' +
+      '<div class="score-card" id="stock-score-fraud"></div></section>';
+
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
     bindComparePicks();
@@ -971,6 +1006,9 @@
     initSheet(d);
     renderValueAnalysis(va);
     renderScores(sc);
+    var fa = fraudAnalysis(d);
+    var fraudEl = $('stock-score-fraud');
+    if (fraudEl) fraudEl.innerHTML = fraudCard(fa);
     bindMoreButtons();
   }
 
@@ -1227,6 +1265,19 @@
 
   function gradeText(g) {
     return { good: '优秀', mid: '良好', low: '一般', bad: '较差', na: '数据不足' }[g];
+  }
+
+  // 造假风险等级（分数越高越可疑，与价值评分方向相反）：<20 低 / <40 中 / <60 较高 / ≥60 高
+  function fraudGradeOf(total) {
+    if (total == null) return 'na';
+    if (total < 20) return 'good';
+    if (total < 40) return 'mid';
+    if (total < 60) return 'low';
+    return 'bad';
+  }
+
+  function fraudGradeText(g) {
+    return { good: '低', mid: '中', low: '较高', bad: '高', na: '数据不足' }[g];
   }
 
   // 评分项构造：match = 符合度（score/max，用于百分比与颜色；负分按 0% 显示）
@@ -1543,6 +1594,113 @@
       buffett: { title: '巴菲特芒格 · 优质企业合理价格+护城河', total: bTotal, items: bItems.concat(moatItems),
         note: moatNote }
     };
+  }
+
+  // ---- 财务报表造假可能性分析（Beneish M-Score 思路的量化红旗加权）----
+  // 百分制：分数越高造假可能性越大；8 项红旗各按严重度(0~1)×权重计分，权重合计 100；
+  // 数据不足该项计 0 不误伤；仅为量化筛查，不构成造假认定
+  function fraudAnalysis(d) {
+    var annual = annualRows(d.indicators || []);
+    var last = annual.length ? annual[annual.length - 1] : null;
+    var prev = annual.length >= 2 ? annual[annual.length - 2] : null;
+    var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
+    var prevDate = prev ? String(prev['报告期']).slice(0, 10) : null;
+    var baList = (d.balance || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var cfList = (d.cashflow || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
+    var prevBa = prevDate ? sheetRowByDate(baList, prevDate) : null;
+    var lastCf = lastDate ? sheetRowByDate(cfList, lastDate) : null;
+    var lastYear = lastDate ? lastDate.slice(0, 4) : null;
+
+    var rev = last ? last['营业总收入'] : null;
+    var revPrev = prev ? prev['营业总收入'] : null;
+    var net = last ? last['净利润'] : null;
+    var ocf = lastCf ? lastCf['经营活动产生的现金流量净额'] : null;
+    var soldCash = lastCf ? lastCf['销售商品、提供劳务收到的现金'] : null;
+    var assets = lastBa ? lastBa['资产总计'] : null;
+    var ar = lastBa ? lastBa['应收账款'] : null;
+    var arPrev = prevBa ? prevBa['应收账款'] : null;
+    var inv = lastBa ? lastBa['存货'] : null;
+    var invPrev = prevBa ? prevBa['存货'] : null;
+    var otherAr = lastBa ? (lastBa['其他应收款'] != null ? lastBa['其他应收款'] : lastBa['其他应收款(合计)']) : null;
+    var soft = lastBa ? ((lastBa['商誉'] || 0) + (lastBa['无形资产'] || 0)) : null;
+    var gm = last ? last['销售毛利率'] : null;
+    var gmPrev = prev ? prev['销售毛利率'] : null;
+
+    // 近5年累计净现比（比单年稳健：累计经营现金流 ÷ 累计净利润）
+    var sumNet = 0, sumOcf = 0, hitNO = false;
+    annual.slice(-5).forEach(function (r) {
+      var cf = sheetRowByDate(cfList, String(r['报告期']).slice(0, 10));
+      var n = r['净利润'], o = cf ? cf['经营活动产生的现金流量净额'] : null;
+      if (n != null && o != null) { sumNet += n; sumOcf += o; hitNO = true; }
+    });
+    var ratio5 = (hitNO && sumNet > 0) ? sumOcf / sumNet : null;
+
+    function grow(cur, pre) { return (cur != null && pre != null && pre > 0) ? cur / pre - 1 : null; }
+    var revGrow = grow(rev, revPrev);
+    var arGap = (grow(ar, arPrev) != null && revGrow != null) ? grow(ar, arPrev) - revGrow : null;
+    var invGap = (grow(inv, invPrev) != null && revGrow != null) ? grow(inv, invPrev) - revGrow : null;
+    var gmDelta = (gm != null && gmPrev != null) ? gm - gmPrev : null;
+    var tata = (net != null && ocf != null && assets != null && assets > 0) ? (net - ocf) / assets : null;
+    var otherShare = (otherAr != null && assets != null && assets > 0) ? otherAr / assets : null;
+    var softShare = (soft != null && assets != null && assets > 0) ? soft / assets : null;
+    var collect = (soldCash != null && rev != null && rev > 0) ? soldCash / rev : null;
+
+    // 严重度分段：v≤a→0；a~b→0~0.5；b~c→0.5~1；≥c→1（越高越可疑）
+    function sev(v, a, b, c) {
+      if (v == null) return null;
+      if (v <= a) return 0;
+      if (v >= c) return 1;
+      if (v <= b) return (v - a) / (b - a) * 0.5;
+      return 0.5 + (v - b) / (c - b) * 0.5;
+    }
+    function w(score, maxV) { return score == null ? null : score * maxV; }
+
+    // 净现比：≥1 无红旗；0~1 线性升；≤0 满严重（利润无现金支撑）
+    var s1 = ratio5 == null ? null : lerpScore(ratio5, 0, 1, 1, 0);
+    // 收现比：≥100% 无红旗；60%~100% 线性升；≤60% 满严重
+    var s8 = collect == null ? null : lerpScore(collect, 0.6, 1, 1, 0);
+    // 毛利率上升才可疑（下降属经营问题）
+    var s5 = gmDelta == null ? null : (gmDelta <= 0 ? 0 : sev(gmDelta, 0, 0.05, 0.10));
+
+    var items = [
+      it('5年累计净现比（经营现金流÷净利润）', ratio5 == null ? '-' : fmtNum(ratio5), '≥ 1（利润有现金支撑）', 25, w(s1, 25)),
+      it('总应计比率（净利润−经营现金流）÷总资产', fmtPct(tata), '≤ 2%（应计越高越可疑）', 20, w(sev(tata, 0.02, 0.06, 0.10), 20)),
+      it('应收账款增速 − 营收增速', fmtPct(arGap), '≤ 5pp（应收异常快于营收）', 15, w(sev(arGap, 0.05, 0.20, 0.40), 15)),
+      it('存货增速 − 营收增速', fmtPct(invGap), '≤ 5pp（存货异常堆积）', 10, w(sev(invGap, 0.05, 0.25, 0.50), 10)),
+      it('销售毛利率同比变动', gmDelta == null ? '-' : (gmDelta > 0 ? '+' : '') + (gmDelta * 100).toFixed(1) + 'pp', '上升≤0（逆势上升可疑）', 10, w(s5, 10)),
+      it('其他应收款÷总资产（关联方占用）', fmtPct(otherShare), '≤ 2%', 10, w(sev(otherShare, 0.02, 0.05, 0.10), 10)),
+      it('（商誉＋无形资产）÷总资产（资产偏软）', fmtPct(softShare), '≤ 10%', 5, w(sev(softShare, 0.10, 0.20, 0.35), 5)),
+      it('销售收现比（销售收现÷营收）', fmtPct(collect), '≥ 100%', 5, w(s8, 5))
+    ];
+    var avail = items.filter(function (x) { return x.score != null; });
+    var total = avail.length ? Math.min(100, avail.reduce(function (s, x) { return s + x.score; }, 0)) : null;
+    return {
+      title: '财务报表造假可能性 · 量化红旗筛查',
+      basis: '评分基准：' + (lastYear || '-') + ' 年报（同比项对比 ' + (prevDate ? prevDate.slice(0, 4) : '-') + ' 年报）',
+      total: total == null ? null : Math.round(total * 10) / 10,
+      items: items,
+      note: '借鉴 Beneish M-Score 思路：将净现背离、高应计、应收/存货增速背离营收、毛利率逆势上升、其他应收款占用、资产偏软、收现不足等量化红旗按严重度加权为 0~100 分，分数越高造假可能性越大。数据不足的项计 0 分不误伤；本分为量化筛查信号，不构成对造假的认定，需结合审计意见、监管问询等定性信息综合判断。'
+    };
+  }
+
+  // 造假分析评分卡（与 scoreCard 同构但等级方向相反：分低=安全=绿）
+  function fraudCard(fa) {
+    var g = fraudGradeOf(fa.total);
+    var rows = fa.items.map(function (x) {
+      var mCls = x.match == null ? 'sc-na' : x.match <= 0.01 ? 'sc-good' : x.match < 0.5 ? 'sc-mid' : x.match < 0.99 ? 'sc-low' : 'sc-bad';
+      var mTxt = x.match == null ? '-' : (x.match * 100).toFixed(0) + '%';
+      return '<tr><td>' + x.std + '</td><td class="v">' + x.val + '</td><td class="v">' + x.thr + '</td>' +
+        '<td class="v ' + mCls + '">' + mTxt + '</td>' +
+        '<td class="v"><b>' + (x.score == null ? '-' : fmtNum(x.score)) + '</b> / ' + x.max + '</td></tr>';
+    }).join('');
+    return '<div class="score-card-head"><h4>' + fa.title + '</h4>' +
+      '<div class="score-circle va-grade-' + g + '"><span>造假分</span><b>' + (fa.total == null ? '-' : fmtNum(fa.total)) + '</b><i>' + fraudGradeText(g) + '</i></div></div>' +
+      '<p class="score-basis">' + fa.basis + '</p>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare">' +
+      '<thead><tr><th>红旗指标</th><th>当前值</th><th>安全阈值</th><th>严重度</th><th>得分</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>' +
+      '<p class="score-note">' + fa.note + '</p>';
   }
 
   // ---- 价格参考（买入/保守卖出/公允卖出）----

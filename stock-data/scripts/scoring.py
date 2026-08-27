@@ -8,6 +8,7 @@
 """
 
 from datetime import datetime, timedelta, timezone
+import math
 
 # 10年期国债收益率参考值（与 stock.js BOND_10Y 一致，仅用于股债利差展示，不影响评分）
 BOND_10Y = 0.017
@@ -716,9 +717,109 @@ def price_references(d, va):
     }
 
 
+def fraud_analysis(d):
+    """对应 JS fraudAnalysis —— 财报造假可能性量化红旗筛查总分（0~100，越高越可疑）。
+    借鉴 Beneish M-Score 思路：8 项红旗按严重度加权，数据不足项计 0 分不误伤。"""
+    annual = annual_rows(d.get('indicators') or [])
+    last = annual[-1] if annual else None
+    prev = annual[-2] if len(annual) >= 2 else None
+    last_date = str(last.get('报告期') or '')[:10] if last else None
+    prev_date = str(prev.get('报告期') or '')[:10] if prev else None
+    ba_list = sorted(d.get('balance') or [], key=lambda r: str(r.get('报告日') or ''))
+    cf_list = sorted(d.get('cashflow') or [], key=lambda r: str(r.get('报告日') or ''))
+    last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
+    prev_ba = sheet_row_by_date(ba_list, prev_date) if prev_date else None
+    last_cf = sheet_row_by_date(cf_list, last_date) if last_date else None
+
+    rev = last.get('营业总收入') if last else None
+    rev_prev = prev.get('营业总收入') if prev else None
+    net = last.get('净利润') if last else None
+    ocf = last_cf.get('经营活动产生的现金流量净额') if last_cf else None
+    sold_cash = last_cf.get('销售商品、提供劳务收到的现金') if last_cf else None
+    assets = last_ba.get('资产总计') if last_ba else None
+    ar = last_ba.get('应收账款') if last_ba else None
+    ar_prev = prev_ba.get('应收账款') if prev_ba else None
+    inv = last_ba.get('存货') if last_ba else None
+    inv_prev = prev_ba.get('存货') if prev_ba else None
+    other_ar = None
+    if last_ba:
+        other_ar = last_ba.get('其他应收款')
+        if other_ar is None:
+            other_ar = last_ba.get('其他应收款(合计)')
+    soft = ((last_ba.get('商誉') or 0) + (last_ba.get('无形资产') or 0)) if last_ba else None
+    gm = last.get('销售毛利率') if last else None
+    gm_prev = prev.get('销售毛利率') if prev else None
+
+    # 近5年累计净现比（比单年稳健：累计经营现金流 ÷ 累计净利润）
+    sum_net, sum_ocf, hit = 0.0, 0.0, False
+    for r in annual[-5:]:
+        cf = sheet_row_by_date(cf_list, str(r.get('报告期') or '')[:10])
+        n = r.get('净利润')
+        o = cf.get('经营活动产生的现金流量净额') if cf else None
+        if n is not None and o is not None:
+            sum_net += n
+            sum_ocf += o
+            hit = True
+    ratio5 = sum_ocf / sum_net if (hit and sum_net > 0) else None
+
+    def grow(cur, pre):
+        return (cur / pre - 1.0) if (cur is not None and pre is not None and pre > 0) else None
+
+    rev_grow = grow(rev, rev_prev)
+    ar_grow = grow(ar, ar_prev)
+    inv_grow = grow(inv, inv_prev)
+    ar_gap = (ar_grow - rev_grow) if (ar_grow is not None and rev_grow is not None) else None
+    inv_gap = (inv_grow - rev_grow) if (inv_grow is not None and rev_grow is not None) else None
+    gm_delta = (gm - gm_prev) if (gm is not None and gm_prev is not None) else None
+    tata = ((net - ocf) / assets) if (net is not None and ocf is not None and assets is not None and assets > 0) else None
+    other_share = other_ar / assets if (other_ar is not None and assets is not None and assets > 0) else None
+    soft_share = soft / assets if (soft is not None and assets is not None and assets > 0) else None
+    collect = sold_cash / rev if (sold_cash is not None and rev is not None and rev > 0) else None
+
+    # 严重度分段：v≤a→0；a~b→0~0.5；b~c→0.5~1；≥c→1（越高越可疑）
+    def sev(v, a, b, c):
+        if v is None:
+            return None
+        if v <= a:
+            return 0.0
+        if v >= c:
+            return 1.0
+        if v <= b:
+            return (v - a) / (b - a) * 0.5
+        return 0.5 + (v - b) / (c - b) * 0.5
+
+    def w(score, max_v):
+        return None if score is None else score * max_v
+
+    # 净现比：≥1 无红旗；0~1 线性升；≤0 满严重（利润无现金支撑）
+    s1 = None if ratio5 is None else lerp_score(ratio5, 0, 1, 1, 0)
+    # 收现比：≥100% 无红旗；60%~100% 线性升；≤60% 满严重
+    s8 = None if collect is None else lerp_score(collect, 0.6, 1, 1, 0)
+    # 毛利率上升才可疑（下降属经营问题）
+    s5 = None if gm_delta is None else (0.0 if gm_delta <= 0 else sev(gm_delta, 0, 0.05, 0.10))
+
+    scores = [
+        w(s1, 25),                              # 5年累计净现比，25 分
+        w(sev(tata, 0.02, 0.06, 0.10), 20),     # 总应计比率，20 分
+        w(sev(ar_gap, 0.05, 0.20, 0.40), 15),   # 应收增速−营收增速，15 分
+        w(sev(inv_gap, 0.05, 0.25, 0.50), 10),  # 存货增速−营收增速，10 分
+        w(s5, 10),                              # 毛利率同比变动，10 分
+        w(sev(other_share, 0.02, 0.05, 0.10), 10),  # 其他应收款占用，10 分
+        w(sev(soft_share, 0.10, 0.20, 0.35), 5),    # 资产偏软，5 分
+        w(s8, 5),                               # 销售收现比，5 分
+    ]
+    avail = [s for s in scores if s is not None]
+    if not avail:
+        return None
+    total = min(100.0, sum(avail))
+    # 与 JS Math.round(total*10)/10 一致（Python round 为银行家舍入，不能直接用）
+    return math.floor(total * 10 + 0.5) / 10.0
+
+
 def compute_scores(company, now=None):
-    """抓取后调用：返回四大流派总分 + 价格参考 dict（供 index.json 直接使用）"""
+    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 dict（供 index.json 直接使用）"""
     va = value_analysis(company, now)
     scores = value_scores(company, va)
     scores['priceRefs'] = price_references(company, va)
+    scores['fraud'] = fraud_analysis(company)
     return scores
