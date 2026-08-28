@@ -922,10 +922,10 @@ def cycle_analysis(d):
     last = annual[-1] if annual else None
     last_date = str(last.get('报告期') or '')[:10] if last else None
 
-    # ---- 阶段一：周期强度判定（样本标准差，窗口取近 5 年年报）----
-    w5 = annual[-5:]
-    nets = [r.get('净利润') for r in w5 if r.get('净利润') is not None]
-    gms = [r.get('销售毛利率') for r in w5 if r.get('销售毛利率') is not None]
+    # ---- 阶段一：周期强度判定（样本标准差，窗口取近 8 年年报）----
+    w8 = annual[-8:]
+    nets = [r.get('净利润') for r in w8 if r.get('净利润') is not None]
+    gms = [r.get('销售毛利率') for r in w8 if r.get('销售毛利率') is not None]
 
     def sd(arr):
         if len(arr) < 2:
@@ -980,7 +980,7 @@ def cycle_analysis(d):
     gm_last = last.get('销售毛利率') if last else None
     net_pct = pct_of(net_last, nets)
     gm_pct = pct_of(gm_last, gms)
-    rev_pct = pct_of(rev_last, [r.get('营业总收入') for r in w5])
+    rev_pct = pct_of(rev_last, [r.get('营业总收入') for r in w8])
     net_yoy = yoy_hist[-1] if yoy_hist else None
     # 最新年报净现比（底部常伴随现金流恶化）
     last_cf = sheet_row_by_date(cf_list, last_date) if last_date else None
@@ -1033,8 +1033,9 @@ def cycle_analysis(d):
 
 def cycle_history(d):
     """对应 JS cycleHistory —— 逐年回溯周期位置分（趋势图/趋势状态共用）。
-    每个年报年以该年为窗口末尾取最近 5 年年报，用与 cycle_analysis 阶段二相同的 8 维逻辑；
-    单季环比仅末年参与（历史无单季数据），历史年满分 90 同口径可比。"""
+    每个年报年以该年为窗口末尾取最近 8 年年报，用与 cycle_analysis 阶段二相同的 8 维逻辑；
+    单季环比逐年参与：历史年用该年自身单季营收环比，末年用全局最新单季环比（与当期总分口径对齐），
+    故各年均为满 8 维、同口径可比。"""
     annual = annual_rows(d.get('indicators') or [])
     cf_list = sorted(d.get('cashflow') or [], key=lambda r: str(r.get('报告日') or ''))
     ba_list = sorted(d.get('balance') or [], key=lambda r: str(r.get('报告日') or ''))
@@ -1047,6 +1048,17 @@ def cycle_history(d):
     qoq = None
     if len(qrev) >= 2 and qrev[-2] is not None and qrev[-2] > 0 and qrev[-1] is not None:
         qoq = qrev[-1] / qrev[-2] - 1.0
+    # 按年归档单季营收（升序，保留 None），供逐年环比：各年取该年最后两个单季（Q3/Q2）
+    interim_by_year = {}
+    for r in q_rows:
+        yr = str(r.get('报告期') or '')[:4]
+        interim_by_year.setdefault(yr, []).append(r.get('营业总收入_单季'))
+
+    def year_qoq(yr):
+        vals = interim_by_year.get(str(yr), [])
+        if len(vals) >= 2 and vals[-2] is not None and vals[-2] > 0 and vals[-1] is not None:
+            return vals[-1] / vals[-2] - 1.0
+        return None
 
     def pct_of(v, arr):
         vs = [x for x in arr if x is not None]
@@ -1059,7 +1071,7 @@ def cycle_history(d):
     for i in range(2, len(annual)):  # 需至少 3 年窗口且同比可算（i≥2）
         row = annual[i]
         year = int(str(row.get('报告期') or '')[:4])
-        win = annual[max(0, i - 4):i + 1]
+        win = annual[max(0, i - 7):i + 1]
         net = row.get('净利润')
         prev = annual[i - 1].get('净利润')
         yoy = (net / prev - 1.0) if (net is not None and prev is not None and prev > 0) else None
@@ -1081,7 +1093,8 @@ def cycle_history(d):
             capex_avg = sum(capex_prev) / len(capex_prev)
             if capex_avg > 0:
                 capex_ratio = capex_now / capex_avg
-        use_qoq = (i == len(annual) - 1)  # 单季环比仅末年参与，与当期总分口径对齐
+        # 单季环比：末年用全局最新单季环比（与当期总分一致），历史年用该年自身单季环比（满 8 维）
+        qoq_i = qoq if i == len(annual) - 1 else year_qoq(year)
         scores = [
             None if pct_of(net, [r.get('净利润') for r in win]) is None
             else pct_of(net, [r.get('净利润') for r in win]) * 25,
@@ -1093,7 +1106,7 @@ def cycle_history(d):
             lerp_score(ncr, 0, 1.2, 0, 10),
             lerp_score(inv_grow, -0.10, 0.20, 0, 10),
             lerp_score(capex_ratio, 0.7, 1.3, 0, 10),
-            lerp_score(qoq, -0.10, 0.05, 0, 10) if use_qoq else None,
+            lerp_score(qoq_i, -0.10, 0.05, 0, 10),
         ]
         avail = [s for s in scores if s is not None]
         sc = math.floor(min(100.0, sum(avail)) * 10 + 0.5) / 10.0 if avail else None

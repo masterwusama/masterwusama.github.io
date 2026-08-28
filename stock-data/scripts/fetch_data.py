@@ -36,9 +36,9 @@ from scoring import compute_scores  # 预计算评分（与 assets/stock.js 一�
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data"
 COMPANIES_DIR = OUTPUT_DIR / "companies"
 
-# 输出报告期数基准（实际输出 MAX_PERIODS+1 期 ≈ 5 年；
+# 输出报告期数基准（实际输出 MAX_PERIODS+1 期 ≈ 8 年；
 # 多 1 期用于最早一期单季值的还原，相应多抓 1 期被丢弃）
-MAX_PERIODS = 20
+MAX_PERIODS = 32
 
 # 巨潮资讯定期报告类别（年报/半年报/一季报/三季报）
 REPORT_CATEGORIES = ["年报", "半年报", "一季报", "三季报"]

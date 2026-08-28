@@ -1110,7 +1110,7 @@
       '<div class="score-card" id="stock-score-cycle"></div>' +
       '<div class="stock-chart-block" id="stock-cycle-chart-block" style="display:none"><h4>历年财报周期位置评分趋势（分数越低越接近周期底部）</h4>' +
       '<div class="stock-chart" id="stock-chart-cycle"></div>' +
-      '<p class="stock-chart-note">逐年回溯：以各年报年为窗口末尾取最近 5 年年报，按与当期相同的 8 维逻辑打分；历史年无单季数据，单季环比维度仅末年参与（历史年满分 90，同口径可比）。</p></div></section>';
+      '<p class="stock-chart-note">逐年回溯：以各年报年为窗口末尾取最近 8 年年报，按与当期相同的 8 维逻辑打分；单季环比逐年参与（历史年用该年自身单季营收环比，末年用最新单季环比），各年均为满 8 维、同口径可比。</p></div></section>';
 
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
@@ -1945,10 +1945,10 @@
     var lastDate = last ? String(last['报告期']).slice(0, 10) : null;
     var lastYear = lastDate ? Number(lastDate.slice(0, 4)) : null;
 
-    // ---- 阶段一：周期强度判定（样本标准差，窗口取近 5 年年报）----
-    var w5 = annual.slice(-5);
-    var nets = w5.map(function (r) { return r['净利润']; }).filter(function (v) { return v != null; });
-    var gms = w5.map(function (r) { return r['销售毛利率']; }).filter(function (v) { return v != null; });
+    // ---- 阶段一：周期强度判定（样本标准差，窗口取近 8 年年报）----
+    var w8 = annual.slice(-8);
+    var nets = w8.map(function (r) { return r['净利润']; }).filter(function (v) { return v != null; });
+    var gms = w8.map(function (r) { return r['销售毛利率']; }).filter(function (v) { return v != null; });
     function sd(arr) {
       if (arr.length < 2) return null;
       var m = arr.reduce(function (s, x) { return s + x; }, 0) / arr.length;
@@ -1989,7 +1989,7 @@
         title: '周期位置 · 周期性行业判定与底部概率量化',
         basis: cyc == null ? '样本不足：年报数据少于 3 期，无法判定周期性' :
           '周期强度 ' + fmtNum(cyc) + ' < 40，判定为非周期性/弱周期行业',
-        note: '周期强度由近 5 年年报的净利润变异系数（40 分）+ 利润深度下滑频率（35 分）+ 毛利率波动（25 分）构成；≥ 40 判为周期性行业才进行周期位置打分。已知局限：判定基于约 5 年财务样本，近 5 年处于单边景气期的典型周期股（如上行期的资源股）波动特征不明显会被判为“非周期”，若窗口恰好覆盖单边行情也可能误判，需结合行业属性（如公用事业/消费/医药通常弱周期，钢铁/有色/化工/航运/造纸通常强周期）复核。'
+        note: '周期强度由近 8 年年报的净利润变异系数（40 分）+ 利润深度下滑频率（35 分）+ 毛利率波动（25 分）构成；≥ 40 判为周期性行业才进行周期位置打分。已知局限：判定基于约 8 年财务样本，近 8 年处于单边景气期的典型周期股（如上行期的资源股）波动特征不明显会被判为“非周期”，若窗口恰好覆盖单边行情也可能误判，需结合行业属性（如公用事业/消费/医药通常弱周期，钢铁/有色/化工/航运/造纸通常强周期）复核。'
       };
     }
 
@@ -2003,10 +2003,10 @@
     var netLast = last ? last['净利润'] : null;
     var revLast = last ? last['营业总收入'] : null;
     var gmLast = last ? last['销售毛利率'] : null;
-    // 2a/2c/2d 利润/毛利率/营收在近 5 年区间的位置（越接近最低越接近底部）
+    // 2a/2c/2d 利润/毛利率/营收在近 8 年区间的位置（越接近最低越接近底部）
     var netPct = pctOf(netLast, nets);
     var gmPct = pctOf(gmLast, gms);
-    var revs = w5.map(function (r) { return r['营业总收入']; });
+    var revs = w8.map(function (r) { return r['营业总收入']; });
     var revPct = pctOf(revLast, revs);
     // 2b 最新年报净利同比（深负=底部区域，过热=远离底部）
     var netYoy = yoyHist.length ? yoyHist[yoyHist.length - 1] : null;
@@ -2039,10 +2039,10 @@
       ? qrev[qrev.length - 1] / qrev[qrev.length - 2] - 1 : null;
 
     var items = [
-      it('利润位置：最新年报净利在近' + w5.length + '年区间的位置', netLast == null ? '-' : fmtMoney(netLast), '接近最低分→底部', 25, netPct == null ? null : netPct * 25),
+      it('利润位置：最新年报净利在近' + w8.length + '年区间的位置', netLast == null ? '-' : fmtMoney(netLast), '接近最低分→底部', 25, netPct == null ? null : netPct * 25),
       it('利润动能：最新年报净利同比', netYoy == null ? '-' : fmtPct(netYoy), '≤ -50% 底部', 15, lerpScore(netYoy, -0.50, 0.30, 0, 15)),
-      it('毛利率位置：最新年报毛利率在近' + w5.length + '年区间的位置', gmLast == null ? '-' : fmtPct(gmLast), '接近最低分→底部', 15, gmPct == null ? null : gmPct * 15),
-      it('营收位置：最新年报营收在近' + w5.length + '年区间的位置', revLast == null ? '-' : fmtMoney(revLast), '接近最低分→底部', 10, revPct == null ? null : revPct * 10),
+      it('毛利率位置：最新年报毛利率在近' + w8.length + '年区间的位置', gmLast == null ? '-' : fmtPct(gmLast), '接近最低分→底部', 15, gmPct == null ? null : gmPct * 15),
+      it('营收位置：最新年报营收在近' + w8.length + '年区间的位置', revLast == null ? '-' : fmtMoney(revLast), '接近最低分→底部', 10, revPct == null ? null : revPct * 10),
       it('现金流压力：最新年报净现比（经营现金流÷净利润）', ncr == null ? '-' : fmtNum(ncr), '≤ 0 底部', 10, lerpScore(ncr, 0, 1.2, 0, 10)),
       it('库存周期：存货同比（去库存→接近底部）', invGrow == null ? '-' : fmtPct(invGrow), '≤ -10% 去库存', 10, lerpScore(invGrow, -0.10, 0.20, 0, 10)),
       it('资本开支周期：当年购建支出÷近3年均值（收缩→出清）', capexRatio == null ? '-' : fmtNum(capexRatio), '≤ 0.7 收缩', 10, lerpScore(capexRatio, 0.7, 1.3, 0, 10)),
@@ -2056,7 +2056,7 @@
       items: items,
       title: '周期位置 · 周期性行业判定与底部概率量化',
       basis: '周期强度 ' + fmtNum(cyc) + '（≥ 40 判为周期性）；位置评分基准：' + (lastYear || '-') + ' 年报 + 最新单季',
-      note: '两阶段量化：①周期强度（净利变异系数 40 + 深度下滑频率 35 + 毛利率波动 25，≥ 40 判为周期性，非周期性不打分）；②周期位置 0~100，分数越低越接近周期底部（利润/毛利率/营收处于历史低位、同比深负、现金流承压、去库存、资本开支收缩、单季仍在回落均为底部特征）。已知局限：基于约 5 年样本的相对位置，近 5 年单边景气期的典型周期股会被判为“非周期”；无历史市价分位数据故未纳入估值维度；周期位置低≠立即反转，需结合行业供需与产能数据确认，仅供研究参考。'
+      note: '两阶段量化：①周期强度（净利变异系数 40 + 深度下滑频率 35 + 毛利率波动 25，≥ 40 判为周期性，非周期性不打分）；②周期位置 0~100，分数越低越接近周期底部（利润/毛利率/营收处于历史低位、同比深负、现金流承压、去库存、资本开支收缩、单季仍在回落均为底部特征）。已知局限：基于约 8 年样本的相对位置，近 8 年单边景气期的典型周期股会被判为“非周期”；无历史市价分位数据故未纳入估值维度；周期位置低≠立即反转，需结合行业供需与产能数据确认，仅供研究参考。'
     };
   }
 
@@ -2101,8 +2101,8 @@
   }
 
   // ---- 年度周期位置分回溯 + 趋势状态（上行/反转/筑底/下行）----
-  // 逐年回溯：对每个年报年，以该年为窗口末尾取最近 5 年年报，用与 cycleAnalysis 阶段二相同的 8 维逻辑打分；
-  // 单季环比维度仅末年可算（历史无单季数据），历史年最高 90 分，同口径可比。
+  // 逐年回溯：对每个年报年，以该年为窗口末尾取最近 8 年年报，用与 cycleAnalysis 阶段二相同的 8 维逻辑打分；
+  // 单季环比逐年参与：历史年用该年自身单季营收环比，末年用全局最新单季环比（与当期总分口径对齐），故各年均为满 8 维、同口径可比。
   function cycleHistory(d) {
     var annual = annualRows(d.indicators || []);
     var cfList = (d.cashflow || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
@@ -2114,6 +2114,19 @@
     var qrev = qRows.map(function (r) { return r['营业总收入_单季']; });
     var qoq = (qrev.length >= 2 && qrev[qrev.length - 2] != null && qrev[qrev.length - 2] > 0 && qrev[qrev.length - 1] != null)
       ? qrev[qrev.length - 1] / qrev[qrev.length - 2] - 1 : null;
+    // 按年归档单季营收（升序，保留 null），供逐年环比：各年取该年最后两个单季（Q3/Q2）
+    var interimByYear = {};
+    qRows.forEach(function (r) {
+      var yr = String(r['报告期'] || '').slice(0, 4);
+      (interimByYear[yr] = interimByYear[yr] || []).push(r['营业总收入_单季']);
+    });
+    function yearQoq(yr) {
+      var vals = interimByYear[String(yr)] || [];
+      if (vals.length >= 2 && vals[vals.length - 2] != null && vals[vals.length - 2] > 0 && vals[vals.length - 1] != null) {
+        return vals[vals.length - 1] / vals[vals.length - 2] - 1;
+      }
+      return null;
+    }
     function pctOf(v, arr) {
       var vs = arr.filter(function (x) { return x != null; });
       if (v == null || vs.length < 2) return null;
@@ -2124,7 +2137,7 @@
     for (var i = 2; i < annual.length; i++) {  // 需至少 3 年窗口且同比可算（i≥2）
       var row = annual[i];
       var year = Number(String(row['报告期']).slice(0, 4));
-      var win = annual.slice(Math.max(0, i - 4), i + 1);
+      var win = annual.slice(Math.max(0, i - 7), i + 1);
       var nets = win.map(function (r) { return r['净利润']; });
       var gms = win.map(function (r) { return r['销售毛利率']; });
       var revs = win.map(function (r) { return r['营业总收入']; });
@@ -2147,7 +2160,8 @@
         var capexAvg = capexPrev.reduce(function (s, x) { return s + x; }, 0) / capexPrev.length;
         if (capexAvg > 0) capexRatio = capexNow / capexAvg;
       }
-      var useQoq = (i === annual.length - 1);  // 单季环比仅末年参与，与当期总分口径对齐
+      // 单季环比：末年用全局最新单季环比（与当期总分一致），历史年用该年自身单季环比（满 8 维）
+      var qoqI = (i === annual.length - 1) ? qoq : yearQoq(year);
       var scores = [
         pctOf(net, nets) == null ? null : pctOf(net, nets) * 25,
         lerpScore(yoy, -0.50, 0.30, 0, 15),
@@ -2156,7 +2170,7 @@
         lerpScore(ncr, 0, 1.2, 0, 10),
         lerpScore(invGrow, -0.10, 0.20, 0, 10),
         lerpScore(capexRatio, 0.7, 1.3, 0, 10),
-        useQoq ? lerpScore(qoq, -0.10, 0.05, 0, 10) : null
+        lerpScore(qoqI, -0.10, 0.05, 0, 10)
       ];
       var avail = scores.filter(function (s) { return s != null; });
       var sc = avail.length ? Math.round(Math.min(100, avail.reduce(function (s, x) { return s + x; }, 0)) * 10) / 10 : null;
