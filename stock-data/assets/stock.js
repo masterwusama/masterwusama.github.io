@@ -447,16 +447,18 @@
     h += '<td class="c-num sc-' + gradeOf(mgmt) + '" data-s="mgmt" ' +
       'title="管理层管理水平 ' + (mgmt == null ? '-' : fmtNum(mgmt)) + ' 分（0-100，越高越好）：费用纪律/资产周转/资本回报/成长质量/营运资金/现金流质量/股东回报/治理诚信加权">' +
       (mgmt == null ? '-' : fmtNum(mgmt)) + '</td>';
-          // 周期位置（百分制，越低越接近底部）：非周期性行业显示“非周期”灰色；周期性低分=机会=绿（同造假分方向）
-          var cyc = sc ? sc.cycle : null;
-          var isCyc = sc ? sc.cyclical === true : false;
-          if (!isCyc && sc && sc.cyclical === false) {
-            h += '<td class="c-num sc-na" data-s="cycle" title="非周期性/弱周期行业（周期强度 < 40），不适用周期位置评分">非周期</td>';
-          } else {
-            h += '<td class="c-num sc-' + fraudGradeOf(cyc) + '" data-s="cycle" ' +
-              'title="周期位置 ' + (cyc == null ? '-' : fmtNum(cyc)) + ' 分（0-100，越低越接近周期底部）：利润/毛利率/营收位置 + 同比动能 + 现金流 + 库存/资本开支周期 + 单季环比加权">' +
-              (cyc == null ? '-' : fmtNum(cyc)) + '</td>';
-          }
+    // 周期位置（百分制，越低越接近底部）：非周期性行业显示“非周期”灰色；周期性低分=机会=绿（同造假分方向）；
+    // 趋势图标：反转/上行 ▲绿、筑底 ◆琥珀、下行 ▼红（后端预计算，降级路径由客户端回填）
+    var cyc = sc ? sc.cycle : null;
+    var cycT = sc ? sc.cycleTrend : null;
+    var cycTip = (cycT ? cycleTrendText(cycT) + '（最新年分数相对上一年）；' : '') +
+      '周期位置 ' + (cyc == null ? '-' : fmtNum(cyc)) + ' 分（0-100，越低越接近周期底部）：利润/毛利率/营收位置 + 同比动能 + 现金流 + 库存/资本开支周期 + 单季环比加权';
+    if (sc && sc.cyclical === false) {
+      h += '<td class="c-num sc-na" data-s="cycle" title="非周期性/弱周期行业（周期强度 < 40），不适用周期位置评分">非周期</td>';
+    } else {
+      h += '<td class="c-num sc-' + fraudGradeOf(cyc) + '" data-s="cycle" title="' + cycTip + '">' +
+        (cyc == null ? '-' : fmtNum(cyc)) + cycleTrendIcon(cycT) + '</td>';
+    }
     ['grahamAgg', 'grahamDef', 'schloss', 'buffett'].forEach(function (k) {
       var v = sc ? sc[k] : null;
       var g = gradeOf(v);
@@ -504,7 +506,7 @@
       '<span class="sc-mgmt sc-' + gradeOf(sc ? sc.mgmt : null) + '" data-s="mgmt" title="管理层管理水平评分（0-100，越高越好）"><em>管理</em><b>' + (sc && sc.mgmt != null ? fmtNum(sc.mgmt) : '-') + '</b></span>' +
       (sc && sc.cyclical === false
         ? '<span class="sc-cycle sc-na" data-s="cycle" title="非周期性/弱周期行业，不适用周期位置评分"><em>周期</em><b>非周期</b></span>'
-        : '<span class="sc-cycle sc-' + fraudGradeOf(sc ? sc.cycle : null) + '" data-s="cycle" title="周期位置评分（0-100，越低越接近周期底部）"><em>周期</em><b>' + (sc && sc.cycle != null ? fmtNum(sc.cycle) : '-') + '</b></span>') +
+        : '<span class="sc-cycle sc-' + fraudGradeOf(sc ? sc.cycle : null) + '" data-s="cycle" title="周期位置评分（0-100，越低越接近周期底部）；趋势：' + (sc && sc.cycleTrend ? cycleTrendText(sc.cycleTrend) : '-') + '"><em>周期</em><b>' + (sc && sc.cycle != null ? fmtNum(sc.cycle) : '-') + '</b>' + cycleTrendIcon(sc ? sc.cycleTrend : null) + '</span>') +
       '</div>';
     // 公允清算价值 + 净现金/市值 并排（移动端半行各一块，样式复用 sc-liq）
     var liq = refs ? refs.fairLiq : null;
@@ -681,6 +683,10 @@
             try { ma = managementAnalysis(d); } catch (e) { /* 管理分缺失不影响评分 */ }
             var ca = null;
             try { ca = cycleAnalysis(d); } catch (e) { /* 周期分缺失不影响评分 */ }
+            var cycTrend = null;
+            if (ca && ca.total != null) {
+              try { cycTrend = cycleTrendOf(cycleHistory(d)); } catch (e) { /* 趋势缺失不影响评分 */ }
+            }
             state.scores[c.code] = {
               grahamAgg: v.grahamAgg.total, grahamDef: v.grahamDef.total,
               schloss: v.schloss.total, buffett: v.buffett.total,
@@ -688,7 +694,8 @@
               fraud: fa ? fa.total : null,
               mgmt: ma ? ma.total : null,
               cycle: ca ? ca.total : null,
-              cyclical: ca ? ca.cyclical : null
+              cyclical: ca ? ca.cyclical : null,
+              cycleTrend: cycTrend
             };
           } catch (e) { /* 单家计算失败不影响其他公司 */ }
           fillRowScores(c.code);
@@ -769,19 +776,30 @@
         }
         return;
       } else if (kind === 'cycle') {
-        // 周期位置：低分=接近底部=机会=绿（同造假分方向）；非周期性显示“非周期”灰（移动端徽标保持结构）
+        // 周期位置：低分=接近底部=机会=绿（同造假分方向）；非周期性显示“非周期”灰；
+        // 宽表 td 重建“分数+趋势图标”结构；移动端徽标保持结构只换等级色/数值/图标（避免破坏卡片布局）
         p = sc ? sc.cycle : null;
+        var ct = sc ? sc.cycleTrend : null;
         var nonCyc = sc && sc.cyclical === false;
         var cg = nonCyc ? 'na' : fraudGradeOf(p);
         if (td.tagName === 'TD') {
           td.className = 'c-num sc-' + cg;
-          td.innerHTML = nonCyc ? '非周期' : (p == null ? '-' : fmtNum(p));
-          if (nonCyc) td.setAttribute('title', '非周期性/弱周期行业（周期强度 < 40），不适用周期位置评分');
+          if (nonCyc) {
+            td.innerHTML = '非周期';
+            td.setAttribute('title', '非周期性/弱周期行业（周期强度 < 40），不适用周期位置评分');
+          } else {
+            td.innerHTML = (p == null ? '-' : fmtNum(p)) + cycleTrendIcon(ct);
+            td.setAttribute('title', (ct ? cycleTrendText(ct) + '（最新年分数相对上一年）；' : '') +
+              '周期位置 ' + (p == null ? '-' : fmtNum(p)) + ' 分（0-100，越低越接近周期底部）');
+          }
         } else {
           td.classList.remove('sc-good', 'sc-mid', 'sc-low', 'sc-bad', 'sc-na');
           td.classList.add('sc-' + cg);
           var cb = td.querySelector('b');
           if (cb) cb.textContent = nonCyc ? '非周期' : (p == null ? '-' : fmtNum(p));
+          var oldI = td.querySelector('i.cy-t');
+          if (oldI) oldI.parentNode.removeChild(oldI);
+          if (!nonCyc && ct) td.insertAdjacentHTML('beforeend', cycleTrendIcon(ct));
         }
         return;
       } else {
@@ -1089,7 +1107,10 @@
 
     // ---- 模块八：周期位置（周期性判定 + 底部概率，分数越低越接近底部，非周期不打分）----
     html += '<section id="sec-cycle" class="stock-section va-module"><h2 class="va-module-title"><span>⑧</span>周期位置 · 周期性行业判定</h2>' +
-      '<div class="score-card" id="stock-score-cycle"></div></section>';
+      '<div class="score-card" id="stock-score-cycle"></div>' +
+      '<div class="stock-chart-block" id="stock-cycle-chart-block" style="display:none"><h4>历年财报周期位置评分趋势（分数越低越接近周期底部）</h4>' +
+      '<div class="stock-chart" id="stock-chart-cycle"></div>' +
+      '<p class="stock-chart-note">逐年回溯：以各年报年为窗口末尾取最近 5 年年报，按与当期相同的 8 维逻辑打分；历史年无单季数据，单季环比维度仅末年参与（历史年满分 90，同口径可比）。</p></div></section>';
 
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
@@ -1109,6 +1130,7 @@
     var ca = cycleAnalysis(d);
     var cycleEl = $('stock-score-cycle');
     if (cycleEl) cycleEl.innerHTML = cycleCard(ca);
+    renderCycleChart(d, ca);
     bindMoreButtons();
   }
 
@@ -2076,6 +2098,123 @@
         '<table class="stock-compare">' + tableHead + '<tbody>' + dimRows(ca.cyclicalItems) + '</tbody></table></div>';
     }
     return h + '<p class="score-note">' + ca.note + '</p>';
+  }
+
+  // ---- 年度周期位置分回溯 + 趋势状态（上行/反转/筑底/下行）----
+  // 逐年回溯：对每个年报年，以该年为窗口末尾取最近 5 年年报，用与 cycleAnalysis 阶段二相同的 8 维逻辑打分；
+  // 单季环比维度仅末年可算（历史无单季数据），历史年最高 90 分，同口径可比。
+  function cycleHistory(d) {
+    var annual = annualRows(d.indicators || []);
+    var cfList = (d.cashflow || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var baList = (d.balance || []).slice().sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
+    var CAPEX_K = '购建固定资产、无形资产和其他长期资产所支付的现金';
+    var annualCf = cfList.filter(function (r) { return String(r['报告日'] || '').slice(5) === '12-31'; });
+    var qRows = (d.indicators || []).filter(function (r) { return String(r['报告期'] || '').slice(5) !== '12-31'; })
+      .sort(function (a, b) { return String(a['报告期']) < String(b['报告期']) ? -1 : 1; });
+    var qrev = qRows.map(function (r) { return r['营业总收入_单季']; });
+    var qoq = (qrev.length >= 2 && qrev[qrev.length - 2] != null && qrev[qrev.length - 2] > 0 && qrev[qrev.length - 1] != null)
+      ? qrev[qrev.length - 1] / qrev[qrev.length - 2] - 1 : null;
+    function pctOf(v, arr) {
+      var vs = arr.filter(function (x) { return x != null; });
+      if (v == null || vs.length < 2) return null;
+      var mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs);
+      return mx === mn ? 0.5 : (v - mn) / (mx - mn);
+    }
+    var out = [];
+    for (var i = 2; i < annual.length; i++) {  // 需至少 3 年窗口且同比可算（i≥2）
+      var row = annual[i];
+      var year = Number(String(row['报告期']).slice(0, 4));
+      var win = annual.slice(Math.max(0, i - 4), i + 1);
+      var nets = win.map(function (r) { return r['净利润']; });
+      var gms = win.map(function (r) { return r['销售毛利率']; });
+      var revs = win.map(function (r) { return r['营业总收入']; });
+      var net = row['净利润'], prev = annual[i - 1]['净利润'];
+      var yoy = (net != null && prev != null && prev > 0) ? net / prev - 1 : null;
+      var date = String(row['报告期']).slice(0, 10);
+      var cf = sheetRowByDate(cfList, date);
+      var ba = sheetRowByDate(baList, date);
+      var baPrev = sheetRowByDate(baList, String(annual[i - 1]['报告期']).slice(0, 10));
+      var ocf = cf ? cf['经营活动产生的现金流量净额'] : null;
+      var ncr = (net != null && ocf != null && net > 0) ? ocf / net : null;
+      var invNow = ba ? ba['存货'] : null;
+      var invPrev = baPrev ? baPrev['存货'] : null;
+      var invGrow = (invNow != null && invPrev != null && invPrev > 0) ? invNow / invPrev - 1 : null;
+      var capexNow = cf ? cf[CAPEX_K] : null;
+      var capexPrev = annualCf.slice(Math.max(0, annualCf.indexOf(cf) - 3), annualCf.indexOf(cf))
+        .map(function (r) { return r[CAPEX_K]; }).filter(function (v) { return v != null; });
+      var capexRatio = null;
+      if (capexNow != null && capexPrev.length >= 2) {
+        var capexAvg = capexPrev.reduce(function (s, x) { return s + x; }, 0) / capexPrev.length;
+        if (capexAvg > 0) capexRatio = capexNow / capexAvg;
+      }
+      var useQoq = (i === annual.length - 1);  // 单季环比仅末年参与，与当期总分口径对齐
+      var scores = [
+        pctOf(net, nets) == null ? null : pctOf(net, nets) * 25,
+        lerpScore(yoy, -0.50, 0.30, 0, 15),
+        pctOf(row['销售毛利率'], gms) == null ? null : pctOf(row['销售毛利率'], gms) * 15,
+        pctOf(row['营业总收入'], revs) == null ? null : pctOf(row['营业总收入'], revs) * 10,
+        lerpScore(ncr, 0, 1.2, 0, 10),
+        lerpScore(invGrow, -0.10, 0.20, 0, 10),
+        lerpScore(capexRatio, 0.7, 1.3, 0, 10),
+        useQoq ? lerpScore(qoq, -0.10, 0.05, 0, 10) : null
+      ];
+      var avail = scores.filter(function (s) { return s != null; });
+      var sc = avail.length ? Math.round(Math.min(100, avail.reduce(function (s, x) { return s + x; }, 0)) * 10) / 10 : null;
+      out.push({ year: year, score: sc });
+    }
+    return out;
+  }
+
+  // 趋势状态（基于逐年回溯分，最新年相对上一年）：
+  // 反转=上一年还在底部区（≤30）且最新分明显回升；上行=持续回升；筑底=低位（≤40）横盘；下行=分数走低（基本面恶化）
+  function cycleTrendOf(hist) {
+    var h = (hist || []).filter(function (x) { return x.score != null; });
+    if (h.length < 2) return null;
+    var d1 = h[h.length - 1].score - h[h.length - 2].score;
+    if (d1 > 5) return h[h.length - 2].score <= 30 ? 'rev' : 'up';
+    if (d1 < -5) return 'down';
+    if (h[h.length - 1].score <= 40) return 'flat';
+    return d1 >= 0 ? 'up' : 'down';
+  }
+
+  function cycleTrendText(t) {
+    return { up: '上行', rev: '反转', flat: '筑底', down: '下行' }[t] || '';
+  }
+
+  // 详情页历年周期位置分趋势图（仅周期性公司且 ≥2 个有效年份才显示；曲线下探=接近底部）
+  function renderCycleChart(d, ca) {
+    var block = $('stock-cycle-chart-block');
+    var el = $('stock-chart-cycle');
+    if (!block || !el) return;
+    if (!ca.cyclical || typeof echarts === 'undefined') { block.style.display = 'none'; return; }
+    var hist = cycleHistory(d).filter(function (x) { return x.score != null; });
+    if (hist.length < 2) { block.style.display = 'none'; return; }
+    block.style.display = '';
+    var chart = echarts.init(el);
+    state.charts.push(chart);
+    chart.setOption({
+      grid: { left: 44, right: 18, top: 32, bottom: 30 },
+      tooltip: { trigger: 'axis', valueFormatter: function (v) { return v == null ? '-' : v + ' 分'; } },
+      xAxis: { type: 'category', data: hist.map(function (x) { return x.year; }) },
+      yAxis: { type: 'value', min: 0, max: 100, name: '周期位置分', splitLine: { lineStyle: { type: 'dashed' } } },
+      series: [{
+        name: '周期位置分', type: 'line', data: hist.map(function (x) { return x.score; }),
+        smooth: false, symbol: 'circle', symbolSize: 8,
+        label: { show: true, position: 'top', fontSize: 10 },
+        itemStyle: { color: '#b07a10' }, lineStyle: { width: 2 },
+        markLine: { symbol: 'none', silent: true, label: { formatter: '底部区 ≤ 30', position: 'insideEndTop', fontSize: 10 },
+          lineStyle: { color: '#1e7e44', type: 'dashed' }, data: [{ yAxis: 30 }] },
+        markArea: { silent: true, itemStyle: { color: 'rgba(30,126,68,0.08)' }, data: [[{ yAxis: 0 }, { yAxis: 30 }]] }
+      }]
+    });
+  }
+
+  // 趋势图标（列表宽表/移动端徽标共用）：反转/上行 ▲绿、筑底 ◆琥珀、下行 ▼红；无趋势返回空串
+  function cycleTrendIcon(t, title) {
+    if (!t) return '';
+    var sym = (t === 'up' || t === 'rev') ? '▲' : (t === 'down' ? '▼' : '◆');
+    var cls = (t === 'up' || t === 'rev') ? 'cy-up' : (t === 'down' ? 'cy-down' : 'cy-flat');
+    return '<i class="cy-t ' + cls + '" title="' + (title || cycleTrendText(t)) + '">' + sym + '</i>';
   }
 
   // ---- 价格参考（买入/保守卖出/公允卖出）----

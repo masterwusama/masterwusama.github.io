@@ -1031,8 +1031,94 @@ def cycle_analysis(d):
             'total': math.floor(total * 10 + 0.5) / 10.0}
 
 
+def cycle_history(d):
+    """对应 JS cycleHistory —— 逐年回溯周期位置分（趋势图/趋势状态共用）。
+    每个年报年以该年为窗口末尾取最近 5 年年报，用与 cycle_analysis 阶段二相同的 8 维逻辑；
+    单季环比仅末年参与（历史无单季数据），历史年满分 90 同口径可比。"""
+    annual = annual_rows(d.get('indicators') or [])
+    cf_list = sorted(d.get('cashflow') or [], key=lambda r: str(r.get('报告日') or ''))
+    ba_list = sorted(d.get('balance') or [], key=lambda r: str(r.get('报告日') or ''))
+    CAPEX_K = '购建固定资产、无形资产和其他长期资产所支付的现金'
+    annual_cf = [r for r in cf_list if str(r.get('报告日') or '')[5:] == '12-31']
+    q_rows = sorted([r for r in (d.get('indicators') or [])
+                     if str(r.get('报告期') or '')[5:] != '12-31'],
+                    key=lambda r: str(r.get('报告期') or ''))
+    qrev = [r.get('营业总收入_单季') for r in q_rows]
+    qoq = None
+    if len(qrev) >= 2 and qrev[-2] is not None and qrev[-2] > 0 and qrev[-1] is not None:
+        qoq = qrev[-1] / qrev[-2] - 1.0
+
+    def pct_of(v, arr):
+        vs = [x for x in arr if x is not None]
+        if v is None or len(vs) < 2:
+            return None
+        mn, mx = min(vs), max(vs)
+        return 0.5 if mx == mn else (v - mn) / (mx - mn)
+
+    out = []
+    for i in range(2, len(annual)):  # 需至少 3 年窗口且同比可算（i≥2）
+        row = annual[i]
+        year = int(str(row.get('报告期') or '')[:4])
+        win = annual[max(0, i - 4):i + 1]
+        net = row.get('净利润')
+        prev = annual[i - 1].get('净利润')
+        yoy = (net / prev - 1.0) if (net is not None and prev is not None and prev > 0) else None
+        date = str(row.get('报告期') or '')[:10]
+        cf = sheet_row_by_date(cf_list, date)
+        ba = sheet_row_by_date(ba_list, date)
+        ba_prev = sheet_row_by_date(ba_list, str(annual[i - 1].get('报告期') or '')[:10])
+        ocf = cf.get('经营活动产生的现金流量净额') if cf else None
+        ncr = ocf / net if (net is not None and ocf is not None and net > 0) else None
+        inv_now = ba.get('存货') if ba else None
+        inv_prev = ba_prev.get('存货') if ba_prev else None
+        inv_grow = (inv_now / inv_prev - 1.0) if (inv_now is not None and inv_prev is not None and inv_prev > 0) else None
+        capex_now = cf.get(CAPEX_K) if cf else None
+        ci = annual_cf.index(cf) if cf in annual_cf else -1
+        capex_prev = [r.get(CAPEX_K) for r in annual_cf[max(0, ci - 3):ci]
+                      if r.get(CAPEX_K) is not None]
+        capex_ratio = None
+        if capex_now is not None and len(capex_prev) >= 2:
+            capex_avg = sum(capex_prev) / len(capex_prev)
+            if capex_avg > 0:
+                capex_ratio = capex_now / capex_avg
+        use_qoq = (i == len(annual) - 1)  # 单季环比仅末年参与，与当期总分口径对齐
+        scores = [
+            None if pct_of(net, [r.get('净利润') for r in win]) is None
+            else pct_of(net, [r.get('净利润') for r in win]) * 25,
+            lerp_score(yoy, -0.50, 0.30, 0, 15),
+            None if pct_of(row.get('销售毛利率'), [r.get('销售毛利率') for r in win]) is None
+            else pct_of(row.get('销售毛利率'), [r.get('销售毛利率') for r in win]) * 15,
+            None if pct_of(row.get('营业总收入'), [r.get('营业总收入') for r in win]) is None
+            else pct_of(row.get('营业总收入'), [r.get('营业总收入') for r in win]) * 10,
+            lerp_score(ncr, 0, 1.2, 0, 10),
+            lerp_score(inv_grow, -0.10, 0.20, 0, 10),
+            lerp_score(capex_ratio, 0.7, 1.3, 0, 10),
+            lerp_score(qoq, -0.10, 0.05, 0, 10) if use_qoq else None,
+        ]
+        avail = [s for s in scores if s is not None]
+        sc = math.floor(min(100.0, sum(avail)) * 10 + 0.5) / 10.0 if avail else None
+        out.append({'year': year, 'score': sc})
+    return out
+
+
+def cycle_trend(hist):
+    """对应 JS cycleTrendOf —— 趋势状态（最新年相对上一年）：
+    rev=反转（上一年还在底部区≤30 且明显回升）/ up=上行 / flat=筑底（低位≤40横盘）/ down=下行"""
+    h = [x for x in (hist or []) if x.get('score') is not None]
+    if len(h) < 2:
+        return None
+    d1 = h[-1]['score'] - h[-2]['score']
+    if d1 > 5:
+        return 'rev' if h[-2]['score'] <= 30 else 'up'
+    if d1 < -5:
+        return 'down'
+    if h[-1]['score'] <= 40:
+        return 'flat'
+    return 'up' if d1 >= 0 else 'down'
+
+
 def compute_scores(company, now=None):
-    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 + 管理分 + 周期分 dict（供 index.json 直接使用）"""
+    """抓取后调用：返回四大流派总分 + 价格参考 + 造假风险分 + 管理分 + 周期分/趋势 dict（供 index.json 直接使用）"""
     va = value_analysis(company, now)
     scores = value_scores(company, va)
     scores['priceRefs'] = price_references(company, va)
@@ -1041,4 +1127,6 @@ def compute_scores(company, now=None):
     ca = cycle_analysis(company)
     scores['cycle'] = ca['total']
     scores['cyclical'] = ca['cyclical']
+    # 趋势状态仅周期性公司（非周期不打分不显示趋势）
+    scores['cycleTrend'] = cycle_trend(cycle_history(company)) if ca['total'] is not None else None
     return scores

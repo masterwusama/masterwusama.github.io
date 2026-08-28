@@ -26,7 +26,7 @@ const NAMES = ['annualRows', 'ttmNetProfit', 'shareCount', 'latestField', 'epsTt
   'sheetRowByDate', 'annualBalanceRows', 'cagr', 'perShareDiv',
   'consecutiveDivYears', 'sum', 'recentDividends', 'lerpScore', 'it',
   'fmtNum', 'fmtMoney', 'fmtPct', 'fmtDate', 'valueAnalysis', 'valueScores',
-  'fairPe', 'bisectBuy', 'priceReferences', 'fraudAnalysis', 'managementAnalysis', 'cycleAnalysis'];
+  'fairPe', 'bisectBuy', 'priceReferences', 'fraudAnalysis', 'managementAnalysis', 'cycleAnalysis', 'cycleHistory', 'cycleTrendOf'];
 
 let code = SRC.match(/var BOND_10Y = [\d.]+;/)[0] + '\n';
 for (const n of NAMES) {
@@ -34,10 +34,10 @@ for (const n of NAMES) {
   if (!f) throw new Error('missing function: ' + n);
   code += f + '\n';
 }
-code += '\nmodule.exports = { valueAnalysis: valueAnalysis, valueScores: valueScores, priceReferences: priceReferences, fraudAnalysis: fraudAnalysis, managementAnalysis: managementAnalysis, cycleAnalysis: cycleAnalysis };\n';
+code += '\nmodule.exports = { valueAnalysis: valueAnalysis, valueScores: valueScores, priceReferences: priceReferences, fraudAnalysis: fraudAnalysis, managementAnalysis: managementAnalysis, cycleAnalysis: cycleAnalysis, cycleHistory: cycleHistory, cycleTrendOf: cycleTrendOf };\n';
 fs.writeFileSync(path.join(__dirname, '_score_check_funcs.js'), code);
 
-const { valueAnalysis, valueScores, priceReferences, fraudAnalysis, managementAnalysis, cycleAnalysis } = require('./_score_check_funcs.js');
+const { valueAnalysis, valueScores, priceReferences, fraudAnalysis, managementAnalysis, cycleAnalysis, cycleHistory, cycleTrendOf } = require('./_score_check_funcs.js');
 const DATA = path.join(__dirname, '..', 'data', 'companies');
 const out = {};
 for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
@@ -48,6 +48,7 @@ for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
     const fa = fraudAnalysis(d);
     const ma = managementAnalysis(d);
     const ca = cycleAnalysis(d);
+    const cycTrend = ca && ca.total != null ? cycleTrendOf(cycleHistory(d)) : null;
     out[d.code] = {
       grahamAgg: sc.grahamAgg.total, grahamDef: sc.grahamDef.total, schloss: sc.schloss.total, buffett: sc.buffett.total,
       priceRefs: priceReferences(d, va),
@@ -55,7 +56,9 @@ for (const f of fs.readdirSync(DATA).filter((x) => x.endsWith('.json'))) {
       mgmt: ma ? ma.total : null,
       cycle: ca ? ca.total : null,
       cyclical: ca ? ca.cyclical : null,
-      cyclicalScore: ca ? ca.cyclicalScore : null
+      cyclicalScore: ca ? ca.cyclicalScore : null,
+      cycleHistory: ca && ca.total != null ? cycleHistory(d) : [],
+      cycleTrend: cycTrend
     };
   } catch (e) {
     out[d.code] = { error: String(e) };

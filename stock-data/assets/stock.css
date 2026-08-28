@@ -1411,3 +1411,16 @@
   font-variant-numeric: tabular-nums;
   cursor: default;
 }
+
+/* 周期趋势图标（列表宽表/移动端徽标共用）：反转/上行 ▲绿、筑底 ◆琥珀、下行 ▼红 */
+.cy-t {
+  display: inline-block;
+  margin-left: 3px;
+  font-style: normal;
+  font-size: 0.82em;
+  line-height: 1;
+  cursor: default;
+}
+.cy-t.cy-up { color: #1e7e44; }
+.cy-t.cy-flat { color: #b07a10; }
+.cy-t.cy-down { color: #c0392b; }
