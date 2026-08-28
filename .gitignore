@@ -21,6 +21,10 @@ stock-data/_dump_out.txt
 stock-data/_test_annual.pdf
 stock-data/assets/echarts.min.js
 stock-data/scripts/_score_check_funcs.js
+stock-data/scripts/_screen_cache.json
+stock-data/scripts/_screen_result.json
+stock-data/scripts/_screen_*.json
+stock-data/scripts/_tmp_*
 
 # D&D 文字冒险素材与未授权文本（不入库）
 dnd-table/de-src/
