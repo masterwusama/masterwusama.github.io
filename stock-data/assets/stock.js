@@ -289,8 +289,8 @@
       '<div class="s-flt-row"><span class="s-flt-t">买点（多选需同时满足）</span>' +
       fltCb('buy', 'grahamAgg', '格进取') + fltCb('buy', 'grahamDef', '格防御') +
       fltCb('buy', 'schloss', '施洛斯') + fltCb('buy', 'buffett', '巴菲特') +
-      '<label class="s-flt-num s-flt-disc" title="买点门槛 × 折扣%，如填 80 则要求现价 ≤ 买价×80%；仅勾选买点后可用，留空等同 100%">打折促销 ' +
-      '<input id="flt-disc" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="100" value="' + fltVal(state.flt.discount) + '"' +
+      '<label class="s-flt-num s-flt-disc" title="买点门槛 × 折扣%，如填 80 则要求现价 ≤ 买价×80%，填 120 则放宽到买价×120%（即现价距买点 20% 以内）；仅勾选买点后可用，留空等同 100%">打折促销 ' +
+      '<input id="flt-disc" type="number" min="0" max="500" step="1" inputmode="numeric" placeholder="100" value="' + fltVal(state.flt.discount) + '"' +
       (state.flt.buys.length ? '' : ' disabled') + '> %</label>' +
       '</div>' +
       '<div class="s-flt-row"><span class="s-flt-t">卖点（多选需同时满足，须同时达到保守与公允）</span>' +
@@ -373,12 +373,12 @@
       applyFilters();
     });
 
-    // 筛选面板：数值输入即时生效（0~100 钳制，越界/非法值失焦时回写钳制后的值）
+    // 筛选面板：数值输入即时生效（0~上限钳制，越界/非法值失焦时回写钳制后的值；打折促销上限 500）
     var fFraud = $('flt-fraud'), fMgmt = $('flt-mgmt'), fDisc = $('flt-disc');
-    function bindNumInput(el, key) {
+    function bindNumInput(el, key, max) {
       if (!el) return;
       el.addEventListener('input', function () {
-        state.flt[key] = clampInt(el.value);
+        state.flt[key] = clampInt(el.value, max);
         applyFilters();
       });
       el.addEventListener('change', function () {
@@ -387,7 +387,7 @@
     }
     bindNumInput(fFraud, 'fraudMax');
     bindNumInput(fMgmt, 'mgmtMin');
-    bindNumInput(fDisc, 'discount');
+    bindNumInput(fDisc, 'discount', 500);
     // 买点/卖点复选：多选代表同时满足；勾选买点才解锁打折促销输入
     box.querySelectorAll('[data-flt-buy]').forEach(function (cb) {
       cb.addEventListener('change', function () {
@@ -638,12 +638,12 @@
       (arr.indexOf(k) >= 0 ? ' checked' : '') + '>' + label + '</label>';
   }
 
-  // 0~100 正整数钳制：空/非法值返回 null（不过滤），越界钳到边界（输入框 min/max 双重保险）
-  function clampInt(v) {
+  // 0~上限正整数钳制（默认上限 100）：空/非法值返回 null（不过滤），越界钳到边界（输入框 min/max 双重保险）
+  function clampInt(v, max) {
     if (v == null || String(v).trim() === '') return null;
     var n = parseInt(v, 10);
     if (isNaN(n)) return null;
-    return Math.max(0, Math.min(100, n));
+    return Math.max(0, Math.min(max == null ? 100 : max, n));
   }
 
   // 数组勾选切换（防重复）
