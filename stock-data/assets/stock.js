@@ -409,11 +409,12 @@
         renderList();
       });
     }
-    // 移动端筛选面板展开/收起（与排序面板同机制）
+    // 移动端筛选面板展开/收起（与排序面板互斥：同时只展开一个，避免叠加占满屏高）
     var fltToggle = $('stock-flt-toggle');
     if (fltToggle) {
       fltToggle.addEventListener('click', function () {
         state.fltOpen = !state.fltOpen;
+        if (state.fltOpen) state.sortOpen = false;
         renderList();
       });
     }
@@ -426,11 +427,12 @@
       });
     });
 
-    // 移动端排序面板展开/收起
+    // 移动端排序面板展开/收起（与筛选面板互斥）
     var sortToggle = $('stock-sort-toggle');
     if (sortToggle) {
       sortToggle.addEventListener('click', function () {
         state.sortOpen = !state.sortOpen;
+        if (state.sortOpen) state.fltOpen = false;
         renderList();
       });
     }

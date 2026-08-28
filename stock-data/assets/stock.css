@@ -1160,15 +1160,48 @@
 
 /* ---- 小屏适配（必须放在所有基础规则之后，避免同特异性规则被后定义覆盖） ---- */
 @media (max-width: 600px) {
-  /* 工具栏（Tab/搜索/排序）整组吸顶：滚动时切市场/搜索/排序无需回顶部 */
+  /* 移动端工具栏紧凑网格：收起态仅两行（市场Tab+搜索 / 筛选+排序摘要按钮），
+     展开面板跨行显示（.s-filter/.s-sort 以 display:contents 让子元素直接参与网格排布），
+     占用屏高从约 1/4 降为一行摘要 + 一个搜索框 */
   .s-toolbar {
     position: sticky;
     top: 0;
     z-index: 50;
     background: #fff;
-    padding: 6px 2px 8px;
+    padding: 6px 2px;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
     margin: -4px 0 4px;
+    display: grid;
+    /* 左列上限 52%（百分比基于网格内容盒，不受 vw/滚动条差异影响），防止长摘要挤没搜索列 */
+    grid-template-columns: minmax(0, 52%) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  /* 行 1：市场 Tab（左）+ 搜索框（右，占满余宽） */
+  .s-tabs {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    gap: 4px;
+  }
+
+  .s-tab {
+    padding: 4px 9px;
+    font-size: 12px;
+  }
+
+  .stock-search-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    min-width: 0;
+  }
+
+  #stock-search {
+    width: 100%;
+    max-width: none;
+    padding: 5px 8px;
+    font-size: 12px;
   }
 
   /* 买入性价比排序分组分隔（移动端卡片流专用） */
@@ -1187,32 +1220,59 @@
     margin: 0 8px;
   }
 
-  /* 排序折叠面板：默认收起为一行摘要，展开显示全部按钮 */
+  /* 筛选/排序容器去盒子化：其按钮与面板直接参与工具栏网格排布 */
+  .s-filter,
   .s-sort {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    display: contents;
   }
 
-  /* 筛选折叠面板：与排序面板同机制，默认收起为条件摘要，展开显示全部控件 */
-  .s-filter-toggle {
+  /* 行 2：筛选与排序摘要按钮并排各占一格，长摘要省略号收进（JS 互斥保证同时只展开一个面板） */
+  .s-filter-toggle,
+  .s-sort-toggle {
     display: block;
-    width: 100%;
-    padding: 8px 10px;
-    font-size: 13px;
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 12px;
     color: #4a6076;
     background: #f3f6fa;
     border: 1px solid #e3e8f0;
     border-radius: 8px;
     text-align: left;
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .s-filter-toggle:active {
+  .s-filter-toggle {
+    grid-area: 2 / 1;
+  }
+
+  .s-sort-toggle {
+    grid-area: 2 / 2;
+  }
+
+  .s-filter-toggle:active,
+  .s-sort-toggle:active {
     background: #e8eef7;
   }
 
-  .s-filter.s-filter-folded .s-filter-body {
+  /* 展开面板跨两列落在摘要行下方；两面板同格子（互斥展开不会重叠），
+     收起态 display:none 不创建网格行，不占用高度 */
+  .s-filter-body,
+  .s-sort-body {
+    grid-area: 3 / 1 / 4 / 3;
+  }
+
+  .s-sort-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .s-filter.s-filter-folded .s-filter-body,
+  .s-sort.s-sort-folded .s-sort-body {
     display: none;
   }
 
@@ -1223,34 +1283,6 @@
 
   .s-flt-row {
     font-size: 13px;
-  }
-
-  .s-sort-body {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .s-sort.s-sort-folded .s-sort-body {
-    display: none;
-  }
-
-  .s-sort-toggle {
-    display: block;
-    width: 100%;
-    padding: 8px 10px;
-    font-size: 13px;
-    color: #4a6076;
-    background: #f3f6fa;
-    border: 1px solid #e3e8f0;
-    border-radius: 8px;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .s-sort-toggle:active {
-    background: #e8eef7;
   }
 
   .s-sort button {
