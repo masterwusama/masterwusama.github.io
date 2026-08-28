@@ -9,7 +9,9 @@
   var $ = function (id) { return document.getElementById(id); };
   var state = { companies: [], current: null, charts: [], view: 'year',
     indexUpdatedAt: null, listScroll: 0, keyword: '', tab: 'A',
-    scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc', sortOpen: false };
+    scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc', sortOpen: false,
+    // 筛选条件：造假风险≤ / 管理能力≥ / 买点（多选同满，可乘打折促销%）/ 卖点（多选同满，须同时达保守与公允）
+    flt: { fraudMax: null, mgmtMin: null, buys: [], discount: null, sells: [] }, fltOpen: false };
 
   // 移动端断点（与 CSS @media max-width:600px 保持一致）：宽表切换卡片流、详情长列表折叠
   var mqMobile = window.matchMedia('(max-width: 600px)');
@@ -254,10 +256,9 @@
     if (!state.scoresLoaded) fetchScores();
   }
 
-  // 渲染列表（市场 Tab 过滤 + 搜索过滤 + 评分排序 + 宽表展示），重建 DOM 后重新绑定交互
+  // 渲染列表（市场 Tab 过滤 + 搜索/条件筛选 + 评分排序 + 宽表展示），重建 DOM 后重新绑定交互
   function renderList() {
     var box = $('stock-list');
-    var kw = (state.keyword || '').trim().toLowerCase();
     var list = sortCompanies().filter(function (c) { return c.market === state.tab; });
     // 市场 Tab：A股/港股/美股 分流展示（带各市场数量），切换仅过滤不重拉数据
     var tabLabels = { A: 'A股', HK: '港股', US: '美股' };
@@ -274,6 +275,31 @@
       '<div class="stock-search-wrap">' +
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>' +
+      '<div class="s-filter' + (isMobile && !state.fltOpen ? ' s-filter-folded' : '') + '">' +
+      // 移动端折叠面板：默认收起为一行摘要（含已启用条件概览），与排序面板同样式风格
+      (isMobile ? '<button type="button" class="s-filter-toggle" id="stock-flt-toggle" ' +
+        'aria-expanded="' + (state.fltOpen ? 'true' : 'false') + '">' + fltToggleLabel() + '</button>' : '') +
+      '<div class="s-filter-body">' +
+      '<div class="s-flt-row">' +
+      '<label class="s-flt-num" title="财报造假可能性（0-100，越高越可疑），只保留 ≤ 该分的公司">造假风险 ≤ ' +
+      '<input id="flt-fraud" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="不限" value="' + fltVal(state.flt.fraudMax) + '"></label>' +
+      '<label class="s-flt-num" title="管理层管理水平（0-100，越高越好），只保留 ≥ 该分的公司">管理能力 ≥ ' +
+      '<input id="flt-mgmt" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="不限" value="' + fltVal(state.flt.mgmtMin) + '"></label>' +
+      '</div>' +
+      '<div class="s-flt-row"><span class="s-flt-t">买点（多选需同时满足）</span>' +
+      fltCb('buy', 'grahamAgg', '格进取') + fltCb('buy', 'grahamDef', '格防御') +
+      fltCb('buy', 'schloss', '施洛斯') + fltCb('buy', 'buffett', '巴菲特') +
+      '<label class="s-flt-num s-flt-disc" title="买点门槛 × 折扣%，如填 80 则要求现价 ≤ 买价×80%；仅勾选买点后可用，留空等同 100%">打折促销 ' +
+      '<input id="flt-disc" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="100" value="' + fltVal(state.flt.discount) + '"' +
+      (state.flt.buys.length ? '' : ' disabled') + '> %</label>' +
+      '</div>' +
+      '<div class="s-flt-row"><span class="s-flt-t">卖点（多选需同时满足，须同时达到保守与公允）</span>' +
+      fltCb('sell', 'grahamAgg', '格进取') + fltCb('sell', 'grahamDef', '格防御') +
+      fltCb('sell', 'schloss', '施洛斯') + fltCb('sell', 'buffett', '巴菲特') +
+      '</div>' +
+      '<div class="s-flt-row"><button type="button" id="flt-reset">重置筛选</button>' +
+      '<span class="s-flt-hint">买：现价 ≤ 买价×折扣；卖：现价 ≥ 保守卖价且 ≥ 公允卖价；缺数据的公司自动排除</span></div>' +
+      '</div></div>' +
       '<div class="s-sort' + (isMobile && !state.sortOpen ? ' s-sort-folded' : '') + '">' +
       // 移动端折叠面板：默认收起（仅一行摘要），点开才显示全部排序按钮，避免占用屏高
       (isMobile ? '<button type="button" class="s-sort-toggle" id="stock-sort-toggle" ' +
@@ -330,7 +356,6 @@
       '</tr></thead><tbody>';
     list.forEach(function (c) {
       var k = (c.name + ' ' + c.code).toLowerCase();
-      if (kw && k.indexOf(kw) < 0) return;
       html += '<tr class="stock-row" data-k="' + k + '" data-code="' + c.code + '" ' +
         'data-price="' + (c.price == null ? '' : c.price) + '" tabindex="0" role="link">' +
         listCells(c) + '</tr>';
@@ -341,19 +366,57 @@
     html += '<div class="stock-list-foot">数据更新于 ' + fmtFullDate(state.indexUpdatedAt) + '</div>';
     box.innerHTML = html;
 
-    // 搜索框输入即时过滤（名称/代码模糊匹配）
+    // 搜索框输入即时过滤（名称/代码模糊匹配，与筛选条件叠加）
     var input = $('stock-search');
     input.addEventListener('input', function () {
       state.keyword = input.value;
-      var q = state.keyword.trim().toLowerCase();
-      var shown = 0;
-      box.querySelectorAll('.stock-row').forEach(function (row) {
-        var hit = !q || (row.getAttribute('data-k') || '').indexOf(q) >= 0;
-        row.style.display = hit ? '' : 'none';
-        if (hit) shown++;
-      });
-      $('stock-search-empty').style.display = shown ? 'none' : '';
+      applyFilters();
     });
+
+    // 筛选面板：数值输入即时生效（0~100 钳制，越界/非法值失焦时回写钳制后的值）
+    var fFraud = $('flt-fraud'), fMgmt = $('flt-mgmt'), fDisc = $('flt-disc');
+    function bindNumInput(el, key) {
+      if (!el) return;
+      el.addEventListener('input', function () {
+        state.flt[key] = clampInt(el.value);
+        applyFilters();
+      });
+      el.addEventListener('change', function () {
+        el.value = state.flt[key] == null ? '' : state.flt[key];
+      });
+    }
+    bindNumInput(fFraud, 'fraudMax');
+    bindNumInput(fMgmt, 'mgmtMin');
+    bindNumInput(fDisc, 'discount');
+    // 买点/卖点复选：多选代表同时满足；勾选买点才解锁打折促销输入
+    box.querySelectorAll('[data-flt-buy]').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        fltToggleArr(state.flt.buys, cb.getAttribute('data-flt-buy'), cb.checked);
+        if (fDisc) fDisc.disabled = !state.flt.buys.length;
+        applyFilters();
+      });
+    });
+    box.querySelectorAll('[data-flt-sell]').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        fltToggleArr(state.flt.sells, cb.getAttribute('data-flt-sell'), cb.checked);
+        applyFilters();
+      });
+    });
+    var fReset = $('flt-reset');
+    if (fReset) {
+      fReset.addEventListener('click', function () {
+        state.flt = { fraudMax: null, mgmtMin: null, buys: [], discount: null, sells: [] };
+        renderList();
+      });
+    }
+    // 移动端筛选面板展开/收起（与排序面板同机制）
+    var fltToggle = $('stock-flt-toggle');
+    if (fltToggle) {
+      fltToggle.addEventListener('click', function () {
+        state.fltOpen = !state.fltOpen;
+        renderList();
+      });
+    }
 
     // 市场 Tab 切换：仅重渲染当前列表，保留搜索词与排序状态
     box.querySelectorAll('.s-tab').forEach(function (btn) {
@@ -409,6 +472,9 @@
         applySort(el.getAttribute('data-sort'));
       });
     });
+
+    // 关键词 + 筛选条件统一应用到所有行（宽表与卡片流共用）
+    applyFilters();
 
     // 从详情返回时恢复滚动位置
     if (state.listScroll) window.scrollTo(0, state.listScroll);
@@ -556,6 +622,97 @@
         '</div>';
     }).join('') + '</div>';
     return h + '</div>';
+  }
+
+  /* ---------------- 列表条件筛选 ---------------- */
+
+  // 筛选数值输入渲染值（空值显示占位符）
+  function fltVal(v) { return v == null ? '' : v; }
+
+  // 买点/卖点复选框 HTML（勾选状态从 state.flt 回显）
+  function fltCb(kind, k, label) {
+    var arr = kind === 'buy' ? state.flt.buys : state.flt.sells;
+    return '<label class="s-flt-cb"><input type="checkbox" data-flt-' + kind + '="' + k + '"' +
+      (arr.indexOf(k) >= 0 ? ' checked' : '') + '>' + label + '</label>';
+  }
+
+  // 0~100 正整数钳制：空/非法值返回 null（不过滤），越界钳到边界（输入框 min/max 双重保险）
+  function clampInt(v) {
+    if (v == null || String(v).trim() === '') return null;
+    var n = parseInt(v, 10);
+    if (isNaN(n)) return null;
+    return Math.max(0, Math.min(100, n));
+  }
+
+  // 数组勾选切换（防重复）
+  function fltToggleArr(arr, k, checked) {
+    var i = arr.indexOf(k);
+    if (checked && i < 0) arr.push(k);
+    if (!checked && i >= 0) arr.splice(i, 1);
+  }
+
+  function fltActive() {
+    var f = state.flt;
+    return f.fraudMax != null || f.mgmtMin != null || f.buys.length > 0 || f.sells.length > 0;
+  }
+
+  // 移动端筛选面板触发按钮文案：展开态“收起”，收起态显示已启用条件摘要（未启用则提示）
+  function fltToggleLabel() {
+    if (state.fltOpen) return '收起筛选 ▲';
+    var f = state.flt, parts = [];
+    if (f.fraudMax != null) parts.push('造假≤' + f.fraudMax);
+    if (f.mgmtMin != null) parts.push('管理≥' + f.mgmtMin);
+    if (f.buys.length) parts.push(f.buys.length + '个买点' + (f.discount != null ? '×' + f.discount + '%' : ''));
+    if (f.sells.length) parts.push(f.sells.length + '个卖点');
+    return parts.length ? '筛选：' + parts.join(' · ') + ' ▾' : '筛选条件 ▾';
+  }
+
+  // 单家公司是否通过筛选（各条件取交集）；依赖的评分/参考价/现价缺失时视为不满足自动排除。
+  // 买点：现价 ≤ 买价×折扣%；卖点：现价须同时 ≥ 保守卖价与公允卖价（任一缺失即不满足）
+  function passFilter(c) {
+    if (!fltActive()) return true;
+    var f = state.flt;
+    var sc = state.scores[c.code] || null;
+    if (f.fraudMax != null) {
+      if (!sc || sc.fraud == null || sc.fraud > f.fraudMax) return false;
+    }
+    if (f.mgmtMin != null) {
+      if (!sc || sc.mgmt == null || sc.mgmt < f.mgmtMin) return false;
+    }
+    var refs = sc ? sc.priceRefs : null;
+    var cur = c.price;
+    var disc = (f.discount != null && f.buys.length) ? f.discount / 100 : 1;
+    var i, r;
+    for (i = 0; i < f.buys.length; i++) {
+      r = refs && refs[f.buys[i]] ? refs[f.buys[i]] : null;
+      if (!r || r.buy == null || cur == null || cur > r.buy * disc) return false;
+    }
+    for (i = 0; i < f.sells.length; i++) {
+      r = refs && refs[f.sells[i]] ? refs[f.sells[i]] : null;
+      if (!r || cur == null || r.sellCons == null || r.sellFair == null ||
+        cur < r.sellCons || cur < r.sellFair) return false;
+    }
+    return true;
+  }
+
+  // 关键词 + 筛选条件统一应用到当前列表所有行（宽表 tr 与移动端卡片共用 .stock-row），
+  // 同步刷新“未找到匹配的公司”提示；评分渐进加载完成后也会重调本函数逐步放行满足的行
+  function applyFilters() {
+    var box = $('stock-list');
+    if (!box) return;
+    var q = (state.keyword || '').trim().toLowerCase();
+    var byCode = {};
+    state.companies.forEach(function (c) { byCode[c.code] = c; });
+    var shown = 0;
+    box.querySelectorAll('.stock-row').forEach(function (row) {
+      var code = row.getAttribute('data-code');
+      var kwHit = !q || (row.getAttribute('data-k') || '').indexOf(q) >= 0;
+      var hit = kwHit && (!byCode[code] || passFilter(byCode[code]));
+      row.style.display = hit ? '' : 'none';
+      if (hit) shown++;
+    });
+    var empty = $('stock-search-empty');
+    if (empty) empty.style.display = shown ? 'none' : '';
   }
 
   /* ---------------- 列表评分预载与排序 ---------------- */
@@ -853,6 +1010,8 @@
         td.innerHTML = p == null ? (td.classList.contains('sl-f') ? '' : '-') : fmtNum(p);
       }
     });
+    // 评分补填完成后重新应用筛选：满足条件的行逐步放行，依赖缺失的行保持隐藏（仅在筛选已启用时才有实际开销）
+    if (fltActive()) applyFilters();
   }
 
   function fetchIndex() {
