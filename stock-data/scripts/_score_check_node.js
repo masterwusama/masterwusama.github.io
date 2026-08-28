@@ -23,7 +23,7 @@ function extractFunc(name) {
 }
 
 const NAMES = ['annualRows', 'ttmNetProfit', 'shareCount', 'latestField', 'epsTtmField',
-  'sheetRowByDate', 'annualBalanceRows', 'cagr', 'perShareDiv',
+  'sheetRowByDate', 'annualBalanceRows', 'arOf', 'cagr', 'perShareDiv',
   'consecutiveDivYears', 'sum', 'recentDividends', 'lerpScore', 'it',
   'fmtNum', 'fmtMoney', 'fmtPct', 'fmtDate', 'valueAnalysis', 'valueScores',
   'fairPe', 'bisectBuy', 'priceReferences', 'fraudAnalysis', 'managementAnalysis', 'cycleAnalysis', 'cycleHistory', 'cycleTrendOf'];

@@ -46,6 +46,14 @@ def annual_balance_rows(rows):
     return sorted(rows, key=lambda r: str(r.get('报告日') or ''))
 
 
+def ar_of(row):
+    """对应 JS arOf：应收账款读取（港股报表科目为“应收帐款”，双科目兼容，优先 A 股口径）"""
+    if not row:
+        return None
+    v = row.get('应收账款')
+    return v if v is not None else row.get('应收帐款')
+
+
 def cagr(cur, prev, years):
     # cur ≤ 0 时负基数开小数次方为复数，无实数解，返回 None（与 JS 一致）
     if cur is None or prev is None or prev <= 0 or cur <= 0 or not years:
@@ -197,6 +205,20 @@ def value_scores(d, va, k=1.0, use_fundamental=False):
     last_ba = sheet_row_by_date(ba_list, last_date) if last_date else None
     s = d.get('snapshot') or {}
     mcap, pe, pb = s.get('market_cap'), s.get('pe_ttm'), s.get('pb')
+    # 快照缺 PB（腾讯行情不返回美股 PB）时用财报每股净资产补算：股价÷每股净资产，缺则归母权益/股本反推；
+    # 仅 k=1（当期评分）时补算，k≠1 的缩放分支已由财报驱动精确计算，两者口径一致（与 JS valueScores 镜像）
+    if pb is None and k == 1.0:
+        bps_fb = _latest_field(d.get('indicators') or [], '每股净资产')
+        if bps_fb is None and last_ba is not None:
+            eq_fb = last_ba.get('归属于母公司股东权益合计')
+            if eq_fb is None:
+                eq_fb = last_ba.get('所有者权益(或股东权益)合计')
+            sh_fb = _share_count(d.get('balance') or [],
+                                 (mcap / s.get('price')) if (mcap is not None and s.get('price')) else None, None)
+            if eq_fb is not None and sh_fb:
+                bps_fb = eq_fb / sh_fb
+        if bps_fb is not None and bps_fb > 0 and s.get('price') is not None and s.get('price') > 0:
+            pb = s.get('price') / bps_fb
     if k != 1.0 or use_fundamental:
         p0 = s.get('price')
         # 每股净资产优先用指标字段（数据源按财报算好、随财报更新），缺则财报权益/股本
@@ -389,8 +411,8 @@ def value_scores(d, va, k=1.0, use_fundamental=False):
     adj_net = [r.get('扣非净利润') for r in annual[-5:]]
     adj_loss_n = len([v for v in adj_net if v is not None and v < 0])
     adj_valid = len([v for v in adj_net if v is not None])
-    # 应收账款/营收 3 年年报均值（位置对齐，缺失年忽略）
-    ar3 = [r.get('应收账款') for r in ba_annual[-3:]]
+    # 应收账款/营收 3 年年报均值（位置对齐，缺失年忽略；港股“应收帐款”科目兼容）
+    ar3 = [ar_of(r) for r in ba_annual[-3:]]
     rev3 = [r.get('营业总收入') for r in in_annual[-3:]]
     ar_rev3 = None
     if len(ar3) == 3 and len(rev3) == 3:
@@ -740,8 +762,8 @@ def fraud_analysis(d):
     ocf = last_cf.get('经营活动产生的现金流量净额') if last_cf else None
     sold_cash = last_cf.get('销售商品、提供劳务收到的现金') if last_cf else None
     assets = last_ba.get('资产总计') if last_ba else None
-    ar = last_ba.get('应收账款') if last_ba else None
-    ar_prev = prev_ba.get('应收账款') if prev_ba else None
+    ar = ar_of(last_ba)
+    ar_prev = ar_of(prev_ba)
     inv = last_ba.get('存货') if last_ba else None
     inv_prev = prev_ba.get('存货') if prev_ba else None
     other_ar = None
@@ -847,12 +869,15 @@ def management_analysis(d):
     adm_exp = last_inc.get('管理费用') if last_inc else None
     fin_exp = last_inc.get('财务费用') if last_inc else None
     assets = last_ba.get('资产总计') if last_ba else None
-    ar = last_ba.get('应收账款') if last_ba else None
+    ar = ar_of(last_ba)
     inv = last_ba.get('存货') if last_ba else None
 
-    # 1. 三费率：任一费用存在则缺失项按 0 计（与 JS (x||0) 一致）
+    # 1. 三费率：任一费用存在则缺失项按 0 计（与 JS (x||0) 一致）；
+    # 三费科目全缺（港股/美股报表口径）时回退替代科目近似计算：美股“营业费用”、港股“销售及分销费用”
     fees = [sell_exp, adm_exp, fin_exp]
     fee_sum = sum(f for f in fees if f is not None) if any(f is not None for f in fees) else None
+    if fee_sum is None and last_inc is not None:
+        fee_sum = last_inc.get('营业费用') if last_inc.get('营业费用') is not None else last_inc.get('销售及分销费用')
     fee_ratio = fee_sum / rev if (fee_sum is not None and rev is not None and rev > 0) else None
     # 2. 总资产周转率 = 营收 ÷ 总资产
     turnover = rev / assets if (rev is not None and assets is not None and assets > 0) else None

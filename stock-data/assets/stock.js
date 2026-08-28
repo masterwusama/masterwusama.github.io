@@ -168,6 +168,13 @@
       .sort(function (a, b) { return a['报告日'] < b['报告日'] ? -1 : 1; });
   }
 
+  // 应收账款读取（港股报表科目为“应收帐款”，双科目兼容，优先 A 股口径）
+  function arOf(row) {
+    if (!row) return null;
+    var v = row['应收账款'];
+    return v != null ? v : row['应收帐款'];
+  }
+
   // 复合增长率：cur 较 prev 跨越 years 年；任一端 ≤ 0 时比率开小数次方无实数解，返回 null
   function cagr(cur, prev, years) {
     if (cur == null || prev == null || prev <= 0 || cur <= 0 || !years) return null;
@@ -1459,6 +1466,17 @@
     var lastBa = lastDate ? sheetRowByDate(baList, lastDate) : null;
     var s = d.snapshot || {};
     var mcap = s.market_cap, pe = s.pe_ttm, pb = s.pb;
+    // 快照缺 PB（腾讯行情不返回美股 PB）时用财报每股净资产补算：股价÷每股净资产，缺则归母权益/股本反推；
+    // 仅 k=1（当期评分）时补算，k≠1 的缩放分支已由财报驱动精确计算，两者口径一致（均随财报变动、不随行情舍入漂移）
+    if (pb == null && k === 1) {
+      var bpsFb = latestField(d.indicators, '每股净资产');
+      if (bpsFb == null && lastBa != null) {
+        var eqFb = lastBa['归属于母公司股东权益合计'] != null ? lastBa['归属于母公司股东权益合计'] : lastBa['所有者权益(或股东权益)合计'];
+        var shFb = shareCount(d.balance, (mcap != null && s.price != null && s.price > 0) ? mcap / s.price : null, null);
+        if (eqFb != null && shFb) bpsFb = eqFb / shFb;
+      }
+      if (bpsFb != null && bpsFb > 0 && s.price != null && s.price > 0) pb = s.price / bpsFb;
+    }
     if (k !== 1 || useFundamental) {
       var p0 = s.price;
       // 每股净资产优先用指标字段（数据源按财报算好、随财报更新），缺则财报权益/股本
@@ -1613,8 +1631,8 @@
     var adjNet = annual.slice(-5).map(function (r) { return r['扣非净利润']; });
     var adjLossN = adjNet.filter(function (v) { return v != null && v < 0; }).length;
     var adjValid = adjNet.filter(function (v) { return v != null; }).length;
-    // 应收账款/营收 3 年年报均值（位置对齐，缺失年忽略）
-    var ar3 = baAnnual.slice(-3).map(function (r) { return r['应收账款']; });
+    // 应收账款/营收 3 年年报均值（位置对齐，缺失年忽略；港股“应收帐款”科目兼容）
+    var ar3 = baAnnual.slice(-3).map(arOf);
     var rev3 = inAnnual.slice(-3).map(function (r) { return r['营业总收入']; });
     var arRev3 = (ar3.length === 3 && rev3.length === 3) ? sum(ar3) / sum(rev3) : null;
     // 近3年累计经营现金流 vs 累计利息费用
@@ -1705,15 +1723,22 @@
       moatNote = '最新年报未披露无形资产/商誉明细，无法量化评估特许经营资产。';
     }
 
+    // 有效满分/缺维数：数据缺失项不计分也不计入满分，总分实际按有效满分折算，需向用户标注（跨市场可比性）
+    function effOf(arr) {
+      var mx = 0, miss = 0;
+      arr.forEach(function (x) { if (x.score != null) mx += x.max; else miss += 1; });
+      return { max: mx, miss: miss };
+    }
+
     return {
       basis: basis,
-      grahamAgg: { title: '进取型烟蒂 · net-net（低于净流动资产买入）', total: gATotal, items: gA,
+      grahamAgg: { title: '进取型烟蒂 · net-net（低于净流动资产买入）', total: gATotal, items: gA, eff: effOf(gA),
         note: '格雷厄姆 net-net 思路：以低于净流动资产（流动资产-全部负债）2/3 的价格买入，赚取清算价值与市价之差。得分越高代表越接近“捡烟蒂”状态。' },
-      grahamDef: { title: '防御型烟蒂 · 防御型投资者标准', total: gDTotal, items: gD,
+      grahamDef: { title: '防御型烟蒂 · 防御型投资者标准', total: gDTotal, items: gD, eff: effOf(gD),
         note: '对应《聪明的投资者》第 14 章防御型投资者选股标准（规模/流动比率/长期负债/盈利稳定/分红历史/盈利增长/估值）。规模为硬门槛（总资产≥100亿），关键安全项（流动比率<1、营运资本为负、近5年过半亏损、净利负增长）直接负分惩罚，比进取型更严格。' },
-      schloss: { title: '施洛斯烟蒂 · 资产折扣+低估值+低负债', total: sTotal, items: sItems.concat(riskItems),
+      schloss: { title: '施洛斯烟蒂 · 资产折扣+低估值+低负债', total: sTotal, items: sItems.concat(riskItems), eff: effOf(sItems),
         note: '沃尔特·施洛斯风格：以低于净资产/流动资产的价格买入、负债极低、有股息，分散持有等待价值回归。风险扣分项为量化危险信号：净资产萎缩/扣非亏损、商誉无形与应收存货减值结构、有息负债攀升与利息覆盖不足、营收毛利率趋势溃败，数据不足不扣分；管理层掏空等无公开量化数据的信号未纳入。' },
-      buffett: { title: '巴菲特芒格 · 优质企业合理价格+护城河', total: bTotal, items: bItems.concat(moatItems),
+      buffett: { title: '巴菲特芒格 · 优质企业合理价格+护城河', total: bTotal, items: bItems.concat(moatItems), eff: effOf(bItems.concat(moatItems)),
         note: moatNote }
     };
   }
@@ -1740,8 +1765,8 @@
     var ocf = lastCf ? lastCf['经营活动产生的现金流量净额'] : null;
     var soldCash = lastCf ? lastCf['销售商品、提供劳务收到的现金'] : null;
     var assets = lastBa ? lastBa['资产总计'] : null;
-    var ar = lastBa ? lastBa['应收账款'] : null;
-    var arPrev = prevBa ? prevBa['应收账款'] : null;
+    var ar = arOf(lastBa);
+    var arPrev = arOf(prevBa);
     var inv = lastBa ? lastBa['存货'] : null;
     var invPrev = prevBa ? prevBa['存货'] : null;
     var otherAr = lastBa ? (lastBa['其他应收款'] != null ? lastBa['其他应收款'] : lastBa['其他应收款(合计)']) : null;
@@ -1844,14 +1869,21 @@
     var admExp = lastInc ? lastInc['管理费用'] : null;
     var finExp = lastInc ? lastInc['财务费用'] : null;
     var assets = lastBa ? lastBa['资产总计'] : null;
-    var ar = lastBa ? lastBa['应收账款'] : null;
+    var ar = arOf(lastBa);
     var inv = lastBa ? lastBa['存货'] : null;
     var roe = last ? (last['净资产收益率'] != null ? last['净资产收益率'] : last['净资产收益率-摊薄']) : null;
     var eps = last ? last['基本每股收益'] : null;
 
-    // 1. 三费率（销售＋管理＋财务费用）÷营收，越低越好（费用纪律/代理成本控制）
+    // 1. 三费率（销售＋管理＋财务费用）÷营收，越低越好（费用纪律/代理成本控制）；
+    // 三费科目全缺（港股/美股报表口径）时回退替代科目近似计算：美股“营业费用”（销售+管理+研发合计）、
+    // 港股“销售及分销费用”，避免整维缺失，口径为近似值（与三费合计不完全可比）
     var feeSum = (sellExp != null || admExp != null || finExp != null)
       ? (sellExp || 0) + (admExp || 0) + (finExp || 0) : null;
+    var feeLabel = '费用纪律：三费率（销售＋管理＋财务费用）÷营收';
+    if (feeSum == null && lastInc != null) {
+      feeSum = lastInc['营业费用'] != null ? lastInc['营业费用'] : lastInc['销售及分销费用'];
+      if (feeSum != null) feeLabel = '费用纪律：费用÷营收（营业费用/销售及分销费用近似口径）';
+    }
     var feeRatio = (feeSum != null && rev != null && rev > 0) ? feeSum / rev : null;
 
     // 2. 总资产周转率 = 营收 ÷ 总资产（资产运营效率）
@@ -1895,7 +1927,7 @@
     try { fraud = fraudAnalysis(d).total; } catch (e) { /* 造假分缺失不影响其余维度 */ }
 
     var items = [
-      it('费用纪律：三费率（销售＋管理＋财务费用）÷营收', fmtPct(feeRatio), '≤ 10%', 15, lerpScore(feeRatio, 0.10, 0.30, 15, 0)),
+      it(feeLabel, fmtPct(feeRatio), '≤ 10%', 15, lerpScore(feeRatio, 0.10, 0.30, 15, 0)),
       it('资产运营：总资产周转率（营收÷总资产）', turnover == null ? '-' : fmtNum(turnover), '≥ 1.0', 10, lerpScore(turnover, 0.2, 1.0, 0, 10)),
       it('资本回报：净资产收益率（年报）', fmtPct(roe), '≥ 15%', 20, lerpScore(roe, 0, 0.15, 0, 20)),
       it('成长质量：营收约5年CAGR', fmtPct(revCagr), '≥ 10%', 10, lerpScore(revCagr, 0, 0.10, 0, 10)),
@@ -1918,6 +1950,8 @@
   // 管理层评分卡（与 scoreCard 同构，等级方向高分=好=绿；符合度列 = 得分/权重）
   function managementCard(ma) {
     var g = gradeOf(ma.total);
+    var effMax = 0, missN = 0;
+    ma.items.forEach(function (x) { if (x.score != null) effMax += x.max; else missN += 1; });
     var rows = ma.items.map(function (x) {
       var mCls = x.match == null ? 'sc-na' : x.match >= 0.99 ? 'sc-good' : x.match >= 0.5 ? 'sc-mid' : 'sc-low';
       var mTxt = x.match == null ? '-' : (x.match * 100).toFixed(0) + '%';
@@ -1927,7 +1961,7 @@
     }).join('');
     return '<div class="score-card-head"><h4>' + ma.title + '</h4>' +
       '<div class="score-circle va-grade-' + g + '"><span>管理分</span><b>' + (ma.total == null ? '-' : fmtNum(ma.total)) + '</b><i>' + gradeText(g) + '</i></div></div>' +
-      '<p class="score-basis">' + ma.basis + '</p>' +
+      '<p class="score-basis">' + ma.basis + (missN ? '；⚠ ' + missN + ' 项数据缺失未计分，本卡按有效满分 ' + effMax + '/100 折算' : '') + '</p>' +
       '<div class="stock-compare-wrap"><table class="stock-compare">' +
       '<thead><tr><th>评判维度</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
@@ -2446,7 +2480,11 @@
     ];
     cards.forEach(function (trio) {
       var el = $(trio[0]);
-      if (el) el.innerHTML = scoreCard(trio[1].title, sc.basis, trio[1].total, trio[1].items, trio[1].note, trio[2], curPrice);
+      // 缺维标注：存在数据缺失项时标注有效满分，提醒总分非同口径 100 分制（跨市场可比性）
+      var eff = trio[1].eff;
+      var basis = sc.basis + (eff && eff.miss
+        ? '；⚠ ' + eff.miss + ' 项数据缺失未计分，本卡按有效满分 ' + eff.max + '/100 折算' : '');
+      if (el) el.innerHTML = scoreCard(trio[1].title, basis, trio[1].total, trio[1].items, trio[1].note, trio[2], curPrice);
     });
   }
 
