@@ -12,6 +12,9 @@
     格雷厄姆防御：保守卖出价→减至2/3、公允价→1/3、公允价×110%→清仓（纪律止盈）
     巴菲特芒格：保守价不卖、公允价→减至2/3、公允价×125%→1/3、×150%→清仓（让利润奔跑）
 - 每个交易日按档位算"应持批次"：低于应持则补买、高于上限则减仓（先卖后买）。
+- 分红除权：每日调仓前先处理持仓标的的除权除息日（ex_date）记录——现金分红
+  计入现金（税前）、转增/送股增加持股数并摊薄成本价；若建仓日晚于除权日则无权。
+  同一笔分红只处理一次（pos.div_last 记录已处理的最近除权日），漏跑数日后补处理。
 - 不设持股数量上限：候选命中档位即可买入，由现金与单票上限自然约束分散度。
 
 各策略参数（2026-08-29 定版）：
@@ -74,11 +77,11 @@ def save_json(path, data):
 
 
 def load_market():
-    """读取 fetch_data 产出的数据，返回 A 股 {code: {...}} 与最新交易日期。
+    """读取 fetch_data 产出的数据，返回 (A 股 {code: {...}}, 分红 {code: [记录]}, 最新交易日期)。
     交易日期取行情快照时间（companies/*.json 的 snapshot.time）而非抓取时刻，
-    保证周末/节假日兜底运行时仍归入最近的交易日。"""
+    保证周末/节假日兜底运行时仍归入最近的交易日；分红取同文件的 dividends 数组。"""
     idx = load_json(BASE / 'data' / 'index.json', {})
-    stocks, trade_date = {}, None
+    stocks, div_map, trade_date = {}, {}, None
     for c in idx.get('companies') or []:
         if c.get('market') != 'A' or not c.get('price'):
             continue
@@ -87,7 +90,10 @@ def load_market():
         t = ((det.get('snapshot') or {}).get('time') or '')[:10]
         if t and (trade_date is None or t > trade_date):
             trade_date = t
-    return stocks, trade_date
+        divs = [d for d in (det.get('dividends') or []) if d.get('ex_date')]
+        if divs:
+            div_map[c['code']] = divs
+    return stocks, div_map, trade_date
 
 
 def refs_of(c):
@@ -224,6 +230,38 @@ def trim_sell(strat, pos, c, cfg, trade_date, target_tr, trades, note):
         pos['tranches'] -= 1
 
 
+def apply_dividends(strat, div_map, trade_date, trades):
+    """除权除息处理：持仓中 bought_at < ex_date <= trade_date 且未处理的分红记录
+    依次入账（现金分红入现金、转增送股增股数摊薄成本）。漏跑数日后会补处理。"""
+    for pos in strat['positions']:
+        if pos['shares'] <= 0:
+            continue
+        divs = sorted(div_map.get(pos['code']) or [], key=lambda d: d['ex_date'])
+        for d in divs:
+            ex = d['ex_date']
+            if ex <= (pos.get('div_last') or '') or ex <= pos['bought_at'] or ex > trade_date:
+                continue  # 已处理过 / 除权日前未持仓（无分红权）/ 尚未除权
+            bonus = d.get('bonus_per_10') or 0
+            transfer = d.get('transfer_per_10') or 0
+            if bonus:  # 现金分红（税前）：登记日收盘持股为基数
+                cash = round(pos['shares'] * bonus / 10.0, 2)
+                strat['cash'] = round(strat['cash'] + cash, 2)
+                trades.append({'date': trade_date, 'code': pos['code'], 'name': pos['name'],
+                               'side': 'dividend', 'price': None, 'shares': pos['shares'],
+                               'amount': cash, 'reason': '现金分红 10派%s元（除权日%s，税前）'
+                                                          % (bonus, ex)})
+            if transfer:  # 转增/送股：总成本不变，按新增整股数摊薄成本
+                add = int(math.floor(pos['shares'] / 10.0 * transfer))
+                if add > 0:
+                    pos['cost'] = round(pos['cost'] * pos['shares'] / (pos['shares'] + add), 4)
+                    pos['shares'] += add
+                    trades.append({'date': trade_date, 'code': pos['code'], 'name': pos['name'],
+                                   'side': 'dividend', 'price': None, 'shares': add,
+                                   'amount': 0, 'reason': '10转增%s股（除权日%s），成本摊薄'
+                                                          % (transfer, ex)})
+            pos['div_last'] = ex
+
+
 def init_strategy(key, cfg, stocks, trade_date):
     strat = {'label': cfg['label'], 'init_cap': INIT_CAP, 'cash': INIT_CAP,
              'positions': [], 'as_of': trade_date}
@@ -243,8 +281,10 @@ def init_strategy(key, cfg, stocks, trade_date):
     return strat, trades
 
 
-def daily_strategy(strat, cfg, stocks, trade_date):
+def daily_strategy(strat, cfg, stocks, div_map, trade_date):
     trades = []
+    # 0. 分红除权：先于买卖执行，保证档位判定基于除权后的持股数与成本
+    apply_dividends(strat, div_map, trade_date, trades)
     # 1. 卖出：现价触及卖出档位则减仓（清仓即移出持仓）
     kept = []
     for pos in strat['positions']:
@@ -319,7 +359,7 @@ def summarize(strat, stocks, trade_date):
 
 
 def main():
-    stocks, trade_date = load_market()
+    stocks, div_map, trade_date = load_market()
     if not stocks or not trade_date:
         print('无 A 股行情，退出')
         return
@@ -355,7 +395,7 @@ def main():
         else:
             strat = pf['strategies'][key]
             strat['_prev_nav'] = (nav_all.get(key) or [{'nav': INIT_CAP}])[-1]['nav']
-            tr = daily_strategy(strat, cfg, stocks, trade_date)
+            tr = daily_strategy(strat, cfg, stocks, div_map, trade_date)
         trades_all.setdefault(key, []).extend(tr)
         view = summarize(strat, stocks, trade_date)
         out['strategies'][key] = view

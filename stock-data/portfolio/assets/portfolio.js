@@ -105,12 +105,16 @@
       return;
     }
     body.innerHTML = tr.map(function (t) {
-      var isBuy = t.side === 'buy';
+      var isBuy = t.side === 'buy', isDiv = t.side === 'dividend';
+      var qty = isDiv
+        ? (t.amount > 0 ? '现金分红入账' : '转增股 ' + t.shares.toLocaleString('zh-CN') + ' 股')
+        : fmt(t.price) + ' 元 × ' + t.shares.toLocaleString('zh-CN') + ' 股';
       return '<div class="pf-trade-row">' +
         '<span class="pf-trade-meta">' + t.date + '</span>' +
-        '<span class="pf-side ' + (isBuy ? 'up' : 'down') + '">' + (isBuy ? '买入' : '卖出') + '</span>' +
+        '<span class="pf-side ' + (isBuy ? 'up' : isDiv ? 'flat' : 'down') + '">' +
+          (isBuy ? '买入' : isDiv ? '分红' : '卖出') + '</span>' +
         '<span><b>' + t.name + '</b> <span class="pf-trade-meta">' + t.code + '</span></span>' +
-        '<span>' + fmt(t.price) + ' 元 × ' + t.shares.toLocaleString('zh-CN') + ' 股</span>' +
+        '<span>' + qty + '</span>' +
         '<span>' + fmt(t.amount) + ' 元</span>' +
         '<span class="pf-trade-meta">' + (t.reason || '') + '</span></div>';
     }).join('');
