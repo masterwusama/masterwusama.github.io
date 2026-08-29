@@ -1,0 +1,817 @@
+{
+ "updated_at": "2026-08-30T05:50:34+08:00",
+ "meta": {
+  "hz_articles": [
+   "1786695798707.html"
+  ],
+  "start": "2026-08-30"
+ },
+ "products": [
+  {
+   "id": "cif-beef-fresh",
+   "name": "鲜牛肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 53.5
+    }
+   ]
+  },
+  {
+   "id": "cif-beef-shank",
+   "name": "牛腿肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 78.0
+    }
+   ]
+  },
+  {
+   "id": "cif-chicken",
+   "name": "白条鸡",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 19.75
+    }
+   ]
+  },
+  {
+   "id": "cif-mutton-shank",
+   "name": "羊腿肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 66.0
+    }
+   ]
+  },
+  {
+   "id": "cif-pork-fresh",
+   "name": "鲜猪肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 18.7
+    }
+   ]
+  },
+  {
+   "id": "cif-pork-rump",
+   "name": "后臀尖",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 21.7
+    }
+   ]
+  },
+  {
+   "id": "hz-猪全精肉",
+   "name": "猪全精肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 31.57
+    }
+   ]
+  },
+  {
+   "id": "hz-猪后腿肉",
+   "name": "猪后腿肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 22.93
+    }
+   ]
+  },
+  {
+   "id": "hz-猪大排",
+   "name": "猪大排",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 33.12
+    }
+   ]
+  },
+  {
+   "id": "hz-猪无骨夹心肉",
+   "name": "猪无骨夹心肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 24.63
+    }
+   ]
+  },
+  {
+   "id": "hz-猪肋条肉",
+   "name": "猪肋条肉",
+   "category": "肉类",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 31.79
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-bittermelon",
+   "name": "苦瓜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 6.3
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-broccoli",
+   "name": "西兰花",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 8.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-cabbage-big",
+   "name": "大白菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 2.25
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-cabbage-round",
+   "name": "圆白菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 2.34
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-carrot",
+   "name": "胡萝卜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 3.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-celery",
+   "name": "芹菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 8.22
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-chive",
+   "name": "韭菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 6.2
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-cucumber",
+   "name": "黄瓜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.6
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-eggplant",
+   "name": "茄子",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.87
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-garlic",
+   "name": "蒜头",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 9.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-ginger",
+   "name": "生姜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 7.5
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-lettuce",
+   "name": "生菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 7.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-lotus",
+   "name": "莲藕",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 7.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-onion",
+   "name": "洋葱",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 3.1
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-pepper",
+   "name": "青椒",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.6
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-pepper-hot",
+   "name": "尖椒",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 6.5
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-potato",
+   "name": "土豆",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 3.1
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-radish-white",
+   "name": "白萝卜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 1.81
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-scallion",
+   "name": "大葱",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 4.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-sprout",
+   "name": "绿豆芽",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 2.3
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-tomato",
+   "name": "西红柿",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.0
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-waxgourd",
+   "name": "冬瓜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 1.6
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-woju",
+   "name": "莴笋",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 4.8
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-youcai",
+   "name": "油菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.2
+    }
+   ]
+  },
+  {
+   "id": "cif-veg-zucchini",
+   "name": "西葫芦",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.15
+    }
+   ]
+  },
+  {
+   "id": "hz-冬瓜",
+   "name": "冬瓜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 1.49
+    }
+   ]
+  },
+  {
+   "id": "hz-四季豆",
+   "name": "四季豆",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 7.75
+    }
+   ]
+  },
+  {
+   "id": "hz-花菜",
+   "name": "花菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 3.45
+    }
+   ]
+  },
+  {
+   "id": "hz-芹菜",
+   "name": "芹菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 4.86
+    }
+   ]
+  },
+  {
+   "id": "hz-茄子",
+   "name": "茄子",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 4.94
+    }
+   ]
+  },
+  {
+   "id": "hz-菠菜",
+   "name": "菠菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 8.01
+    }
+   ]
+  },
+  {
+   "id": "hz-蒜苔",
+   "name": "蒜苔",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 19.85
+    }
+   ]
+  },
+  {
+   "id": "hz-豇豆",
+   "name": "豇豆",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 11.61
+    }
+   ]
+  },
+  {
+   "id": "hz-青菜",
+   "name": "青菜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 5.82
+    }
+   ]
+  },
+  {
+   "id": "hz-黄瓜",
+   "name": "黄瓜",
+   "category": "蔬菜",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 8.26
+    }
+   ]
+  },
+  {
+   "id": "cif-egg",
+   "name": "鲜鸡蛋",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 10.9
+    }
+   ]
+  },
+  {
+   "id": "cif-flour",
+   "name": "面粉",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 3.8
+    }
+   ]
+  },
+  {
+   "id": "cif-oil-blend",
+   "name": "调和油",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 15.73
+    }
+   ]
+  },
+  {
+   "id": "cif-oil-peanut",
+   "name": "花生油",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 30.36
+    }
+   ]
+  },
+  {
+   "id": "cif-oil-rapeseed",
+   "name": "菜籽油",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 12.34
+    }
+   ]
+  },
+  {
+   "id": "cif-oil-soy",
+   "name": "豆油",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 11.12
+    }
+   ]
+  },
+  {
+   "id": "cif-rice-indica",
+   "name": "籼米",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 4.38
+    }
+   ]
+  },
+  {
+   "id": "cif-rice-japonica",
+   "name": "粳米",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "商务部百家日报（浙江市场）",
+   "prices": [
+    {
+     "date": "2026-08-30",
+     "price": 5.0
+    }
+   ]
+  },
+  {
+   "id": "hz-鸡蛋",
+   "name": "鸡蛋",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 10.13
+    }
+   ]
+  },
+  {
+   "id": "hz-鸭蛋",
+   "name": "鸭蛋",
+   "category": "农副产品",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 12.7
+    }
+   ]
+  },
+  {
+   "id": "hz-大黄鱼",
+   "name": "大黄鱼",
+   "category": "水产",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 52.0
+    }
+   ]
+  },
+  {
+   "id": "hz-小黄鱼",
+   "name": "小黄鱼",
+   "category": "水产",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 48.0
+    }
+   ]
+  },
+  {
+   "id": "hz-河虾",
+   "name": "河虾",
+   "category": "水产",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 220.55
+    }
+   ]
+  },
+  {
+   "id": "hz-银鲳",
+   "name": "银鲳",
+   "category": "水产",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 58.0
+    }
+   ]
+  },
+  {
+   "id": "hz-鲳鱼",
+   "name": "鲳鱼",
+   "category": "水产",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 49.66
+    }
+   ]
+  },
+  {
+   "id": "hz-鳊鱼",
+   "name": "鳊鱼",
+   "category": "水产",
+   "unit": "元/公斤",
+   "source": "杭州市商务局周报",
+   "prices": [
+    {
+     "date": "2026-08-14",
+     "price": 36.21
+    }
+   ]
+  }
+ ]
+}

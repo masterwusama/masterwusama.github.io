@@ -1,0 +1,42 @@
+---
+layout: page
+title: 物价查询
+---
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="./assets/price.css">
+
+<div id="fp-app">
+  <div class="fp-header">
+    <h1 class="fp-title">📈 杭州物价查询</h1>
+    <p class="fp-sub">主要食用农产品价格与走势 · 单位：元/公斤 · <span id="fp-updated"></span></p>
+  </div>
+
+  <div id="fp-tabs" class="fp-tabs"></div>
+  <p id="fp-note" class="fp-note"></p>
+  <div id="fp-grid" class="fp-grid"></div>
+  <div id="fp-empty" class="fp-empty" style="display:none">
+    <div class="fp-empty-icon">🌱</div>
+    <p>数据采集中，自 2026-08-30 起每日自动采集，请稍后再来。</p>
+  </div>
+</div>
+
+<!-- 单品走势弹层 -->
+<div id="fp-modal" class="fp-modal" style="display:none">
+  <div class="fp-modal-mask"></div>
+  <div class="fp-modal-body">
+    <div class="fp-modal-head">
+      <div>
+        <span id="fp-modal-name" class="fp-modal-name"></span>
+        <span id="fp-modal-src" class="fp-modal-src"></span>
+      </div>
+      <button id="fp-modal-close" class="fp-modal-close" type="button">✕</button>
+    </div>
+    <div id="fp-chart" class="fp-chart"></div>
+    <p id="fp-modal-info" class="fp-modal-info"></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script charset="utf-8" src="./assets/price.js"></script>

@@ -1,0 +1,46 @@
+name: update-market-price
+
+# 定时更新杭州物价数据（fridge-cook/price/ 子文件夹，冰箱做菜模块子目录）
+# 只提交 fridge-cook/price/data 下的数据文件，不会触碰博客的其他内容。
+# 数据源：商务部百家日报（日更，浙江市场中位数）+ 杭州市商务局生活必需品周报（周更）。
+
+on:
+  # 每天 1 次（UTC 02:30），对应北京时间 10:30（百家日报当日数据已发布）
+  schedule:
+    - cron: "30 2 * * *"
+  # 支持在 GitHub 网页上手动触发
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: market-price-update
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 抓取物价数据
+        working-directory: fridge-cook/price/scripts
+        run: python fetch_market_prices.py
+
+      - name: 提交数据变更
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(market-price): 更新杭州物价数据"
+          file_pattern: fridge-cook/price/data/*
+          commit_user_name: market-price-bot
+          commit_user_email: market-price-bot@users.noreply.github.com
+          skip_fetch: true
+          skip_checkout: true

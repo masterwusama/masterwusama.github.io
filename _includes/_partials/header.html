@@ -57,6 +57,12 @@
             <li class="menu-sub-item"><a href="{{ '/stock-data/agro-price/' | relative_url }}">农化制品价格跟踪</a></li>
           </ul>
           {% endif %}
+          {% if itemName == 'cook' %}
+          <ul class="menu-sub">
+            <li class="menu-sub-item"><a href="{{ '/fridge-cook/cook/' | relative_url }}">做菜推荐</a></li>
+            <li class="menu-sub-item"><a href="{{ '/fridge-cook/price/' | relative_url }}">物价查询</a></li>
+          </ul>
+          {% endif %}
         </li>
       {% endfor %}
 

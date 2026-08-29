@@ -5,97 +5,40 @@ title: 冰箱做菜
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="./assets/app.css">
+<link rel="stylesheet" href="./cook/assets/app.css">
+<style>
+  .fc-hub { max-width: 640px; margin: 0 auto; }
+  .fc-hub-cards { display: flex; flex-wrap: wrap; gap: 16px; }
+  .fc-hub-card {
+    flex: 1 1 260px; display: block; text-decoration: none; color: inherit;
+    border: 1px solid var(--fc-border, #e4e4e4); border-radius: 12px;
+    padding: 22px 20px; background: var(--fc-card-bg, #fff);
+    transition: box-shadow .15s, transform .15s;
+  }
+  .fc-hub-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); transform: translateY(-2px); }
+  .fc-hub-icon { font-size: 34px; line-height: 1; }
+  .fc-hub-name { font-size: 18px; font-weight: 700; margin: 12px 0 6px; }
+  .fc-hub-desc { font-size: 13px; color: #888; line-height: 1.6; }
+</style>
 
-<div id="fc-app">
+<div id="fc-app" class="fc-hub">
   <div class="fc-header">
     <h1 class="fc-title">🍳 冰箱做菜</h1>
-    <p class="fc-sub">报出冰箱里有什么，告诉你今天能做啥</p>
+    <p class="fc-sub">厨房生活小站</p>
   </div>
 
-  <!-- 视图切换 -->
-  <div class="fc-tabs" role="tablist">
-    <button class="fc-tab is-active" data-view="cook" role="tab">做菜推荐</button>
-    <button class="fc-tab" data-view="library" role="tab">菜谱库</button>
+  <div class="fc-hub-cards">
+    <a class="fc-hub-card" href="./cook/">
+      <div class="fc-hub-icon">🥘</div>
+      <div class="fc-hub-name">做菜推荐</div>
+      <div class="fc-hub-desc">报出冰箱里有什么，告诉你今天能做啥。含菜谱库、购物清单与收藏。</div>
+    </a>
+    <a class="fc-hub-card" href="./price/">
+      <div class="fc-hub-icon">📈</div>
+      <div class="fc-hub-name">物价查询</div>
+      <div class="fc-hub-desc">杭州主要农产品（蔬菜 / 水果 / 肉类部位 / 农副产品）中位数价格与近期走势，可看单品近一年历史。</div>
+    </a>
   </div>
 
-  <!-- ============ 做菜推荐视图 ============ -->
-  <div id="fc-view-cook" class="fc-view">
-    <!-- 食材输入 -->
-    <section class="fc-card">
-      <div class="fc-input-row">
-        <input id="fc-input" type="text" class="fc-input" placeholder="输入食材，如：土豆" autocomplete="off">
-        <button id="fc-input-add" class="fc-btn fc-btn-primary">添加</button>
-      </div>
-      <div id="fc-suggest" class="fc-suggest" hidden></div>
-      <div id="fc-fridge" class="fc-chips"></div>
-      <div class="fc-chips-label">常用食材（点击添加）</div>
-      <div id="fc-common" class="fc-chips"></div>
-      <div class="fc-chips-label">快过期？（长按已添加食材可标记 ⭐，优先推荐用掉）</div>
-    </section>
-
-    <!-- 筛选与排序 -->
-    <section class="fc-card">
-      <div class="fc-filter-row">
-        <label class="fc-filter-label">工具：</label>
-        <span id="fc-tools" class="fc-filter-opts"></span>
-      </div>
-      <div class="fc-filter-row">
-        <label class="fc-filter-label">难度：</label>
-        <span id="fc-difficulty" class="fc-filter-opts"></span>
-      </div>
-      <div class="fc-filter-row">
-        <label class="fc-filter-label">排序：</label>
-        <span id="fc-sort" class="fc-filter-opts"></span>
-      </div>
-    </section>
-
-    <!-- 推荐结果 -->
-    <div id="fc-result-head" class="fc-result-head" hidden>
-      <span id="fc-result-count"></span>
-      <button id="fc-clear-fridge" class="fc-link-btn">清空冰箱</button>
-    </div>
-    <div id="fc-result" class="fc-result"></div>
-
-    <!-- 购物清单 -->
-    <section id="fc-shopping" class="fc-card" hidden>
-      <div class="fc-card-title">🛒 购物清单 <span class="fc-card-sub">（所有推荐菜缺失食材汇总）</span></div>
-      <div id="fc-shopping-list" class="fc-shopping-list"></div>
-      <button id="fc-copy-list" class="fc-btn fc-btn-ghost">复制清单</button>
-    </section>
-  </div>
-
-  <!-- ============ 菜谱库视图 ============ -->
-  <div id="fc-view-library" class="fc-view" hidden>
-    <section class="fc-card">
-      <input id="fc-search" type="text" class="fc-input" placeholder="搜索菜名 / 食材，如：土豆" autocomplete="off">
-      <div class="fc-lib-bar">
-        <div id="fc-cat-filter" class="fc-cats"></div>
-        <button id="fc-fav-only" class="fc-cat" type="button">☆ 只看收藏</button>
-      </div>
-    </section>
-    <div id="fc-library" class="fc-library"></div>
-  </div>
-
-  <!-- 菜谱详情弹层 -->
-  <div id="fc-detail-mask" class="fc-mask" hidden>
-    <div id="fc-detail" class="fc-detail"></div>
-  </div>
-
-  <!-- 设置 -->
-  <section class="fc-card fc-settings">
-    <div class="fc-card-title">数据管理</div>
-    <p class="fc-settings-tip">冰箱清单等数据保存在本浏览器。换设备可用备份迁移。</p>
-    <div class="fc-settings-row">
-      <button id="fc-export" class="fc-btn fc-btn-ghost">导出备份</button>
-      <button id="fc-import" class="fc-btn fc-btn-ghost">导入备份</button>
-      <button id="fc-reset" class="fc-btn fc-btn-ghost fc-btn-danger">清空本机数据</button>
-      <input id="fc-import-file" type="file" accept=".json" hidden>
-    </div>
-  </section>
-
-  <p class="fc-footer">数据仅存于本浏览器 · 菜谱库随仓库更新</p>
+  <p class="fc-footer">数据每日自动采集 · 价格仅供参考</p>
 </div>
-
-<script src="./assets/store.js"></script>
-<script src="./assets/app.js"></script>
