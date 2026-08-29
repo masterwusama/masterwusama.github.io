@@ -192,6 +192,8 @@ def fill_buy(strat, pos, c, cfg, trade_date, target_tr, trades, note):
     disc = discount_of(c, cfg)
     while pos['tranches'] < target_tr:
         shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
+        if shares == 0 and strat['cash'] >= c['price'] * 100:
+            shares = 100  # 档位金额不足一手：高价股以一手为一档，保证能建仓
         if shares <= 0:
             break
         band = cfg['buy_bands'][pos['tranches']]
