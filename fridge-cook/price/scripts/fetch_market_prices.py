@@ -96,6 +96,30 @@ BAIJIA_PRODUCTS = [
     ('veg-bittermelon', '苦瓜', '170200', '蔬菜'),
     ('veg-zucchini', '西葫芦', '170330', '蔬菜'),
     ('veg-broccoli', '西兰花', '170340', '蔬菜'),
+    ('veg-spinach', '菠菜', '170440', '蔬菜'),
+    ('veg-cauliflower', '菜花', '170450', '蔬菜'),
+    ('veg-yam', '山药', '170500', '蔬菜'),
+    ('veg-pumpkin', '南瓜', '170470', '蔬菜'),
+    ('veg-bean', '豆角', '170170', '蔬菜'),
+]
+
+# 商务部周度数据（全国批发/零售周均价，接口自带近一年历史）
+# id, name, indexId, category, 默认单位
+WEEKLY_PRODUCTS = [
+    ('fruit-apple', '苹果', '224089', '水果', '元/公斤'),
+    ('fruit-banana', '香蕉', '224090', '水果', '元/公斤'),
+    ('fruit-grape', '葡萄', '224091', '水果', '元/公斤'),
+    ('fruit-pear', '梨', '224093', '水果', '元/公斤'),
+    ('fruit-watermelon', '西瓜', '224094', '水果', '元/公斤'),
+    ('fruit-mandarin', '柑橘', '23543271', '水果', '元/公斤'),
+    ('milk', '牛奶', '532023', '农副产品', '元/升'),
+    ('yogurt', '酸奶', '532029', '农副产品', '元/公斤'),
+    ('fish-carp', '鲤鱼', '224080', '水产', '元/公斤'),
+    ('fish-silvercarp', '鲢鱼', '224081', '水产', '元/公斤'),
+    ('fish-grasscarp', '草鱼', '224082', '水产', '元/公斤'),
+    ('fish-crucian', '鲫鱼', '224083', '水产', '元/公斤'),
+    ('fish-hairtail', '大带鱼', '224084', '水产', '元/公斤'),
+    ('fish-yellowcroaker', '大黄花鱼', '224086', '水产', '元/公斤'),
 ]
 
 # 杭州周报正文中的分类段落关键字（就近向上匹配）
@@ -206,6 +230,44 @@ def fetch_baijia(today):
             time.sleep(SLEEP)
         except Exception as e:  # noqa: BLE001
             print('  [warn] 百家日报 %s(%s) 失败: %r' % (name, cid, e))
+    return out
+
+
+# ---------------- 源3：商务部周度 ----------------
+
+def fetch_weekly(cutoff, today):
+    """抓商务部周度数据（全国批发/零售周均价）
+
+    POST /cif/getWeekLineChart2021.fhtml，indexIds 逗号分隔，
+    startDate/endDate 控制区间（实测生效，可取近一年）。
+    接口实测每次只返回前 3 个 indexIds，故分批请求。
+    返回 JSON 数组，元素含 datas[{DATADATE, DATA, NAME}] 与 unit。
+    返回 {id: {'unit': .., 'points': [{date, price}...]}}
+    """
+    out = {}
+    for i in range(0, len(WEEKLY_PRODUCTS), 3):
+        batch = WEEKLY_PRODUCTS[i:i + 3]
+        ids = ','.join(w[2] for w in batch)
+        body = 'indexIds=%s&startDate=%s&endDate=%s' % (ids, cutoff, today)
+        raw = http_get(CIF_BASE + '/cif/getWeekLineChart2021.fhtml', data=body)
+        arr = json.loads(raw)
+        for w in batch:
+            pid, name = w[0], w[1]
+            for el in arr:
+                ds = el.get('datas') or []
+                if not ds or not ds[0].get('NAME', '').startswith(name):
+                    continue
+                pts = []
+                for d in ds:
+                    try:
+                        pts.append({'date': d['DATADATE'],
+                                    'price': round(float(d['DATA']), 2)})
+                    except (KeyError, ValueError):
+                        continue
+                pts.sort(key=lambda x: x['date'])
+                out[pid] = {'unit': el.get('unit') or w[4], 'points': pts}
+                break
+        time.sleep(SLEEP)
     return out
 
 
@@ -349,6 +411,27 @@ def main():
             if not any(x['date'] == date for x in p['prices']):
                 p['prices'].append({'date': date, 'price': it['price']})
             old_products[fid] = p
+
+    print('== 商务部周度（全国，近一年历史）')
+    try:
+        weekly = fetch_weekly(cutoff, today)
+        print('   成功 %d/%d 品种' % (len(weekly), len(WEEKLY_PRODUCTS)))
+        for pid, name, iid, cat, dunit in WEEKLY_PRODUCTS:
+            got = weekly.get(pid)
+            if not got:
+                continue
+            fid = 'cifw-' + pid
+            p = old_products.get(fid) or {
+                'id': fid, 'name': name, 'category': cat,
+                'unit': dunit, 'source': '商务部周度（全国）', 'prices': []}
+            p['unit'] = got['unit'] or p['unit']
+            existing = set(x['date'] for x in p['prices'])
+            p['prices'] += [x for x in got['points']
+                            if x['date'] not in existing]
+            p['prices'].sort(key=lambda x: x['date'])
+            old_products[fid] = p
+    except Exception as e:  # noqa: BLE001
+        print('  [warn] 商务部周度失败: %r' % e)
 
     # 排序 + 裁剪 365 天
     cat_order = {'肉类': 0, '蔬菜': 1, '水果': 2, '农副产品': 3, '水产': 4}
