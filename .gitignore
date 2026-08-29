@@ -32,3 +32,4 @@ dnd-table/_gist*.json
 
 # rpg 本地工具（地图生成器/校验器，不入库）
 rpg/tools/
+stock-data/scripts/_auto_screen_*.json
