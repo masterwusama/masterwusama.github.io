@@ -7,16 +7,17 @@
 - 买入三档（按现价低于买点的折价深度，各策略档位不同）：
     折价 ≥ 档位1 → 建至单票上限的 1/3；≥ 档位2 → 2/3；≥ 档位3 → 满上限。
     初始化时若折价已很深，直接按对应档位一次性买入。
-- 卖出三档（按现价升序触及）：
-    ≥ 保守卖出价(sellCons) → 减至 2/3；≥ 公允价值价(sellFair) → 1/3；
-    ≥ sellFair×(1+溢价容忍) → 清仓。
+- 卖出三档（各策略独立价位表 sell_bands，依次触及依次减仓）：
+    施洛斯：保守卖出价→减至2/3、公允价→1/3、公允价×105%→清仓（修复即卖、快进快出）
+    格雷厄姆防御：保守卖出价→减至2/3、公允价→1/3、公允价×110%→清仓（纪律止盈）
+    巴菲特芒格：保守价不卖、公允价→减至2/3、公允价×125%→1/3、×150%→清仓（让利润奔跑）
 - 每个交易日按档位算"应持批次"：低于应持则补买、高于上限则减仓（先卖后买）。
 - 不设持股数量上限：候选命中档位即可买入，由现金与单票上限自然约束分散度。
 
 各策略参数（2026-08-29 定版）：
-- 施洛斯烟蒂：单票上限 8%；买入档位 折价 3%/8%/15%；卖出溢价容忍 15%
-- 格雷厄姆防御：管理≥70+流派分≥75；单票上限 6%；买入档位 折价 5%/10%/15%；溢价容忍 10%
-- 巴菲特芒格：管理≥80+流派分≥70；单票上限 15%；买入档位 折价 2%/5%/10%；溢价容忍 25%
+- 施洛斯烟蒂：单票上限 8%；买入档位 折价 3%/8%/15%
+- 格雷厄姆防御：管理≥70+流派分≥75；单票上限 6%；买入档位 折价 5%/10%/15%
+- 巴菲特芒格：管理≥80+流派分≥70；单票上限 15%；买入档位 折价 2%/5%/10%
 
 运行方式（本地或 Actions，需在 fetch_data.py 之后）：
     python portfolio_engine.py
@@ -41,15 +42,15 @@ N_TR = 3  # 买入/卖出均为三档（每档 = 单票上限的 1/3）
 STRATEGIES = {
     'schloss': {'label': '施洛斯烟蒂', 'school': 'schloss',
                 'target_w': 0.08, 'buy_bands': (0.03, 0.08, 0.15),
-                'sell_premium': 0.15,
+                'sell_bands': (('sellCons', 1.0), ('sellFair', 1.0), ('sellFair', 1.05)),
                 'min_mgmt': 55, 'max_fraud': 30, 'min_score': 0},
     'grahamDef': {'label': '格雷厄姆防御', 'school': 'grahamDef',
                   'target_w': 0.06, 'buy_bands': (0.05, 0.10, 0.15),
-                  'sell_premium': 0.10,
+                  'sell_bands': (('sellCons', 1.0), ('sellFair', 1.0), ('sellFair', 1.10)),
                   'min_mgmt': 70, 'max_fraud': 30, 'min_score': 75},
     'buffett': {'label': '巴菲特芒格', 'school': 'buffett',
                 'target_w': 0.15, 'buy_bands': (0.02, 0.05, 0.10),
-                'sell_premium': 0.25,
+                'sell_bands': (('sellFair', 1.0), ('sellFair', 1.25), ('sellFair', 1.50)),
                 'min_mgmt': 80, 'max_fraud': 30, 'min_score': 70},
 }
 
@@ -123,29 +124,26 @@ def demand_tranches(c, cfg):
 
 
 def cap_tranches(c, cfg):
-    """卖出侧持仓上限批次（0~3）：现价触及保守卖出价/公允价/溢价容忍依次减档"""
+    """卖出侧持仓上限批次（0~3）：现价依次触及 sell_bands 各档则相应减档"""
     price = c.get('price')
     if not price:
         return N_TR  # 无行情不触发卖出
     r = refs_of(c).get(cfg['school']) or {}
-    sc, sf = r.get('sellCons'), r.get('sellFair')
     hit = 0
-    if sc and price >= sc:
-        hit += 1
-    if sf and price >= sf:
-        hit += 1
-    if sf and price >= sf * (1 + cfg['sell_premium']):
-        hit += 1
+    for i, (ref_key, mult) in enumerate(cfg['sell_bands']):
+        v = r.get(ref_key)
+        if v and price >= v * mult:
+            hit = max(hit, i + 1)  # 按最高触发档位减档（低档参考价缺失不影响高档）
     return N_TR - hit
 
 
 def sell_band_name(cfg, i):
     """第 i 档（0 起）卖出触发说明"""
-    if i == 0:
-        return '达到保守卖出价'
-    if i == 1:
-        return '达到公允价值价'
-    return '达到公允价×%.0f%%' % ((1 + cfg['sell_premium']) * 100)
+    ref_key, mult = cfg['sell_bands'][i]
+    base = '保守卖出价' if ref_key == 'sellCons' else '公允价值价'
+    if abs(mult - 1.0) < 1e-9:
+        return '达到%s' % base
+    return '达到%s×%.0f%%' % (base, mult * 100)
 
 
 def candidates(stocks, cfg, exclude=()):
