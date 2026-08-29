@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """模拟持仓引擎：三种价值投资策略的每日调仓与净值记录。
 
-策略（初始资金各 20 万，均不满仓）：
-- 施洛斯烟蒂：分散持有深度折价烟蒂（最多 10 只 ×8%；宁缺毋滥，只买命中买点的）
-- 格雷厄姆防御：防御型分散篮（质量门槛 管理≥70+流派分≥75，最多 10 只 ×6%）
-- 巴菲特芒格：优质公司集中持有（最多 4 只 ×15%）
+策略（初始资金各 20 万，均不满仓，分批建仓）：
+全局硬门槛（所有策略）：造假分 < 30 且管理分 > 55。
+- 施洛斯烟蒂：最多 10 只，单票上限 8%，分 4 批（每批 2%）
+- 格雷厄姆防御：质量门槛 管理≥70+流派分≥75，最多 10 只，单票上限 6%，分 3 批（每批 2%）
+- 巴菲特芒格：质量门槛 管理≥80+流派分≥70，最多 4 只，单票上限 15%，分 3 批（每批 5%）
+建仓节奏：首日仅买第 1 批；此后每个交易日，持仓标的只要仍命中买点且未达
+单票上限就按折价深度优先加 1 批，新命中买点的候选买入第 1 批补位。
 
 运行方式（本地或 Actions，需在 fetch_data.py 之后）：
     python portfolio_engine.py
@@ -27,11 +30,14 @@ INIT_CAP = 200000.0
 
 STRATEGIES = {
     'schloss': {'label': '施洛斯烟蒂', 'school': 'schloss',
-                'max_pos': 10, 'per_w': 0.08, 'min_mgmt': 0, 'min_score': 0},
+                'max_pos': 10, 'target_w': 0.08, 'n_tranches': 4,
+                'min_mgmt': 55, 'max_fraud': 30, 'min_score': 0},
     'grahamDef': {'label': '格雷厄姆防御', 'school': 'grahamDef',
-                  'max_pos': 10, 'per_w': 0.06, 'min_mgmt': 70, 'min_score': 75},
+                  'max_pos': 10, 'target_w': 0.06, 'n_tranches': 3,
+                  'min_mgmt': 70, 'max_fraud': 30, 'min_score': 75},
     'buffett': {'label': '巴菲特芒格', 'school': 'buffett',
-                'max_pos': 4, 'per_w': 0.15, 'min_mgmt': 80, 'min_score': 70},
+                'max_pos': 4, 'target_w': 0.15, 'n_tranches': 3,
+                'min_mgmt': 80, 'max_fraud': 30, 'min_score': 70},
 }
 
 
@@ -74,16 +80,23 @@ def refs_of(c):
     return ((c.get('scores') or {}).get('priceRefs') or {})
 
 
+def quality_ok(c, cfg):
+    """全局硬门槛：造假分必须低于 30、管理分必须大于 55；策略可叠加更高要求"""
+    sc = c.get('scores') or {}
+    if (sc.get('fraud') or 0) >= cfg['max_fraud']:
+        return False
+    if (sc.get('mgmt') or 0) <= cfg['min_mgmt']:
+        return False
+    if cfg['min_score'] and (sc.get(cfg['school']) or 0) < cfg['min_score']:
+        return False
+    return True
+
+
 def candidates(stocks, cfg, exclude=()):
     """命中买点且通过质量门槛的候选，按折价深度升序（越深越靠前）"""
     rows = []
     for code, c in stocks.items():
-        if code in exclude:
-            continue
-        sc = c.get('scores') or {}
-        if (sc.get('mgmt') or 0) < cfg['min_mgmt']:
-            continue
-        if cfg['min_score'] and (sc.get(cfg['school']) or 0) < cfg['min_score']:
+        if code in exclude or not quality_ok(c, cfg):
             continue
         r = refs_of(c).get(cfg['school']) or {}
         buy = r.get('buy')
@@ -95,6 +108,11 @@ def candidates(stocks, cfg, exclude=()):
     return [code for _, code in rows]
 
 
+def tranche_amount(cfg):
+    """每批买入金额 = 初始资金 × 单票上限 ÷ 批数"""
+    return INIT_CAP * cfg['target_w'] / cfg['n_tranches']
+
+
 def buy_lots(cash, price, amount):
     """A 股整手（100 股）买入股数"""
     if price is None or price <= 0:
@@ -103,22 +121,32 @@ def buy_lots(cash, price, amount):
     return int(math.floor(amt / price / 100.0)) * 100
 
 
+def apply_buy(strat, pos, c, trade_date, shares, reason, trades):
+    """按当日收盘价执行一笔买入（含均价摊薄），记入交易流水"""
+    amount = round(shares * c['price'], 2)
+    new_shares = pos['shares'] + shares
+    pos['cost'] = round((pos['cost'] * pos['shares'] + amount) / new_shares, 4)
+    pos['shares'] = new_shares
+    strat['cash'] = round(strat['cash'] - amount, 2)
+    trades.append({'date': trade_date, 'code': pos['code'], 'name': pos['name'],
+                   'side': 'buy', 'price': c['price'], 'shares': shares,
+                   'amount': amount, 'reason': reason})
+
+
 def init_strategy(key, cfg, stocks, trade_date):
     strat = {'label': cfg['label'], 'init_cap': INIT_CAP, 'cash': INIT_CAP,
              'positions': [], 'as_of': trade_date}
     trades = []
     for code in candidates(stocks, cfg)[:cfg['max_pos']]:
         c = stocks[code]
-        shares = buy_lots(strat['cash'], c['price'], INIT_CAP * cfg['per_w'])
+        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
         if shares <= 0:
             continue
-        amount = round(shares * c['price'], 2)
-        strat['cash'] = round(strat['cash'] - amount, 2)
-        strat['positions'].append({'code': code, 'name': c['name'], 'shares': shares,
-                                   'cost': c['price'], 'bought_at': trade_date})
-        trades.append({'date': trade_date, 'code': code, 'name': c['name'],
-                       'side': 'buy', 'price': c['price'], 'shares': shares,
-                       'amount': amount, 'reason': '初始建仓（命中买点）'})
+        pos = {'code': code, 'name': c['name'], 'shares': 0, 'cost': 0,
+               'bought_at': trade_date, 'tranches': 0}
+        apply_buy(strat, pos, c, trade_date, shares, '初始建仓第1批（命中买点）', trades)
+        pos['tranches'] = 1
+        strat['positions'].append(pos)
     return strat, trades
 
 
@@ -139,22 +167,40 @@ def daily_strategy(strat, cfg, stocks, trade_date):
         else:
             kept.append(pos)
     strat['positions'] = kept
-    # 2. 买入：新命中买点的候选补位（不追加已持仓）
+    # 2. 加仓：已持仓且仍命中买点、未达单票上限的，按折价深度优先各加 1 批
+    pend = []
+    for pos in strat['positions']:
+        if pos.get('tranches', 1) >= cfg['n_tranches']:
+            continue
+        c = stocks.get(pos['code'])
+        if not c:
+            continue
+        r = refs_of(c).get(cfg['school']) or {}
+        if c.get('price') and r.get('buy') and c['price'] <= r['buy'] and quality_ok(c, cfg):
+            pend.append((c['price'] / r['buy'], pos))
+    pend.sort(key=lambda t: t[0])
+    for _, pos in pend:
+        c = stocks[pos['code']]
+        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
+        if shares <= 0:
+            continue
+        apply_buy(strat, pos, c, trade_date, shares,
+                  '加仓第%d批（仍命中买点）' % (pos['tranches'] + 1), trades)
+        pos['tranches'] = pos.get('tranches', 1) + 1
+    # 3. 买入：新命中买点的候选买第 1 批补位（不追加已持仓）
     held = {p['code'] for p in strat['positions']}
     for code in candidates(stocks, cfg, exclude=held):
         if len(strat['positions']) >= cfg['max_pos']:
             break
         c = stocks[code]
-        shares = buy_lots(strat['cash'], c['price'], INIT_CAP * cfg['per_w'])
+        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
         if shares <= 0:
             continue
-        amount = round(shares * c['price'], 2)
-        strat['cash'] = round(strat['cash'] - amount, 2)
-        strat['positions'].append({'code': code, 'name': c['name'], 'shares': shares,
-                                   'cost': c['price'], 'bought_at': trade_date})
-        trades.append({'date': trade_date, 'code': code, 'name': c['name'],
-                       'side': 'buy', 'price': c['price'], 'shares': shares,
-                       'amount': amount, 'reason': '命中买点买入'})
+        pos = {'code': code, 'name': c['name'], 'shares': 0, 'cost': 0,
+               'bought_at': trade_date, 'tranches': 0}
+        apply_buy(strat, pos, c, trade_date, shares, '新建仓第1批（命中买点）', trades)
+        pos['tranches'] = 1
+        strat['positions'].append(pos)
     strat['as_of'] = trade_date
     return trades
 
@@ -233,7 +279,9 @@ def main():
         state[key] = {'label': cfg['label'], 'init_cap': INIT_CAP,
                       'cash': strat['cash'], 'positions': strat['positions'],
                       'as_of': trade_date}
-        posn = ', '.join('%s %d股' % (p['name'], p['shares']) for p in strat['positions'])
+        posn = ', '.join('%s %d股(%d/%d批)' % (p['name'], p['shares'],
+                                               p.get('tranches', 1), cfg['n_tranches'])
+                         for p in strat['positions'])
         print('%s: nav=%.2f 现金=%.2f 仓位=%.1f%% 持仓[%s] 新交易=%d' % (
             cfg['label'], view['nav'], view['cash'], view['position_pct'],
             posn or '空仓', len(tr)))
