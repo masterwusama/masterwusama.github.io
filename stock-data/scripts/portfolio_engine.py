@@ -1,13 +1,22 @@
 # -*- coding: utf-8 -*-
 """模拟持仓引擎：三种价值投资策略的每日调仓与净值记录。
 
-策略（初始资金各 20 万，均不满仓，分批建仓）：
-全局硬门槛（所有策略）：造假分 < 30 且管理分 > 55。
-- 施洛斯烟蒂：最多 10 只，单票上限 8%，分 4 批（每批 2%）
-- 格雷厄姆防御：质量门槛 管理≥70+流派分≥75，最多 10 只，单票上限 6%，分 3 批（每批 2%）
-- 巴菲特芒格：质量门槛 管理≥80+流派分≥70，最多 4 只，单票上限 15%，分 3 批（每批 5%）
-建仓节奏：首日仅买第 1 批；此后每个交易日，持仓标的只要仍命中买点且未达
-单票上限就按折价深度优先加 1 批，新命中买点的候选买入第 1 批补位。
+策略（初始资金各 20 万，均不满仓；全局硬门槛：造假分 < 30 且管理分 > 55）：
+
+分批建仓/减仓 = 价格档位驱动（不到相应档位不执行）：
+- 买入三档（按现价低于买点的折价深度，各策略档位不同）：
+    折价 ≥ 档位1 → 建至单票上限的 1/3；≥ 档位2 → 2/3；≥ 档位3 → 满上限。
+    初始化时若折价已很深，直接按对应档位一次性买入。
+- 卖出三档（按现价升序触及）：
+    ≥ 保守卖出价(sellCons) → 减至 2/3；≥ 公允价值价(sellFair) → 1/3；
+    ≥ sellFair×(1+溢价容忍) → 清仓。
+- 每个交易日按档位算"应持批次"：低于应持则补买、高于上限则减仓（先卖后买）。
+- 不设持股数量上限：候选命中档位即可买入，由现金与单票上限自然约束分散度。
+
+各策略参数（2026-08-29 定版）：
+- 施洛斯烟蒂：单票上限 8%；买入档位 折价 3%/8%/15%；卖出溢价容忍 15%
+- 格雷厄姆防御：管理≥70+流派分≥75；单票上限 6%；买入档位 折价 5%/10%/15%；溢价容忍 10%
+- 巴菲特芒格：管理≥80+流派分≥70；单票上限 15%；买入档位 折价 2%/5%/10%；溢价容忍 25%
 
 运行方式（本地或 Actions，需在 fetch_data.py 之后）：
     python portfolio_engine.py
@@ -27,16 +36,20 @@ from pathlib import Path
 BASE = Path(__file__).parent.parent
 CN_TZ = timezone(timedelta(hours=8))
 INIT_CAP = 200000.0
+N_TR = 3  # 买入/卖出均为三档（每档 = 单票上限的 1/3）
 
 STRATEGIES = {
     'schloss': {'label': '施洛斯烟蒂', 'school': 'schloss',
-                'max_pos': 10, 'target_w': 0.08, 'n_tranches': 4,
+                'target_w': 0.08, 'buy_bands': (0.03, 0.08, 0.15),
+                'sell_premium': 0.15,
                 'min_mgmt': 55, 'max_fraud': 30, 'min_score': 0},
     'grahamDef': {'label': '格雷厄姆防御', 'school': 'grahamDef',
-                  'max_pos': 10, 'target_w': 0.06, 'n_tranches': 3,
+                  'target_w': 0.06, 'buy_bands': (0.05, 0.10, 0.15),
+                  'sell_premium': 0.10,
                   'min_mgmt': 70, 'max_fraud': 30, 'min_score': 75},
     'buffett': {'label': '巴菲特芒格', 'school': 'buffett',
-                'max_pos': 4, 'target_w': 0.15, 'n_tranches': 3,
+                'target_w': 0.15, 'buy_bands': (0.02, 0.05, 0.10),
+                'sell_premium': 0.25,
                 'min_mgmt': 80, 'max_fraud': 30, 'min_score': 70},
 }
 
@@ -92,25 +105,66 @@ def quality_ok(c, cfg):
     return True
 
 
+def discount_of(c, cfg):
+    """现价相对该流派买点的折价深度；无买点/无价/未到买点返回 None"""
+    r = refs_of(c).get(cfg['school']) or {}
+    buy, price = r.get('buy'), c.get('price')
+    if not buy or not price or price > buy:
+        return None
+    return 1 - price / buy
+
+
+def demand_tranches(c, cfg):
+    """买入侧应持批次（0~3）：折价深度达到第几档就建到几档"""
+    disc = discount_of(c, cfg)
+    if disc is None:
+        return 0
+    return sum(1 for b in cfg['buy_bands'] if disc >= b)
+
+
+def cap_tranches(c, cfg):
+    """卖出侧持仓上限批次（0~3）：现价触及保守卖出价/公允价/溢价容忍依次减档"""
+    price = c.get('price')
+    if not price:
+        return N_TR  # 无行情不触发卖出
+    r = refs_of(c).get(cfg['school']) or {}
+    sc, sf = r.get('sellCons'), r.get('sellFair')
+    hit = 0
+    if sc and price >= sc:
+        hit += 1
+    if sf and price >= sf:
+        hit += 1
+    if sf and price >= sf * (1 + cfg['sell_premium']):
+        hit += 1
+    return N_TR - hit
+
+
+def sell_band_name(cfg, i):
+    """第 i 档（0 起）卖出触发说明"""
+    if i == 0:
+        return '达到保守卖出价'
+    if i == 1:
+        return '达到公允价值价'
+    return '达到公允价×%.0f%%' % ((1 + cfg['sell_premium']) * 100)
+
+
 def candidates(stocks, cfg, exclude=()):
-    """命中买点且通过质量门槛的候选，按折价深度升序（越深越靠前）"""
+    """命中买点（折价>0）且通过质量门槛的候选，按折价深度降序（越深越靠前）"""
     rows = []
     for code, c in stocks.items():
         if code in exclude or not quality_ok(c, cfg):
             continue
-        r = refs_of(c).get(cfg['school']) or {}
-        buy = r.get('buy')
-        price = c.get('price')
-        if not buy or not price or price > buy:
+        disc = discount_of(c, cfg)
+        if disc is None or disc <= 0:
             continue
-        rows.append((price / buy, code))
+        rows.append((-disc, code))
     rows.sort()
     return [code for _, code in rows]
 
 
 def tranche_amount(cfg):
-    """每批买入金额 = 初始资金 × 单票上限 ÷ 批数"""
-    return INIT_CAP * cfg['target_w'] / cfg['n_tranches']
+    """每档买入金额 = 初始资金 × 单票上限 ÷ 档数"""
+    return INIT_CAP * cfg['target_w'] / N_TR
 
 
 def buy_lots(cash, price, amount):
@@ -133,74 +187,103 @@ def apply_buy(strat, pos, c, trade_date, shares, reason, trades):
                    'amount': amount, 'reason': reason})
 
 
+def fill_buy(strat, pos, c, cfg, trade_date, target_tr, trades, note):
+    """把持仓从当前批次补买到 target_tr（每档一笔流水）；返回实际买到的批次"""
+    disc = discount_of(c, cfg)
+    while pos['tranches'] < target_tr:
+        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
+        if shares <= 0:
+            break
+        band = cfg['buy_bands'][pos['tranches']]
+        apply_buy(strat, pos, c, trade_date, shares,
+                  '%s第%d档（折价%.1f%%≥%.0f%%）' % (note, pos['tranches'] + 1,
+                                                    disc * 100, band * 100), trades)
+        pos['tranches'] += 1
+    return pos['tranches']
+
+
+def trim_sell(strat, pos, c, cfg, trade_date, target_tr, trades, note):
+    """把持仓从当前批次减到 target_tr（每档一笔流水，按比例减仓，末档清仓）"""
+    while pos['tranches'] > target_tr:
+        band_i = N_TR - pos['tranches']  # 本笔对应第几档卖出（0 起）
+        if target_tr == 0:
+            sell_cnt = pos['shares']
+        else:
+            keep = int(pos['shares'] * target_tr / pos['tranches'])
+            sell_cnt = pos['shares'] - keep
+        if sell_cnt <= 0:
+            break
+        amount = round(sell_cnt * c['price'], 2)
+        strat['cash'] = round(strat['cash'] + amount, 2)
+        trades.append({'date': trade_date, 'code': pos['code'], 'name': pos['name'],
+                       'side': 'sell', 'price': c['price'], 'shares': sell_cnt,
+                       'amount': amount,
+                       'reason': '%s第%d档（%s）' % (note, band_i + 1,
+                                                     sell_band_name(cfg, band_i))})
+        pos['shares'] -= sell_cnt
+        pos['tranches'] -= 1
+
+
 def init_strategy(key, cfg, stocks, trade_date):
     strat = {'label': cfg['label'], 'init_cap': INIT_CAP, 'cash': INIT_CAP,
              'positions': [], 'as_of': trade_date}
     trades = []
-    for code in candidates(stocks, cfg)[:cfg['max_pos']]:
+    for code in candidates(stocks, cfg):  # 不设持股数量上限，现金与单票上限自然约束
         c = stocks[code]
-        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
-        if shares <= 0:
+        demand = demand_tranches(c, cfg)
+        if demand <= 0:
             continue
         pos = {'code': code, 'name': c['name'], 'shares': 0, 'cost': 0,
                'bought_at': trade_date, 'tranches': 0}
-        apply_buy(strat, pos, c, trade_date, shares, '初始建仓第1批（命中买点）', trades)
-        pos['tranches'] = 1
-        strat['positions'].append(pos)
+        reached = fill_buy(strat, pos, c, cfg, trade_date, demand, trades, '初始建仓')
+        if reached > 0:
+            strat['positions'].append(pos)
+        if strat['cash'] < tranche_amount(cfg) * 0.5:
+            break  # 现金已明显不足，停止扫描
     return strat, trades
 
 
 def daily_strategy(strat, cfg, stocks, trade_date):
     trades = []
-    # 1. 卖出：现价触及该流派卖出参考价（sellFair）
+    # 1. 卖出：现价触及卖出档位则减仓（清仓即移出持仓）
     kept = []
     for pos in strat['positions']:
         c = stocks.get(pos['code'])
-        price = c.get('price') if c else None
-        sf = (refs_of(c).get(cfg['school']) or {}).get('sellFair') if c else None
-        if price and sf and price >= sf:
-            amount = round(pos['shares'] * price, 2)
-            strat['cash'] = round(strat['cash'] + amount, 2)
-            trades.append({'date': trade_date, 'code': pos['code'], 'name': pos['name'],
-                           'side': 'sell', 'price': price, 'shares': pos['shares'],
-                           'amount': amount, 'reason': '达到卖出参考价'})
-        else:
+        if c:
+            cap = cap_tranches(c, cfg)
+            if cap < pos['tranches']:
+                trim_sell(strat, pos, c, cfg, trade_date, cap, trades, '分批卖出')
+        if pos['shares'] > 0:
             kept.append(pos)
     strat['positions'] = kept
-    # 2. 加仓：已持仓且仍命中买点、未达单票上限的，按折价深度优先各加 1 批
+    # 2. 加仓：持仓折价加深到更高档位则补买（按折价深度优先）
     pend = []
     for pos in strat['positions']:
-        if pos.get('tranches', 1) >= cfg['n_tranches']:
-            continue
         c = stocks.get(pos['code'])
-        if not c:
+        if not c or pos['tranches'] >= N_TR:
             continue
-        r = refs_of(c).get(cfg['school']) or {}
-        if c.get('price') and r.get('buy') and c['price'] <= r['buy'] and quality_ok(c, cfg):
-            pend.append((c['price'] / r['buy'], pos))
+        disc = discount_of(c, cfg)
+        if disc is not None and quality_ok(c, cfg):
+            pend.append((-disc, pos))
     pend.sort(key=lambda t: t[0])
     for _, pos in pend:
         c = stocks[pos['code']]
-        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
-        if shares <= 0:
-            continue
-        apply_buy(strat, pos, c, trade_date, shares,
-                  '加仓第%d批（仍命中买点）' % (pos['tranches'] + 1), trades)
-        pos['tranches'] = pos.get('tranches', 1) + 1
-    # 3. 买入：新命中买点的候选买第 1 批补位（不追加已持仓）
+        fill_buy(strat, pos, c, cfg, trade_date, demand_tranches(c, cfg),
+                 trades, '分批加仓')
+    # 3. 买入：新命中档位（折价>0）的候选按档位建仓（不设持股数量上限）
     held = {p['code'] for p in strat['positions']}
     for code in candidates(stocks, cfg, exclude=held):
-        if len(strat['positions']) >= cfg['max_pos']:
+        if strat['cash'] < tranche_amount(cfg) * 0.5:
             break
         c = stocks[code]
-        shares = buy_lots(strat['cash'], c['price'], tranche_amount(cfg))
-        if shares <= 0:
+        demand = demand_tranches(c, cfg)
+        if demand <= 0:
             continue
         pos = {'code': code, 'name': c['name'], 'shares': 0, 'cost': 0,
                'bought_at': trade_date, 'tranches': 0}
-        apply_buy(strat, pos, c, trade_date, shares, '新建仓第1批（命中买点）', trades)
-        pos['tranches'] = 1
-        strat['positions'].append(pos)
+        reached = fill_buy(strat, pos, c, cfg, trade_date, demand, trades, '新建仓')
+        if reached > 0:
+            strat['positions'].append(pos)
     strat['as_of'] = trade_date
     return trades
 
@@ -279,8 +362,7 @@ def main():
         state[key] = {'label': cfg['label'], 'init_cap': INIT_CAP,
                       'cash': strat['cash'], 'positions': strat['positions'],
                       'as_of': trade_date}
-        posn = ', '.join('%s %d股(%d/%d批)' % (p['name'], p['shares'],
-                                               p.get('tranches', 1), cfg['n_tranches'])
+        posn = ', '.join('%s %d股(%d/3档)' % (p['name'], p['shares'], p['tranches'])
                          for p in strat['positions'])
         print('%s: nav=%.2f 现金=%.2f 仓位=%.1f%% 持仓[%s] 新交易=%d' % (
             cfg['label'], view['nav'], view['cash'], view['position_pct'],
