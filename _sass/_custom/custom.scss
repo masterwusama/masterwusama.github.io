@@ -1,1 +1,23 @@
 // Custom styles.
+
+// ---- 价值分析菜单的子菜单（价值分析/模拟持仓） ----
+.menu-item-stocks { position: relative; }
+.menu-sub { list-style: none; margin: 2px 0 4px; padding-left: 20px; }
+.menu-sub-item a { font-size: 13px; opacity: .85; }
+
+@media (min-width: 768px) {
+  .menu-sub {
+    display: none;
+    position: absolute; left: 50%; transform: translateX(-50%); top: 100%;
+    margin: 0; padding: 4px 0; min-width: 130px; z-index: 1100;
+    background: #fff; border: 1px solid #e4e9f2; border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .12);
+  }
+  .menu-item-stocks:hover .menu-sub,
+  .menu-item-stocks:focus-within .menu-sub { display: block; }
+  .menu-sub-item a {
+    display: block; padding: 6px 14px; white-space: nowrap; opacity: 1;
+    color: #555;
+  }
+  .menu-sub-item a:hover { background: #f0f3f7; color: #2b6cb0; }
+}

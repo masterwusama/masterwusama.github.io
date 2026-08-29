@@ -42,11 +42,15 @@ jobs:
         working-directory: stock-data/scripts
         run: python fetch_data.py
 
+      - name: 模拟持仓调仓（基于刚更新的收盘价）
+        working-directory: stock-data/scripts
+        run: python portfolio_engine.py
+
       - name: 提交数据变更
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(stock-data): 更新 A 股财务数据"
-          file_pattern: stock-data/data/*
+          file_pattern: stock-data/data/* stock-data/portfolio/data/*
           commit_user_name: stock-data-bot
           commit_user_email: stock-data-bot@users.noreply.github.com
           skip_fetch: true

@@ -1,0 +1,31 @@
+---
+layout: page
+title: 模拟持仓
+---
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="./assets/portfolio.css?v=20260829a">
+
+<div id="pf-app">
+  <div id="pf-loading" class="pf-hint">持仓数据加载中...</div>
+  <div id="pf-error" class="pf-hint" style="display:none"></div>
+
+  <div id="pf-main" style="display:none">
+    <div class="pf-header">
+      <div class="pf-title">模拟持仓 <span id="pf-asof" class="pf-asof"></span></div>
+      <div class="pf-sub">初始资金各 20 万 · 按网站跟踪的 A 股标的每日收盘调仓 · 仅供学习研究</div>
+    </div>
+
+    <div id="pf-tabs" class="pf-tabs"></div>
+
+    <div id="pf-summary" class="pf-summary"></div>
+    <div id="pf-positions" class="pf-positions"></div>
+
+    <details class="pf-trades" open>
+      <summary id="pf-trades-summary">调仓记录</summary>
+      <div id="pf-trades-body"></div>
+    </details>
+  </div>
+</div>
+
+<script charset="utf-8" src="./assets/portfolio.js?v=20260829a"></script>

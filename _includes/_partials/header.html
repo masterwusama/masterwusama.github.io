@@ -50,6 +50,12 @@
             {% endif %}
             {{ __.menu[name] }}
           </a>
+          {% if itemName == 'stocks' %}
+          <ul class="menu-sub">
+            <li class="menu-sub-item"><a href="{{ '/stock-data/' | relative_url }}">价值分析</a></li>
+            <li class="menu-sub-item"><a href="{{ '/stock-data/portfolio/' | relative_url }}">模拟持仓</a></li>
+          </ul>
+          {% endif %}
         </li>
       {% endfor %}
 
