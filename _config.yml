@@ -121,7 +121,6 @@ menu:
   #categories: /categories/
   #about: /about/
   stocks: /stock-data/
-  agro: /agro-price/
   cook: /fridge-cook/
   dnd: /dnd-table/
   games: /rpg/
@@ -142,7 +141,6 @@ menu_icons:
   categories: th
   schedule: calendar
   stocks: line-chart
-  agro: flask
   cook: cutlery
   dnd: magic
   games: gamepad

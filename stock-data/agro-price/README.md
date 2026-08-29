@@ -5,7 +5,7 @@
 
 ## 页面
 
-<https://masterwusama.github.io/agro-price/>
+<https://masterwusama.github.io/stock-data/agro-price/>
 
 - **营收结构卡**：2025 年报口径（农药产品 54.5%、中间体产品 44.58%），点击分类筛选产品
 - **产品卡片**：最新价、周/月/年初涨跌、数据期数
@@ -19,7 +19,7 @@ GitHub Actions（定时任务，每天 2 次）
    ├─ 生意社商品报价动态 + 报价中心（mprice）→ 中间体主序列（增量累积）
    └─ 3456.tv 行情历史 → 2020~2025 回填（已停更）
         ↓ 解析/合并 → data/products.json
-   GitHub Pages 静态托管 → https://masterwusama.github.io/agro-price/
+   GitHub Pages 静态托管 → https://masterwusama.github.io/stock-data/agro-price/
 ```
 
 ## 数据源

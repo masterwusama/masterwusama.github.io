@@ -1,7 +1,7 @@
 name: update-agro-price
 
-# 定时更新农化制品价格数据（agro-price/ 子文件夹）
-# 只提交 agro-price/data 下的数据文件，不会触碰博客的其他内容。
+# 定时更新农化制品价格数据（stock-data/agro-price/ 子文件夹，价值分析模块子目录）
+# 只提交 stock-data/agro-price/data 下的数据文件，不会触碰博客的其他内容。
 
 on:
   # 每天 2 次（UTC 时间）：1:00 / 13:00
@@ -33,14 +33,14 @@ jobs:
           python-version: "3.12"
 
       - name: 抓取价格数据
-        working-directory: agro-price/scripts
+        working-directory: stock-data/agro-price/scripts
         run: python fetch_prices.py
 
       - name: 提交数据变更
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(agro-price): 更新农化制品价格数据"
-          file_pattern: agro-price/data/*
+          file_pattern: stock-data/agro-price/data/*
           commit_user_name: agro-price-bot
           commit_user_email: agro-price-bot@users.noreply.github.com
           skip_fetch: true
