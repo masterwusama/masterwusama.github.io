@@ -2,9 +2,9 @@
 """模拟持仓引擎：三种价值投资策略的每日调仓与净值记录。
 
 策略（初始资金各 20 万，均不满仓）：
-- 施洛斯烟蒂：分散持有深度折价烟蒂（最多 8 只 ×12%，上限约 72% 仓位）
-- 格雷厄姆防御：质量门槛更高的防御型（最多 5 只 ×12%，上限约 60% 仓位）
-- 巴菲特芒格：优质公司集中持有（最多 4 只 ×15%，上限约 60% 仓位）
+- 施洛斯烟蒂：分散持有深度折价烟蒂（最多 10 只 ×8%；宁缺毋滥，只买命中买点的）
+- 格雷厄姆防御：防御型分散篮（质量门槛 管理≥70+流派分≥75，最多 10 只 ×6%）
+- 巴菲特芒格：优质公司集中持有（最多 4 只 ×15%）
 
 运行方式（本地或 Actions，需在 fetch_data.py 之后）：
     python portfolio_engine.py
@@ -27,9 +27,9 @@ INIT_CAP = 200000.0
 
 STRATEGIES = {
     'schloss': {'label': '施洛斯烟蒂', 'school': 'schloss',
-                'max_pos': 8, 'per_w': 0.12, 'min_mgmt': 0, 'min_score': 0},
+                'max_pos': 10, 'per_w': 0.08, 'min_mgmt': 0, 'min_score': 0},
     'grahamDef': {'label': '格雷厄姆防御', 'school': 'grahamDef',
-                  'max_pos': 5, 'per_w': 0.12, 'min_mgmt': 70, 'min_score': 80},
+                  'max_pos': 10, 'per_w': 0.06, 'min_mgmt': 70, 'min_score': 75},
     'buffett': {'label': '巴菲特芒格', 'school': 'buffett',
                 'max_pos': 4, 'per_w': 0.15, 'min_mgmt': 80, 'min_score': 70},
 }
