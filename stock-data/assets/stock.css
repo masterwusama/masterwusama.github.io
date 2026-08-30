@@ -1179,48 +1179,64 @@
 
 /* ---- 小屏适配（必须放在所有基础规则之后，避免同特异性规则被后定义覆盖） ---- */
 @media (max-width: 600px) {
-  /* 移动端工具栏紧凑网格：收起态仅两行（市场Tab+搜索 / 筛选+排序摘要按钮），
-     展开面板跨行显示（.s-filter/.s-sort 以 display:contents 让子元素直接参与网格排布），
-     占用屏高从约 1/4 降为一行摘要 + 一个搜索框 */
+  /* 移动端工具栏紧凑布局（吸顶）：收起态仅两行——行1「市场Tab + 搜索框填满余宽」，
+     行2「筛选 / 排序」两摘要按钮等宽各占一半；展开面板 flex-basis 100% 独占一行
+     （.s-filter/.s-sort 以 display:contents 让子元素直接参与工具栏排布，order 保证行序） */
   .s-toolbar {
     position: sticky;
     top: 0;
     z-index: 50;
     background: #fff;
-    padding: 6px 2px;
+    padding: 8px;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
     margin: -4px 0 4px;
-    display: grid;
-    /* 左列上限 52%（百分比基于网格内容盒，不受 vw/滚动条差异影响），防止长摘要挤没搜索列 */
-    grid-template-columns: minmax(0, 52%) minmax(0, 1fr);
-    gap: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
   }
 
-  /* 行 1：市场 Tab（左）+ 搜索框（右，占满余宽） */
+  /* 行 1：市场 Tab（自然宽）+ 搜索框（吃掉行内剩余宽度，不再留松散空白）；
+     Tab 已收到 320px 窄屏可单行摆下三个（见下方 @media 360px） */
   .s-tabs {
-    grid-column: 1;
-    grid-row: 1;
+    order: 1;
+    flex: none;
     margin: 0;
-    gap: 4px;
+    gap: 3px;
   }
 
+  /* 工具栏控件统一 32px 高（tab / 搜索框 / 摘要按钮），行1 不再高低不齐 */
   .s-tab {
-    padding: 4px 9px;
+    height: 32px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 7px;
     font-size: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+
+  .s-tab-count {
+    margin-left: 3px;
+    font-size: 11px;
   }
 
   .stock-search-wrap {
-    grid-column: 2;
-    grid-row: 1;
+    order: 2;
+    flex: 1 1 120px;
+    min-width: 96px;
     margin: 0;
-    min-width: 0;
   }
 
   #stock-search {
     width: 100%;
+    height: 32px;
+    box-sizing: border-box;
     max-width: none;
-    padding: 5px 8px;
+    padding: 0 10px;
     font-size: 12px;
+    border-radius: 8px;
   }
 
   /* 买入性价比排序分组分隔（移动端卡片流专用） */
@@ -1252,7 +1268,6 @@
   }
 
   .stock-search-wrap {
-    flex: none;
     display: block;
   }
 
@@ -1264,6 +1279,7 @@
     background: #f9fbfd;
     border-radius: 8px;
     padding: 8px 10px;
+    box-sizing: border-box; /* flex-basis 100% 下计入内边距与边框，否则面板宽出工具栏溢出 22px */
   }
 
   .s-flt-row {
@@ -1275,12 +1291,18 @@
     display: inline; /* 移动端无悬停，规则说明恢复直接可见 */
   }
 
-  /* 行 2：筛选与排序摘要按钮并排各占一格，长摘要省略号收进（JS 互斥保证同时只展开一个面板） */
+  /* 行 2：筛选与排序摘要按钮等宽并列（basis 50% 扣掉一个 gap）；
+     文字摘要可省略号截断，箭头固定右端不被挤掉（JS 互斥保证同时只展开一个面板） */
   .s-filter-toggle,
   .s-sort-toggle {
-    display: block;
+    display: flex;
+    align-items: center;
+    flex: 1 1 calc(50% - 4px);
     min-width: 0;
-    padding: 6px 8px;
+    height: 32px;
+    box-sizing: border-box;
+    padding: 0 9px;
+    gap: 6px;
     font-size: 12px;
     color: #4a6076;
     background: #f3f6fa;
@@ -1288,17 +1310,48 @@
     border-radius: 8px;
     text-align: left;
     cursor: pointer;
-    white-space: nowrap;
+  }
+
+  .s-filter-toggle > span,
+  .s-sort-toggle > span {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 箭头由按钮内 <i class="s-tgl-arw"> 元素承担（不用 ::after，便于量测与展开态翻转） */
+  .s-filter-toggle .s-tgl-arw,
+  .s-sort-toggle .s-tgl-arw {
+    flex: none;
+    margin-left: auto;
+    font-style: normal;
+    font-size: 10px;
+    line-height: 1;
+    color: #94a3b8;
+    transition: transform 0.15s;
+  }
+
+  /* 展开态（aria-expanded）：箭头翻转并高亮，与「收起」语义对应 */
+  .s-filter-toggle[aria-expanded="true"],
+  .s-sort-toggle[aria-expanded="true"] {
+    background: #e8eef7;
+    border-color: #b9d0ea;
+    color: #2b6cb8;
+  }
+
+  .s-filter-toggle[aria-expanded="true"] .s-tgl-arw,
+  .s-sort-toggle[aria-expanded="true"] .s-tgl-arw {
+    transform: rotate(180deg);
+    color: #2b6cb8;
   }
 
   .s-filter-toggle {
-    grid-area: 2 / 1;
+    order: 3;
   }
 
   .s-sort-toggle {
-    grid-area: 2 / 2;
+    order: 4;
   }
 
   .s-filter-toggle:active,
@@ -1306,11 +1359,16 @@
     background: #e8eef7;
   }
 
-  /* 展开面板跨两列落在摘要行下方；两面板同格子（互斥展开不会重叠），
-     收起态 display:none 不创建网格行，不占用高度 */
+  /* 展开面板 basis 100% + order 5 → 单独占一行落在摘要行下方；
+     收起态 display:none 不参与 flex 排布，不占用高度（两面板互斥不会重叠） */
   .s-filter-body,
   .s-sort-body {
-    grid-area: 3 / 1 / 4 / 3;
+    order: 5;
+    flex: 1 0 100%;
+    min-width: 0;
+    /* 矮屏手机上展开面板不致吃掉整屏（工具栏 sticky，面板超高则内部滚动） */
+    max-height: 46vh;
+    overflow-y: auto;
   }
 
   .s-sort-body {
@@ -1318,6 +1376,11 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
+    box-sizing: border-box;
+    background: #f9fbfd;
+    border: 1px solid #e3e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
   }
 
   .s-filter.s-filter-folded .s-filter-body,
@@ -1593,6 +1656,28 @@
 
   /* 评分卡明细表保持横向滚动（.stock-compare 已有 min-width + overflow） */
   .score-card .stock-compare-wrap { margin-top: 8px; }
+}
+
+/* 超窄屏（≤360px，老款小屏手机）：工具栏两列等分后左格仅 ~140px，
+   再收一档字号与内边距，保证三个市场 Tab 仍能单行摆下（否则行 1 变两行、吸顶占高翻倍） */
+@media (max-width: 360px) {
+  .s-tabs { gap: 2px; }
+
+  .s-tab {
+    padding: 0 5px;
+    font-size: 11px;
+  }
+
+  .s-tab-count {
+    margin-left: 2px;
+    font-size: 10px;
+  }
+
+  .s-filter-toggle,
+  .s-sort-toggle {
+    padding: 0 7px;
+    font-size: 11px;
+  }
 }
 
 /* 净现金块可点（移动端卡片）：手势提示，点击弹代入计算式浮层 */

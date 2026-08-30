@@ -278,7 +278,8 @@
       '<div class="s-filter' + (isMobile && !state.fltOpen ? ' s-filter-folded' : '') + '">' +
       // 移动端折叠面板：默认收起为一行摘要（含已启用条件概览），与排序面板同样式风格
       (isMobile ? '<button type="button" class="s-filter-toggle" id="stock-flt-toggle" ' +
-        'aria-expanded="' + (state.fltOpen ? 'true' : 'false') + '">' + fltToggleLabel() + '</button>' : '') +
+        'aria-expanded="' + (state.fltOpen ? 'true' : 'false') + '"><span>' + fltToggleLabel() + '</span>' +
+        '<i class="s-tgl-arw" aria-hidden="true">▾</i></button>' : '') +
       '<div class="s-filter-body">' +
       '<div class="s-flt-row">' +
       '<label class="s-flt-num" title="财报造假可能性（0-100，越高越可疑），只保留 ≤ 该分的公司">造假风险 ≤ ' +
@@ -303,8 +304,8 @@
       '<div class="s-sort' + (isMobile && !state.sortOpen ? ' s-sort-folded' : '') + '">' +
       // 移动端折叠面板：默认收起（仅一行摘要），点开才显示全部排序按钮，避免占用屏高
       (isMobile ? '<button type="button" class="s-sort-toggle" id="stock-sort-toggle" ' +
-        'aria-expanded="' + (state.sortOpen ? 'true' : 'false') + '">' +
-        sortToggleLabel() + '</button>' : '') +
+        'aria-expanded="' + (state.sortOpen ? 'true' : 'false') + '"><span>' +
+        sortToggleLabel() + '</span><i class="s-tgl-arw" aria-hidden="true">▾</i></button>' : '') +
       '<div class="s-sort-body">' +
       '<span class="s-flt-t">排序</span>' +
       sortBtn('score-grahamAgg', '格·进取') +
@@ -659,15 +660,16 @@
     return f.fraudMax != null || f.mgmtMin != null || f.buys.length > 0 || f.sells.length > 0;
   }
 
-  // 移动端筛选面板触发按钮文案：展开态“收起”，收起态显示已启用条件摘要（未启用则提示）
+  // 移动端筛选面板触发按钮文案：收起态显示已启用条件摘要（未启用则提示），
+  // 展开态仅“收起筛选”——箭头由 .s-tgl-arw 元素按 aria-expanded 翻转，不进文案
   function fltToggleLabel() {
-    if (state.fltOpen) return '收起筛选 ▲';
+    if (state.fltOpen) return '收起筛选';
     var f = state.flt, parts = [];
     if (f.fraudMax != null) parts.push('造假≤' + f.fraudMax);
     if (f.mgmtMin != null) parts.push('管理≥' + f.mgmtMin);
     if (f.buys.length) parts.push(f.buys.length + '个买点' + (f.discount != null ? '×' + f.discount + '%' : ''));
     if (f.sells.length) parts.push(f.sells.length + '个卖点');
-    return parts.length ? '筛选：' + parts.join(' · ') + ' ▾' : '筛选条件 ▾';
+    return parts.length ? '筛选：' + parts.join(' · ') : '筛选条件';
   }
 
   // 单家公司是否通过筛选（各条件取交集）；依赖的评分/参考价/现价缺失时视为不满足自动排除。
@@ -741,11 +743,12 @@
     'netcash': '净现金/市值', 'fraud': '造假风险', 'mgmt': '管理水平', 'cycle': '周期位置'
   };
 
-  // 移动端排序面板触发按钮文案：展开态“收起”，收起态显示当前排序摘要（无则提示选择）
+  // 移动端排序面板触发按钮文案：收起态显示当前排序摘要（无则提示选择），
+  // 展开态仅“收起排序”——升降序箭头与展开箭头均由 CSS/方向符号单独处理
   function sortToggleLabel() {
-    if (state.sortOpen) return '收起排序 ▲';
+    if (state.sortOpen) return '收起排序';
     var label = SORT_LABELS[state.sortKey];
-    return label ? '排序：' + label + (state.sortDir === 'desc' ? ' ↓' : ' ↑') + ' ▾' : '选择排序方式 ▾';
+    return label ? '排序：' + label + (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '选择排序方式';
   }
 
   // 表头排序单元格 HTML（可点击；激活列高亮并显示箭头；cls 追加样式如 stick，attrs 追加属性如 rowspan；
