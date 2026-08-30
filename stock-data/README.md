@@ -153,6 +153,10 @@ python scripts/fetch_data.py --limit 2
   - `data/events/<code>.json`：单家原始明细（增减持/并购/违规/诉讼/ST + 前十大/机构/实控人/解禁）
   - `data/events/index.json`：列表覆盖层 `{updated_at, byCode:{code:{fraudDelta, mgmtDelta, flags, ...}}}`
 - **评分内核不变**：事件信号在 `fetch_events.py` 内算成静态 `delta`，前端只做 `clamp(基础分 + delta, 0, 100)`，不改动财报评分逻辑。
+- **并购桶清洗**：Wind 对“并购重组”问句偶发路由塌缩会把全市场无关事件整表灌入，抓取时已过
+  `clean_ma_rows`（仅保留本公司代码/简称出现在并购各方的行，并合并同事件出让/竞买方展开行）；
+  存量明细重清洗：对每家 `data/events/<code>.json` 的 `events.ma` 套用 `clean_ma_rows(recs, name, windcode)`
+  回写后，再 `--recompute` 重建覆盖层（均离线，不耗积分）。
 
 ```bash
 # 依赖 wind-mcp-skill（Node CLI），需有效 Wind token；token 有限时按 --codes 精抓

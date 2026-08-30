@@ -225,7 +225,10 @@ def fetch_one(code, name, wc, uniq_prefix):
     for key, tool, q in EVENT_QUERIES:
         n += 1
         payload = call_wind(tool, q.format(name=name, code=wc), "%s-%s-%d" % (uniq_prefix, key, n))
-        ev[key] = tables_records(payload)
+        recs = tables_records(payload)
+        if key == "ma":
+            recs = clean_ma_rows(recs, name, wc)
+        ev[key] = recs
     return {
         "code": code, "name": name, "windcode": wc,
         "fetched_at": dt.datetime.now().isoformat(timespec="seconds"),
@@ -347,6 +350,47 @@ def _is_party(row, short, field):
     return bool(short) and (short in val or short[:3] in val)
 
 
+def _ma_relevant(rec, short, wc):
+    """并购行与本公司是否相关：任一“股票代码”列命中自身代码，
+    或简称核心（去“股份”后缀）出现在标题/并购各方名称。
+    Wind 对定向问句偶发路由塌缩，会把全市场无关并购事件整表灌入（如 603599）。"""
+    code = (wc or "").split(".")[0]
+    if code:
+        for k, v in rec.items():
+            if "股票代码" in k and code in str(v):
+                return True
+    core = (short or "").replace("股份", "")
+    if not core:
+        return False
+    text = " ".join(str(v) for k, v in rec.items() if any(
+        t in k for t in ("标题", "竞买方", "出让方", "标的方")))
+    return core in text or core[:2] in text
+
+
+def clean_ma_rows(recs, short, wc):
+    """并购桶清洗：剔除无关行 + 同一事件按(事件ID,标的)合并出让/竞买方展开行。
+    幂等：已清洗行重跑不会重复拼接。"""
+    merged, order = {}, []
+    for r in recs or []:
+        if not _ma_relevant(r, short, wc):
+            continue
+        key = (r.get("并购事件ID") or r.get("并购事件标题") or "",
+               r.get("并购事件标的方名称") or "")
+        if key not in merged:
+            merged[key] = dict(r)
+            order.append(key)
+            continue
+        base = merged[key]
+        for k, v in r.items():
+            if not v:
+                continue
+            if "股票代码" in k:
+                base.setdefault(k, v)           # 同事件其他方的代码列补位
+            elif k.endswith("名称") and str(v) not in str(base.get(k, "")):
+                base[k] = base.get(k, "") + "、" + str(v)  # 多出让/竞买方串接
+    return [merged[k] for k in order]
+
+
 def compute_deltas(data):
     """依据事件/股东明细算造假与管理的静态增量（列名/单位容错，缺表则该项计 0）。"""
     ev = data.get("events") or {}
@@ -423,8 +467,8 @@ def compute_deltas(data):
         fraud += 5
         flags.append("大股东/董监高减持")
 
-    # --- 高商誉/跨界并购重组（被标注重组）---
-    ma = ev.get("ma") or []
+    # --- 高商誉/跨界并购重组（被标注重组）；先过相关性/去重，防 Wind 路由塌缩混入全市场事件 ---
+    ma = clean_ma_rows(ev.get("ma"), short, data.get("windcode") or "")
     if any(_has(r, "重组") for r in ma):
         fraud += 5
         flags.append("并购重组 %d 起" % len(ma))
