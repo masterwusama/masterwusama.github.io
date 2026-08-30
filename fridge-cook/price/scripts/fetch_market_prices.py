@@ -20,8 +20,9 @@
      - 单位：元/公斤（元/500克 自动 ×2）
 
 说明：各源口径不同（百家日报=浙江批发市场，周报=杭州市监测，
-周度=全国均价），同名单品也分源存储（id 前缀 cif- / cifw- / hz-），
-前端分别展示，不做混合。
+周度=全国均价），同名单品分源采集（id 前缀 cif- / cifw- / hz-），
+输出前按地区就近原则整合：(品名,分类) 相同的品种只保留最贴近
+杭州的来源（杭州周报 > 浙江日报 > 商务部周度），避免前端重复卡片。
 基础品种自 2026-08-30 起采集不回填；水果/水产日报与周度源自带可查历史，
 入库时一次性回填近一年。滚动保留最近 365 天。
 
@@ -156,6 +157,17 @@ SECTION_KEYWORDS = [
     ('鸡蛋', '农副产品'), ('禽蛋', '农副产品'), ('鸭蛋', '农副产品'),
     ('粮食', '农副产品'), ('食用油', '农副产品'), ('桶装', '农副产品'),
 ]
+
+
+# 同名不同源整合：地区就近优先级（数字越小越优先）
+SOURCE_PRIORITY = {
+    '杭州市商务局周报': 0,
+    '商务部百家日报（浙江市场）': 1,
+    '商务部周度（全国）': 2,
+}
+
+# 已被百家日报水果/水产覆盖的周度品种（更贴近杭州且日更，周度不再抓取）
+FF_COVERED = {(p[1], p[3]) for p in BAIJIA_FF_PRODUCTS}
 
 
 # ---------------- 抓取 ----------------
@@ -324,12 +336,14 @@ def fetch_weekly(cutoff, today):
     POST /cif/getWeekLineChart2021.fhtml，indexIds 逗号分隔，
     startDate/endDate 控制区间（实测生效，可取近一年）。
     接口实测每次只返回前 3 个 indexIds，故分批请求。
+    被浙江日报覆盖的同名品种（FF_COVERED）跳过不抓。
     返回 JSON 数组，元素含 datas[{DATADATE, DATA, NAME}] 与 unit。
     返回 {id: {'unit': .., 'points': [{date, price}...]}}
     """
     out = {}
-    for i in range(0, len(WEEKLY_PRODUCTS), 3):
-        batch = WEEKLY_PRODUCTS[i:i + 3]
+    todo = [w for w in WEEKLY_PRODUCTS if (w[1], w[3]) not in FF_COVERED]
+    for i in range(0, len(todo), 3):
+        batch = todo[i:i + 3]
         ids = ','.join(w[2] for w in batch)
         body = 'indexIds=%s&startDate=%s&endDate=%s' % (ids, cutoff, today)
         raw = http_get(CIF_BASE + '/cif/getWeekLineChart2021.fhtml', data=body)
@@ -457,6 +471,19 @@ def load_old():
     return {'updated_at': None, 'meta': {}, 'products': []}
 
 
+def merge_same_name(products):
+    """同名同分类只保留地区最就近的来源（杭州周报>浙江日报>全国周度）"""
+    best = {}
+    for p in products:
+        key = (p['name'], p['category'])
+        cur = best.get(key)
+        if cur is None or (SOURCE_PRIORITY.get(p['source'], 9)
+                           < SOURCE_PRIORITY.get(cur['source'], 9)):
+            best[key] = p
+    kept = {id(p) for p in best.values()}
+    return [p for p in products if id(p) in kept]
+
+
 def main():
     old = load_old()
     old_products = {p['id']: p for p in old.get('products', [])}
@@ -501,7 +528,9 @@ def main():
     print('== 商务部周度（全国，近一年历史）')
     try:
         weekly = fetch_weekly(cutoff, today)
-        print('   成功 %d/%d 品种' % (len(weekly), len(WEEKLY_PRODUCTS)))
+        n_todo = len(WEEKLY_PRODUCTS) - len(FF_COVERED & {(w[1], w[3]) for w in WEEKLY_PRODUCTS})
+        print('   成功 %d/%d 品种（同名已由浙江源覆盖的不抓）'
+              % (len(weekly), n_todo))
         for pid, name, iid, cat, dunit in WEEKLY_PRODUCTS:
             got = weekly.get(pid)
             if not got:
@@ -528,6 +557,7 @@ def main():
         if not p['prices']:
             continue
         products.append(p)
+    products = merge_same_name(products)
     products.sort(key=lambda x: (cat_order.get(x['category'], 9), x['id']))
 
     data = {
