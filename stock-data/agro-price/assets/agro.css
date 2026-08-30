@@ -1,4 +1,4 @@
-/* 农化制品价格跟踪 —— 样式 */
+/* 行业EDB量价跟踪 —— 样式（农化制品 + 汽车/电解铝/航运 EDB） */
 
 #agro-app {
   max-width: 980px;
@@ -278,4 +278,204 @@
   font-size: 12px;
   color: #aaa;
   text-align: center;
+}
+
+/* ================= 行业切换栏 ================= */
+
+.edb-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 0 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.edb-seg {
+  padding: 7px 20px;
+  border: 1px solid #d5d5d5;
+  border-radius: 20px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .15s;
+}
+
+.edb-seg:hover {
+  border-color: #2f7d32;
+  color: #2f7d32;
+}
+
+.edb-seg.active {
+  background: #2f7d32;
+  border-color: #2f7d32;
+  color: #fff;
+}
+
+.edb-switch-note {
+  margin-left: auto;
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* ================= EDB 分类标题 ================= */
+
+.edb-cat-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.edb-cat-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+}
+
+.edb-cat-meta {
+  font-size: 12px;
+  color: #999;
+}
+
+/* ================= KPI 指标卡 ================= */
+
+.edb-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.edb-kpi {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.edb-kpi-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.edb-kpi-freq {
+  font-size: 10px;
+  color: #2f7d32;
+  background: #e8f3e8;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-weight: 400;
+}
+
+.edb-kpi-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.1;
+}
+
+.edb-kpi-val em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+  margin-left: 3px;
+}
+
+.edb-kpi-chgs {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 6px;
+  flex-wrap: wrap;
+}
+
+.edb-chg {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.edb-chg.up { color: #c0392b; background: #fdf0ee; }
+.edb-chg.down { color: #1e8449; background: #eaf7ee; }
+.edb-chg.flat { color: #888; background: #f2f2f2; }
+
+.edb-kpi-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edb-rng-label {
+  font-size: 10px;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.edb-rng-track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: #eee;
+  border-radius: 2px;
+}
+
+.edb-rng-dot {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: #2f7d32;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.edb-kpi-foot {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #bbb;
+}
+
+/* ================= EDB 图表面板 ================= */
+
+.edb-panel {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.edb-panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.edb-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
+
+.edb-panel-sub {
+  font-size: 12px;
+  color: #999;
+}
+
+.edb-chart {
+  width: 100%;
 }

@@ -292,5 +292,10 @@
       });
   }
 
+  // 供行业切换控制器调用：农化视图重新显示时恢复图表尺寸
+  window.__agroRefresh = function () {
+    if (state.chart) state.chart.resize();
+  };
+
   document.addEventListener('DOMContentLoaded', init);
 })();

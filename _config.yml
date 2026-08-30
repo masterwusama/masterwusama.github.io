@@ -491,8 +491,10 @@ rating:
 
 # Show number of visitors to each article.
 # You can visit https://leancloud.cn get AppID and AppKey.
+# NOTE: 依赖的 cdn1.lncld.net 上 av-core-mini-0.6.1.js 已停用（ERR_CONNECTION_CLOSED），
+# 会导致页面报 "AV is not defined"，故关闭此统计。如需恢复请改用可用的 LeanCloud SDK 地址。
 leancloud_visitors:
-  enable: true
+  enable: false
   app_id: dlyvoNdAoAIToHWDK1r6TcrD-gzGzoHsz
   app_key: gXRKSPjCrw7K49nk49Pegsl3
 

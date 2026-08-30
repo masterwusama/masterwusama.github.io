@@ -1,7 +1,10 @@
-# agro-price — 农化制品价格跟踪
+# agro-price — 行业EDB量价跟踪
 
 以广信股份（603599）的营收结构为骨架，跟踪其主营产品（农药原药 / 中间体）的
 市场价格走势，将"产品价格 → 出厂价/毛利率 → 公司业绩"的传导链可视化。
+
+模块顶部提供行业切换：**农化制品**（生意社/中农立华价格，原有能力）与
+**汽车 / 电解铝 / 航运**（万得 Wind 宏观行业 EDB 量价指标）。
 
 ## 页面
 
@@ -96,3 +99,22 @@ python scripts/fetch_prices.py
 - **增量策略**：中农立华每次全量重抓（文章数有限），生意社按栏目翻 5 页增量累积（历史保留在 products.json 中）；
   主序列以本轮 fresh 抓取为准，旧文件仅补 fresh 未覆盖的更早历史，避免旧聚合值重复参与聚合
 - **数据仅供个人学习研究**，商业使用请确认数据源协议
+
+## 行业 EDB 量价（汽车 / 电解铝 / 航运）
+
+农化视图之外，`assets/edb.js` 消费 `data/edb.json`，按行业分类渲染最近一年的
+宏观行业 EDB 量价指标：KPI 指标卡（最新值 / 环比 / 同比 / 区间位置）→
+相对走势总览（各指标起点归一为 100）→ 多维度分类图表（产量 vs 渗透率、
+铝价 vs 氧化铝成本与价差、CCFI/SCFI/BDI/BDTI 等）。
+
+数据由 `scripts/fetch_edb.py` 通过本地万得金融能力
+（`.agents/skills/wind-mcp-skill`，`economic_data.query_economic_indicator_data`）
+抓取，日频序列自动折叠为周频、月频原样保留（省积分）。指标清单在脚本内
+`CATEGORIES` 中维护（EDB 代码 + 展示名 + 分组）。EDB 数据为手动按需抓取，
+不进入每日定时任务。
+
+```bash
+# 依赖本地 Wind 能力已配置 WIND_API_KEY（config.json 已被 .gitignore 忽略）
+python scripts/fetch_edb.py            # 抓全部分类，输出 data/edb.json
+python scripts/fetch_edb.py --only alu # 只抓某一类
+```

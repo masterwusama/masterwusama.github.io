@@ -26,6 +26,9 @@ stock-data/scripts/_screen_result.json
 stock-data/scripts/_screen_*.json
 stock-data/scripts/_tmp_*
 
+# 本地预览验证临时截图（不入库）
+**/_verify_*.png
+
 # D&D 文字冒险素材与未授权文本（不入库）
 dnd-table/de-src/
 dnd-table/_gist*.json
@@ -33,3 +36,6 @@ dnd-table/_gist*.json
 # rpg 本地工具（地图生成器/校验器，不入库）
 rpg/tools/
 stock-data/scripts/_auto_screen_*.json
+
+# Wind 金融能力 API Key（含明文密钥，不入库）
+.agents/skills/wind-mcp-skill/config.json
