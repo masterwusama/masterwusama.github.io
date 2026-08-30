@@ -1717,3 +1717,107 @@
 .cy-t.cy-up { color: #1e7e44; }
 .cy-t.cy-flat { color: #b07a10; }
 .cy-t.cy-down { color: #c0392b; }
+
+/* ---- Wind 事件增强分切换档（列表工具栏） ---- */
+.s-wind-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  background: #fff;
+  color: #556;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: center;
+}
+.s-wind-toggle .swt-lab { color: #8a93a5; }
+.s-wind-toggle .swt-val {
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #eef1f6;
+  color: #667;
+}
+.s-wind-toggle:hover { border-color: #b9c6dd; }
+.s-wind-toggle.active {
+  border-color: #5b8ff9;
+  background: #eef4ff;
+  color: #2b5bb5;
+}
+.s-wind-toggle.active .swt-lab { color: #5b8ff9; }
+.s-wind-toggle.active .swt-val { background: #5b8ff9; color: #fff; }
+
+/* ---- ⑥⑦ 卡片底部 Wind 事件优化说明 ---- */
+.ev-enh {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px dashed #cdd8ea;
+  border-radius: 8px;
+  background: #f7faff;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.ev-enh-line b { color: #222; }
+.ev-enh .ev-good { color: #00a854; font-weight: 700; }
+.ev-enh .ev-bad { color: #d63031; font-weight: 700; }
+.ev-enh .ev-flat { color: #8a93a5; font-weight: 700; }
+.ev-enh-hint { color: #8a93a5; font-size: 12px; }
+.ev-flags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.ev-flag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #fff3e0;
+  color: #b06a10;
+  font-size: 12px;
+}
+.ev-flag.ev-flag-none { background: #eef1f6; color: #8a93a5; }
+.ev-enh-note { margin-top: 6px; color: #97a0b0; font-size: 12px; }
+
+/* ---- ⑨ 公司事件与股东结构 ---- */
+.va-events { font-size: 13px; }
+.ev-src { color: #8a93a5; font-size: 12px; margin: 2px 0 10px; }
+.ev-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.ev-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: #eef1f6;
+  color: #556;
+  font-size: 12px;
+}
+.ev-chip.ev-chip-bad { background: #fdecec; color: #c0392b; }
+.ev-chip.ev-chip-warn { background: #fff3e0; color: #b06a10; }
+.ev-chip.ev-chip-good { background: #e6f7ee; color: #1e7e44; }
+.ev-block { margin-bottom: 18px; }
+.ev-block > h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: #34405a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ev-block .ev-n {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8a93a5;
+  background: #eef1f6;
+  border-radius: 10px;
+  padding: 0 8px;
+}
+.ev-tbl { min-width: 480px; }
+.ev-tbl .ev-num { font-variant-numeric: tabular-nums; }
+.ev-tbl .ev-def { max-width: 320px; }
+.ev-tbl .ev-good { color: #00a854; font-weight: 600; }
+.ev-tbl .ev-bad { color: #d63031; font-weight: 600; }
+.ev-more { color: #97a0b0; font-size: 12px; margin: 4px 0 0; }
+
+/* 移动端：事件切换档按钮入工具栏流式排布，与搜索框同占一行的右侧 */
+@media (max-width: 600px) {
+  .s-wind-toggle { order: 3; flex: 0 0 auto; padding: 6px 10px; }
+  .ev-tbl { min-width: 420px; }
+}

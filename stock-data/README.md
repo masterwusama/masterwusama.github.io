@@ -142,6 +142,27 @@ python scripts/fetch_data.py --limit 2
 
 数据输出到 `data/` 目录。
 
+## 公司事件 / 股东结构数据（一次性 Wind 抓取，不随每日更新）
+
+价值分析详情页的 **⑥ 造假风险 / ⑦ 管理水平** 提供“基础财报分 ↔ Wind 事件增强分”切换，
+并新增 **⑨ 公司事件与股东结构** 模块。事件信号来自万得（Wind）付费数据，
+由 `scripts/fetch_events.py` **本地手动跑一次**生成，**不接入每日 Actions 定时更新**（避免持续消耗 Wind 配额）。
+
+- **仅覆盖 A 股**：港美股无事件数据 → 列表回落基础分、详情页隐藏 ⑨ 模块。
+- **存储隔离**：产物写入 `data/events/`，独立于每日 `data/*` 的自动提交，互不干扰。
+  - `data/events/<code>.json`：单家原始明细（增减持/并购/违规/诉讼/ST + 前十大/机构/实控人/解禁）
+  - `data/events/index.json`：列表覆盖层 `{updated_at, byCode:{code:{fraudDelta, mgmtDelta, flags, ...}}}`
+- **评分内核不变**：事件信号在 `fetch_events.py` 内算成静态 `delta`，前端只做 `clamp(基础分 + delta, 0, 100)`，不改动财报评分逻辑。
+
+```bash
+# 依赖 wind-mcp-skill（Node CLI），需有效 Wind token；token 有限时按 --codes 精抓
+python scripts/fetch_events.py                      # 抓取全部 A 股（消耗配额）
+python scripts/fetch_events.py --codes 002027,601899  # 只抓指定代码（增量）
+python scripts/fetch_events.py --recompute           # 离线用已存 JSON 重算 delta/index.json（不耗 Wind）
+```
+
+> 当前已抓取 12 家 A 股事件数据；后续 token 恢复可用 `--codes` 增量补齐，无需重抓已有。
+
 ## 注意
 
 - **更新频率**：定时任务每天 3 次（北京 9:00 / 17:00 / 次日 1:00），适合财报、

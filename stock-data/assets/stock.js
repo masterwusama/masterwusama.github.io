@@ -10,6 +10,9 @@
   var state = { companies: [], current: null, charts: [], view: 'year',
     indexUpdatedAt: null, listScroll: 0, keyword: '', tab: 'A',
     scores: {}, details: {}, scoresLoaded: false, sortKey: null, sortDir: 'desc', sortOpen: false,
+    // Wind 事件增强分开关（列表用，localStorage 记忆）+ 事件覆盖层（events/index.json byCode）+ 单家事件明细缓存
+    windMode: (function () { try { return localStorage.getItem('va_wind') === '1'; } catch (e) { return false; } })(),
+    eventOverlay: null, eventDetails: {}, overlayLoaded: false,
     // 筛选条件：造假风险≤ / 管理能力≥ / 买点（多选同满，可乘打折促销%）/ 卖点（多选同满，须同时达保守与公允）
     flt: { fraudMax: null, mgmtMin: null, buys: [], discount: null, sells: [] }, fltOpen: false };
 
@@ -275,6 +278,10 @@
       '<div class="stock-search-wrap">' +
       '<input id="stock-search" type="search" placeholder="搜索公司名称 / 代码" ' +
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>' +
+      // Wind 事件增强分切换档（仅当事件覆盖层存在时显示）：切换列表造假/管理两列口径，排序/筛选跟随
+      (state.eventOverlay ? '<button type="button" class="s-wind-toggle' + (state.windMode ? ' active' : '') + '" id="stock-wind-toggle" ' +
+        'title="切换造假/管理分口径：基础财报分 ↔ Wind 事件增强分（基础分 + 一次性 Wind 事件增量，仅A股有事件数据时生效）">' +
+        '<span class="swt-lab">事件增强分</span><span class="swt-val">' + (state.windMode ? 'Wind' : '基础') + '</span></button>' : '') +
       '<div class="s-filter' + (isMobile && !state.fltOpen ? ' s-filter-folded' : '') + '">' +
       // 移动端折叠面板：默认收起为一行摘要（含已启用条件概览），与排序面板同样式风格
       (isMobile ? '<button type="button" class="s-filter-toggle" id="stock-flt-toggle" ' +
@@ -439,6 +446,16 @@
       });
     }
 
+    // Wind 事件增强分切换档：切换造假/管理列口径（基础财报分 ↔ 基础分+事件增量），排序/筛选跟随，localStorage 记忆
+    var windToggle = $('stock-wind-toggle');
+    if (windToggle) {
+      windToggle.addEventListener('click', function () {
+        state.windMode = !state.windMode;
+        try { localStorage.setItem('va_wind', state.windMode ? '1' : '0'); } catch (e) {}
+        renderList();
+      });
+    }
+
     // 排序：表头列与下方按钮共用同一逻辑（applySort），首次点击数值列降序、文本列升序；
     // 仅绑定 .s-sort-body 内按钮，避免命中折叠面板触发按钮（无 data-sort）
     box.querySelectorAll('thead th[data-sort]').forEach(function (th) {
@@ -492,6 +509,82 @@
     }
   }
 
+  /* ---------------- Wind 事件增强分 helper ---------------- */
+
+  // 该代码是否处于“Wind 增强”档：开关开 + 覆盖层有该代码事件数据（覆盖层仅含 A 股，命中即 A 股）
+  function windActiveCode(code) {
+    return !!(state.windMode && state.eventOverlay && state.eventOverlay[code]);
+  }
+
+  // 基础分叠加事件 delta 后钉到 0~100；基础分缺失时原样返回（无基可加）
+  function applyDelta(base, delta) {
+    if (base == null) return null;
+    if (!delta) return base;
+    return Math.max(0, Math.min(100, base + delta));
+  }
+
+  // 展示用造假/管理分（按代码）：Wind 档下为优化分，否则基础财报分
+  function dispFraudCode(code) {
+    var sc = state.scores[code];
+    var base = sc ? sc.fraud : null;
+    if (windActiveCode(code)) return applyDelta(base, (state.eventOverlay[code].fraudDelta) || 0);
+    return base;
+  }
+  function dispMgmtCode(code) {
+    var sc = state.scores[code];
+    var base = sc ? sc.mgmt : null;
+    if (windActiveCode(code)) return applyDelta(base, (state.eventOverlay[code].mgmtDelta) || 0);
+    return base;
+  }
+  // 展示用造假/管理分（按公司对象）
+  function dispFraud(c) { return dispFraudCode(c.code); }
+  function dispMgmt(c) { return dispMgmtCode(c.code); }
+
+  // 单元格悬停提示：windMode 下补充“基础+delta→优化”与触发红旗摘要
+  function windCellTip(c, base, disp, kind, baseTip) {
+    if (!windActiveCode(c.code)) return baseTip;
+    var o = state.eventOverlay[c.code] || {};
+    var d = (kind === 'fraud' ? o.fraudDelta : o.mgmtDelta) || 0;
+    var flags = (o.flags && o.flags.length) ? '；事件：' + o.flags.join('、') : '';
+    return 'Wind 事件增强：基础财报 ' + (base == null ? '-' : fmtNum(base)) + ' 分 ' +
+      (d >= 0 ? '+' : '') + fmtNum(d) + ' → 优化 ' + (disp == null ? '-' : fmtNum(disp)) + ' 分' + flags +
+      '\n' + baseTip;
+  }
+
+  // HTML 转义（事件明细表文本字段来自 Wind 原始数据，不可信，一律转义）
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  // ⑥⑦ 卡片底部：Wind 事件优化说明（基础财报分 → 优化分 + 触发红旗）；仅当该代码在覆盖层时显示
+  function eventEnhFooter(ov, base, kind) {
+    if (!ov) return '';
+    var delta = (kind === 'fraud' ? ov.fraudDelta : ov.mgmtDelta) || 0;
+    var opt = applyDelta(base, delta);
+    // 造假分越低越好（delta<0 为改善），管理分越高越好（delta>0 为改善）
+    var good = kind === 'fraud' ? delta < 0 : delta > 0;
+    var bad = kind === 'fraud' ? delta > 0 : delta < 0;
+    var dCls = delta === 0 ? 'ev-flat' : (good ? 'ev-good' : (bad ? 'ev-bad' : 'ev-flat'));
+    var sign = delta > 0 ? '+' : '';
+    var h = '<div class="ev-enh">' +
+      '<div class="ev-enh-line">Wind 事件优化：基础财报分 <b>' + (base == null ? '-' : fmtNum(base)) + '</b> ' +
+      '<span class="' + dCls + '">' + (delta === 0 ? '±0' : sign + fmtNum(delta)) + '</span> → 优化分 <b>' +
+      (opt == null ? '-' : fmtNum(opt)) + '</b>' +
+      '<span class="ev-enh-hint">（' + (kind === 'fraud' ? '越低越好' : '越高越好') + '）</span></div>';
+    var flags = ov.flags || [];
+    if (flags.length) {
+      h += '<div class="ev-flags">' + flags.map(function (f) {
+        return '<span class="ev-flag">' + esc(f) + '</span>';
+      }).join('') + '</div>';
+    } else {
+      h += '<div class="ev-flags"><span class="ev-flag ev-flag-none">无事件增量，与基础财报分一致</span></div>';
+    }
+    h += '<div class="ev-enh-note">事件信号来自一次性 Wind 抓取（增减持/并购重组/违规处罚/司法诉讼/ST/股东结构），仅本地留存不随每日更新；基础评分内核不变，本行只在“事件增强分”口径下生效。</div>';
+    return h + '</div>';
+  }
+
   // 单行 10 个单元格：名称/代码/行业/现价/清算/净现金 ＋ 评分4 ＋ 价格参考4（每流派买/保/公合并单列）
   // data-s 标记供降级路径 fillRowScores 渐进重填；价格与现价对照着色（买区绿/卖区红）
   function listCells(c) {
@@ -514,15 +607,21 @@
     h += '<td class="c-num' + (ncr != null && ncr >= 1 ? ' r-hit' : '') + '" data-s="netcash" ' +
       'title="' + ncrTitle + '">' +
       (ncr == null ? '-' : (ncr * 100).toFixed(1) + '%') + '</td>';
-    // 造假风险（百分制，越高风险越大）：等级色与详情页造假分圆徽一致
-    var fraud = sc ? sc.fraud : null;
+    // 造假风险（百分制，越高风险越大）：Wind 档取基础+事件 delta 的优化分，否则基础财报分
+    var fraudBase = sc ? sc.fraud : null;
+    var fraud = dispFraud(c);
+    var fraudTip = windCellTip(c, fraudBase, fraud, 'fraud',
+      '财报造假可能性 ' + (fraud == null ? '-' : fmtNum(fraud)) + ' 分（0-100，越高越可疑）：净现背离/高应计/应收存货增速背离/毛利率逆势上升/其他应收占用等量化红旗加权');
     h += '<td class="c-num sc-' + fraudGradeOf(fraud) + '" data-s="fraud" ' +
-      'title="财报造假可能性 ' + (fraud == null ? '-' : fmtNum(fraud)) + ' 分（0-100，越高越可疑）：净现背离/高应计/应收存货增速背离/毛利率逆势上升/其他应收占用等量化红旗加权">' +
+      'title="' + fraudTip + '">' +
       (fraud == null ? '-' : fmtNum(fraud)) + '</td>';
-    // 管理水平（百分制，越高越好）：等级色与价值评分同向，与详情页管理分圆徽一致
-    var mgmt = sc ? sc.mgmt : null;
+    // 管理水平（百分制，越高越好）：Wind 档取基础+事件 delta 的优化分，否则基础财报分
+    var mgmtBase = sc ? sc.mgmt : null;
+    var mgmt = dispMgmt(c);
+    var mgmtTip = windCellTip(c, mgmtBase, mgmt, 'mgmt',
+      '管理层管理水平 ' + (mgmt == null ? '-' : fmtNum(mgmt)) + ' 分（0-100，越高越好）：费用纪律/资产周转/资本回报/成长质量/营运资金/现金流质量/股东回报/治理诚信加权');
     h += '<td class="c-num sc-' + gradeOf(mgmt) + '" data-s="mgmt" ' +
-      'title="管理层管理水平 ' + (mgmt == null ? '-' : fmtNum(mgmt)) + ' 分（0-100，越高越好）：费用纪律/资产周转/资本回报/成长质量/营运资金/现金流质量/股东回报/治理诚信加权">' +
+      'title="' + mgmtTip + '">' +
       (mgmt == null ? '-' : fmtNum(mgmt)) + '</td>';
     // 周期位置（百分制，越低越接近底部）：非周期性行业显示“非周期”灰色；周期性低分=机会=绿（同造假分方向）；
     // 趋势图标：反转/上行 ▲绿、筑底 ◆琥珀、下行 ▼红（后端预计算，降级路径由客户端回填）
@@ -579,8 +678,8 @@
       '<span class="sc-code">' + c.code + '</span>' +
       '<span class="sc-industry">' + (c.industry || '-') + '</span>' +
       '<span class="sc-price">' + (cur == null ? '-' : fmtNum(cur)) + '</span>' +
-      '<span class="sc-fraud sc-' + fraudGradeOf(sc ? sc.fraud : null) + '" data-s="fraud" title="财报造假可能性（0-100，越高越可疑）"><em>造假</em><b>' + (sc && sc.fraud != null ? fmtNum(sc.fraud) : '-') + '</b></span>' +
-      '<span class="sc-mgmt sc-' + gradeOf(sc ? sc.mgmt : null) + '" data-s="mgmt" title="管理层管理水平评分（0-100，越高越好）"><em>管理</em><b>' + (sc && sc.mgmt != null ? fmtNum(sc.mgmt) : '-') + '</b></span>' +
+      '<span class="sc-fraud sc-' + fraudGradeOf(dispFraud(c)) + '" data-s="fraud" title="财报造假可能性（0-100，越高越可疑）"><em>造假</em><b>' + (dispFraud(c) != null ? fmtNum(dispFraud(c)) : '-') + '</b></span>' +
+      '<span class="sc-mgmt sc-' + gradeOf(dispMgmt(c)) + '" data-s="mgmt" title="管理层管理水平评分（0-100，越高越好）"><em>管理</em><b>' + (dispMgmt(c) != null ? fmtNum(dispMgmt(c)) : '-') + '</b></span>' +
       (sc && sc.cyclical === false
         ? '<span class="sc-cycle sc-na" data-s="cycle" title="非周期性/弱周期行业，不适用周期位置评分"><em>周期</em><b>非周期</b></span>'
         : '<span class="sc-cycle sc-' + fraudGradeOf(sc ? sc.cycle : null) + '" data-s="cycle" title="周期位置评分（0-100，越低越接近周期底部）；趋势：' + (sc && sc.cycleTrend ? cycleTrendText(sc.cycleTrend) : '-') + '"><em>周期</em><b>' + (sc && sc.cycle != null ? fmtNum(sc.cycle) : '-') + '</b>' + cycleTrendIcon(sc ? sc.cycleTrend : null) + '</span>') +
@@ -679,10 +778,12 @@
     var f = state.flt;
     var sc = state.scores[c.code] || null;
     if (f.fraudMax != null) {
-      if (!sc || sc.fraud == null || sc.fraud > f.fraudMax) return false;
+      var fz = dispFraud(c);
+      if (fz == null || fz > f.fraudMax) return false;
     }
     if (f.mgmtMin != null) {
-      if (!sc || sc.mgmt == null || sc.mgmt < f.mgmtMin) return false;
+      var mz = dispMgmt(c);
+      if (mz == null || mz < f.mgmtMin) return false;
     }
     var refs = sc ? sc.priceRefs : null;
     var cur = c.price;
@@ -788,14 +889,8 @@
       var scN = state.scores[c.code];
       return scN && scN.priceRefs ? scN.priceRefs.netCashRatio : null;
     }
-    if (key === 'fraud') {
-      var scF = state.scores[c.code];
-      return scF && scF.fraud != null ? scF.fraud : null;
-    }
-    if (key === 'mgmt') {
-      var scM = state.scores[c.code];
-      return scM && scM.mgmt != null ? scM.mgmt : null;
-    }
+    if (key === 'fraud') return dispFraud(c);
+    if (key === 'mgmt') return dispMgmt(c);
     if (key === 'cycle') {
       var scC = state.scores[c.code];
       return scC && scC.cycle != null ? scC.cycle : null;  // 非周期性公司为 null 排最后
@@ -918,8 +1013,8 @@
         }
         return;
       } else if (kind === 'fraud') {
-        // 造假风险：PC 宽表 td 重设等级色；移动端 .sc-fraud 徽标保留结构类只换等级色与数值
-        p = sc ? sc.fraud : null;
+        // 造假风险：Wind 档取优化分；PC 宽表 td 重设等级色；移动端 .sc-fraud 徽标保留结构类只换等级色与数值
+        p = dispFraudCode(code);
         var fg = fraudGradeOf(p);
         if (td.tagName === 'TD') {
           td.className = 'c-num sc-' + fg;
@@ -932,8 +1027,8 @@
         }
         return;
       } else if (kind === 'mgmt') {
-        // 管理水平：方向与价值评分同向（越高越好），复用等级色；移动端徽标同造假分处理
-        p = sc ? sc.mgmt : null;
+        // 管理水平：Wind 档取优化分；方向与价值评分同向（越高越好），复用等级色；移动端徽标同造假分处理
+        p = dispMgmtCode(code);
         var mg = gradeOf(p);
         if (td.tagName === 'TD') {
           td.className = 'c-num sc-' + mg;
@@ -1035,27 +1130,66 @@
           if (c.scores) { state.scores[c.code] = c.scores; have++; }
         });
         state.scoresLoaded = total > 0 && have === total;
-        showList();
+        // 加载 Wind 事件覆盖层（events/index.json，一次性抓取；缺失/404 静默，列表仅用基础分）
+        fetchOverlayThenShowList();
       })
       .catch(function () { fail('公司列表加载失败，请稍后刷新重试'); });
   }
 
+  // 拉取事件覆盖层后再渲染列表；无事件数据不阻断主流程
+  function fetchOverlayThenShowList() {
+    fetch(DATA_BASE + 'events/index.json?t=' + Date.now())
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (ov) { state.eventOverlay = (ov && ov.byCode) || null; state.overlayLoaded = true; })
+      .catch(function () { state.eventOverlay = null; state.overlayLoaded = true; })
+      .then(function () { showList(); });
+  }
+
   /* ---------------- 公司详情 ---------------- */
 
+  // 拉单家事件明细（events/<code>.json）；404 / 失败 → null（静默，无事件模块不显示）
+  function fetchEventData(code) {
+    return fetch(DATA_BASE + 'events/' + code + '.json?t=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+
+  // 确保事件覆盖层已加载（深链直达详情时 fetchIndex 未跑）；用 overlayLoaded 避免反复请求
+  function fetchOverlayOnce() {
+    if (state.overlayLoaded) return Promise.resolve(state.eventOverlay);
+    return fetch(DATA_BASE + 'events/index.json?t=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (ov) { state.eventOverlay = (ov && ov.byCode) || null; state.overlayLoaded = true; return state.eventOverlay; })
+      .catch(function () { state.overlayLoaded = true; return null; });
+  }
+
   function showDetail(code) {
-    // 列表页已预载过该公司数据（评分预载），直接复用免重复下载
-    if (state.details[code]) { renderDetail(state.details[code]); return; }
+    var cached = state.details[code];
+    // 已预载公司数据且事件明细也拉过则直接复用；否则补拉事件与覆盖层（本地小文件，不耗 Wind）
+    if (cached && cached._evDone) { renderDetail(cached); return; }
     show('stock-loading');
-    fetch(DATA_BASE + 'companies/' + code + '.json')
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
+    var pc = cached ? Promise.resolve(cached) :
+      fetch(DATA_BASE + 'companies/' + code + '.json')
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .catch(function () { return null; });
+    Promise.all([pc, fetchOverlayOnce()])
+      .then(function (res) {
+        var d = res[0];
+        if (!d) { fail('公司数据加载失败：' + code); return null; }
+        // 覆盖层有该代码事件条目才拉单家明细（避免港美股/未抓公司每次 404 控制台报错）
+        var overlay = res[1];
+        return (overlay && overlay[code])
+          ? fetchEventData(code).then(function (evs) { return [d, evs]; })
+          : [d, null];
       })
-      .then(function (d) {
-        state.details[code] = d;
+      .then(function (pair) {
+        if (!pair) return;
+        var d = pair[0];
+        d._events = pair[1];
+        d._evDone = true;
+        if (!state.details[code]) state.details[code] = d;
         renderDetail(d);
-      })
-      .catch(function () { fail('公司数据加载失败：' + code); });
+      });
   }
 
   function renderDetail(d) {
@@ -1083,6 +1217,10 @@
       '<span class="s-meta">更新于 ' + fmtDate(s.time || d.updated_at) + '</span>' +
       '</div>';
 
+    // Wind 事件覆盖层当前代码条目（⑥⑦优化说明 + ⑨事件模块共用）；无事件数据（港美股/未抓公司）为 null
+    var ovD = (state.eventOverlay && state.eventOverlay[d.code]) ? state.eventOverlay[d.code] : null;
+    var hasEvents = evHasAny(d._events);
+
     // 五大模块锚点导航（点击平滑滚动，避免与 #/code 路由冲突）
     html += '<nav class="va-nav" aria-label="详情模块导航">' +
       '<a href="#sec-basic" data-scroll="sec-basic">① 基础财务信息</a>' +
@@ -1093,6 +1231,7 @@
       '<a href="#sec-fraud" data-scroll="sec-fraud">⑥ 造假风险</a>' +
       '<a href="#sec-mgmt" data-scroll="sec-mgmt">⑦ 管理水平</a>' +
       '<a href="#sec-cycle" data-scroll="sec-cycle">⑧ 周期位置</a>' +
+      (hasEvents ? '<a href="#sec-events" data-scroll="sec-events">⑨ 事件与股东</a>' : '') +
       '</nav>';
 
     // ---- 模块一：基础财务信息（估值快照/趋势图/财务对比/报表/分红/定期报告）----
@@ -1284,6 +1423,12 @@
       '<div class="stock-chart" id="stock-chart-cycle"></div>' +
       '<p class="stock-chart-note">逐年回溯：以各年报年为窗口末尾取最近 8 年年报，按与当期相同的 8 维逻辑打分；单季环比逐年参与（历史年用该年自身单季营收环比，末年用最新单季环比），各年均为满 8 维、同口径可比。</p></div></section>';
 
+    // ---- 模块九：公司事件与股东结构（仅当有 Wind 事件明细时展示；港美股/未抓公司自动隐藏）----
+    if (hasEvents) {
+      html += '<section id="sec-events" class="stock-section va-module"><h2 class="va-module-title"><span>⑨</span>公司事件与股东结构</h2>' +
+        renderEvents(d._events, ovD) + '</section>';
+    }
+
     $('stock-detail-body').innerHTML = html;
     bindViewToggle();
     bindComparePicks();
@@ -1295,10 +1440,10 @@
     renderScores(sc);
     var fa = fraudAnalysis(d);
     var fraudEl = $('stock-score-fraud');
-    if (fraudEl) fraudEl.innerHTML = fraudCard(fa);
+    if (fraudEl) fraudEl.innerHTML = fraudCard(fa, ovD);
     var ma = managementAnalysis(d);
     var mgmtEl = $('stock-score-mgmt');
-    if (mgmtEl) mgmtEl.innerHTML = managementCard(ma);
+    if (mgmtEl) mgmtEl.innerHTML = managementCard(ma, ovD);
     var ca = cycleAnalysis(d);
     var cycleEl = $('stock-score-cycle');
     if (cycleEl) cycleEl.innerHTML = cycleCard(ca);
@@ -1996,8 +2141,8 @@
     };
   }
 
-  // 造假分析评分卡（与 scoreCard 同构但等级方向相反：分低=安全=绿）
-  function fraudCard(fa) {
+  // 造假分析评分卡（与 scoreCard 同构但等级方向相反：分低=安全=绿）；ov 为 Wind 事件覆盖层条目，有则并列基础分+事件明细+优化分
+  function fraudCard(fa, ov) {
     var g = fraudGradeOf(fa.total);
     var rows = fa.items.map(function (x) {
       var mCls = x.match == null ? 'sc-na' : x.match <= 0.01 ? 'sc-good' : x.match < 0.5 ? 'sc-mid' : x.match < 0.99 ? 'sc-low' : 'sc-bad';
@@ -2012,7 +2157,7 @@
       '<div class="stock-compare-wrap"><table class="stock-compare">' +
       '<thead><tr><th>红旗指标</th><th>当前值</th><th>安全阈值</th><th>严重度</th><th>得分</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
-      '<p class="score-note">' + fa.note + '</p>';
+      '<p class="score-note">' + fa.note + '</p>' + eventEnhFooter(ov, fa.total, 'fraud');
   }
 
   // ---- 管理层管理水平评分（融合 DEA 投入产出效率思想的 8 维百分制加权）----
@@ -2113,7 +2258,7 @@
   }
 
   // 管理层评分卡（与 scoreCard 同构，等级方向高分=好=绿；符合度列 = 得分/权重）
-  function managementCard(ma) {
+  function managementCard(ma, ov) {
     var g = gradeOf(ma.total);
     var effMax = 0, missN = 0;
     ma.items.forEach(function (x) { if (x.score != null) effMax += x.max; else missN += 1; });
@@ -2130,7 +2275,165 @@
       '<div class="stock-compare-wrap"><table class="stock-compare">' +
       '<thead><tr><th>评判维度</th><th>当前值</th><th>参考阈值</th><th>符合度</th><th>得分</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
-      '<p class="score-note">' + ma.note + '</p>';
+      '<p class="score-note">' + ma.note + '</p>' + eventEnhFooter(ov, ma.total, 'mgmt');
+  }
+
+  /* ---------------- ⑨ 公司事件与股东结构（一次性 Wind 明细） ---------------- */
+
+  // 事件明细是否含任意非空数据（决定 ⑧ 后是否插入 ⑨ 模块）
+  function evHasAny(evs) {
+    if (!evs) return false;
+    var e = evs.events || {}, h = evs.holders || {}, k;
+    for (k in e) if (e[k] && e[k].length) return true;
+    for (k in h) if (h[k] && h[k].length) return true;
+    return false;
+  }
+
+  // 从一行记录里按列名子串优先级取值（列名带前缀且各表不一，取首个非空匹配）
+  function pickVal(rec, subs) {
+    for (var i = 0; i < subs.length; i++) {
+      for (var k in rec) {
+        if (k.indexOf(subs[i]) >= 0) {
+          var v = rec[k];
+          if (v !== null && v !== undefined && v !== '') return v;
+        }
+      }
+    }
+    return '';
+  }
+
+  // 十大/流通股东表为“最新 vs 上期”成对展开，按名次去重并排序
+  function dedupeRank(recs) {
+    var seen = {}, out = [];
+    (recs || []).forEach(function (r) {
+      var rk = pickVal(r, ['名次']);
+      var key = rk !== '' ? 'r' + rk : JSON.stringify(r);
+      if (!seen[key]) { seen[key] = 1; out.push(r); }
+    });
+    out.sort(function (a, b) {
+      return (Number(pickVal(a, ['名次'])) || 99) - (Number(pickVal(b, ['名次'])) || 99);
+    });
+    return out;
+  }
+
+  // 通用事件子表：cols=[{label, keys:[子串] | get:fn(rec)->html(需自行转义), cls}]；超出 cap 折叠提示
+  function evTable(title, recs, cols, opts) {
+    if (!recs || !recs.length) return '';
+    opts = opts || {};
+    var cap = opts.cap || 12;
+    var shown = recs.slice(0, cap);
+    var h = '<div class="ev-block"><h4>' + title + '<span class="ev-n">' + recs.length + ' 条</span></h4>' +
+      '<div class="stock-compare-wrap"><table class="stock-compare ev-tbl"><thead><tr>' +
+      cols.map(function (c) { return '<th>' + c.label + '</th>'; }).join('') + '</tr></thead><tbody>';
+    shown.forEach(function (r) {
+      h += '<tr>' + cols.map(function (c) {
+        var v = c.get ? c.get(r) : esc(pickVal(r, c.keys));
+        return '<td class="' + (c.cls || '') + '">' + (v === '' || v == null ? '-' : v) + '</td>';
+      }).join('') + '</tr>';
+    });
+    h += '</tbody></table></div>';
+    if (recs.length > cap) h += '<p class="ev-more">仅显示前 ' + cap + ' 条（共 ' + recs.length + ' 条）</p>';
+    h += '</div>';
+    return h;
+  }
+
+  // 概览横幅：把覆盖层里的关键事件事实浓缩成可点读的标签（缺项不显示）
+  function evOverview(ov, evs) {
+    var chips = [];
+    if (ov) {
+      if (ov.penaltyCount) chips.push('<span class="ev-chip ev-chip-bad">违规处罚 ' + ov.penaltyCount + ' 条</span>');
+      if (ov.defendantLawsuit) chips.push('<span class="ev-chip ev-chip-bad">被告涉案 ' + fmtNum(ov.defendantLawsuit) + ' 万</span>');
+      if (ov.st) chips.push('<span class="ev-chip ev-chip-bad">ST / 风险警示</span>');
+      if (ov.reduceFlag) chips.push('<span class="ev-chip ev-chip-bad">大股东/董监高减持</span>');
+      if (ov.unlockRatio != null) chips.push('<span class="ev-chip' + (ov.unlockRatio >= 20 ? ' ev-chip-warn' : '') + '">未来解禁占比 ' + fmtNum(ov.unlockRatio) + '%</span>');
+      if (ov.instHold != null) chips.push('<span class="ev-chip ev-chip-good">机构持股合计 ' + fmtNum(ov.instHold) + '%</span>');
+    }
+    var ac = ((evs.holders || {}).actual_controller || [])[0];
+    if (ac) {
+      var nm = pickVal(ac, ['实际控制人名称', '疑似实际控制人', '实际控制人']);
+      if (nm) chips.push('<span class="ev-chip">实际控制人：' + esc(nm) + '</span>');
+    }
+    return chips.length ? '<div class="ev-chips">' + chips.join('') + '</div>' : '';
+  }
+
+  // ⑨ 主体：事件明细五表 + 股东结构（前十大/机构/实控人/解禁）
+  function renderEvents(evs, ov) {
+    if (!evHasAny(evs)) return '';
+    var e = evs.events || {}, hd = evs.holders || {};
+    var short = evs.name || '';
+    var h = '<div class="va-events">';
+    h += '<p class="ev-src">数据源：一次性 Wind 结构化事件与股东数据（抓取于 ' + esc(fmtDate(evs.fetched_at)) + '），不随每日行情/财报更新。</p>';
+    h += evOverview(ov, evs);
+
+    // 增减持（仅保留有“方向”值的记录，误路由的十大变动表无方向列自动排除）
+    var inc = (e.increase_hold || []).filter(function (r) { return pickVal(r, ['方向']) !== ''; });
+    h += evTable('重要股东增减持（近 1 年）', inc, [
+      { label: '股东', keys: ['增减持股东姓名', '股东姓名'] },
+      { label: '方向', get: function (r) { var d = pickVal(r, ['方向']); return '<span class="' + (/减|卖/.test(d) ? 'ev-bad' : 'ev-good') + '">' + esc(d) + '</span>'; } },
+      { label: '数量', keys: ['增减持数量'] },
+      { label: '变动后持股', keys: ['增减持后股东持股'] },
+      { label: '报告期', keys: ['报告期'] }
+    ]);
+
+    h += evTable('并购重组', e.ma, [
+      { label: '标题', keys: ['并购事件标题', '标题'] },
+      { label: '类型', keys: ['并购类型'] },
+      { label: '最新进度', keys: ['最新进度'] },
+      { label: '披露日', keys: ['最新披露日'] }
+    ]);
+
+    h += evTable('违规处罚', e.penalty, [
+      { label: '发生日期', keys: ['发生日期'] },
+      { label: '违规行为', keys: ['违规行为'] },
+      { label: '原因类型', keys: ['违规原因类型'] },
+      { label: '决定机构', keys: ['决定机构'] },
+      { label: '罚款金额', keys: ['罚款金额'] }
+    ], { cap: 12 });
+
+    // 司法诉讼：本公司作为被告的行高亮（简称子串匹配）
+    h += evTable('司法诉讼', e.lawsuit, [
+      { label: '案件名称', keys: ['案件名称'] },
+      { label: '类型', keys: ['诉讼仲裁类型', '类型'] },
+      { label: '原告', keys: ['原告方'] },
+      { label: '被告', cls: 'ev-def', get: function (r) { var d = pickVal(r, ['被告方']); return short && String(d).indexOf(short) >= 0 ? '<b class="ev-bad">' + esc(d) + '</b>' : esc(d); } },
+      { label: '涉案金额(万元)', cls: 'ev-num', keys: ['涉案金额'] }
+    ], { cap: 12 });
+
+    h += evTable('ST / 风险警示变动', e.st_change, [
+      { label: '日期', keys: ['日期', '变动日'] },
+      { label: '类型', keys: ['类型', '状态'] },
+      { label: '说明', keys: ['实施', '原因', '说明', '类型'] }
+    ]);
+
+    // 前十大股东（优先十大股东，回落流通股东）
+    var top = dedupeRank((hd.top10 && hd.top10.length) ? hd.top10 : hd.top10_float);
+    h += evTable('前十大股东', top, [
+      { label: '名次', keys: ['名次'] },
+      { label: '股东名称', keys: ['最新一期十大股东名称', '最新一期前十大流通股东名称', '股东名称'] },
+      { label: '持股比例', cls: 'ev-num', keys: ['最新一期十大股东持股比例', '最新一期前十大流通股东持股比例', '持股比例'] },
+      { label: '持股数量', cls: 'ev-num', keys: ['最新一期十大股东持股数量', '最新一期前十大流通股东持股数量', '持股数量'] },
+      { label: '较上期变动', cls: 'ev-num', keys: ['股东持股数量变动'] }
+    ], { cap: 10 });
+
+    // 机构持股（去名次重后取前几家；合计比例见概览）
+    var inst = dedupeRank(hd.institutions);
+    h += evTable('机构持股（前几家）', inst, [
+      { label: '名次', keys: ['名次'] },
+      { label: '机构名称', keys: ['最新一期机构股东名称', '机构股东名称'] },
+      { label: '持股比例', cls: 'ev-num', keys: ['最新一期机构持股比例', '机构持股比例'] },
+      { label: '持股数量', cls: 'ev-num', keys: ['最新一期机构持股数量', '机构持股数量'] },
+      { label: '较上期变动', cls: 'ev-num', keys: ['机构持股数量变动', '机构持股比例变动'] }
+    ], { cap: 10 });
+
+    h += evTable('限售解禁', hd.unlock, [
+      { label: '解禁日期', keys: ['解禁日期', '日期'] },
+      { label: '解禁数量', cls: 'ev-num', keys: ['解禁数量', '数量'] },
+      { label: '占总股本/流通股比例', cls: 'ev-num', keys: ['比例'] },
+      { label: '股东名称', keys: ['股东名称', '名称'] }
+    ]);
+
+    h += '</div>';
+    return h;
   }
 
   // ---- 周期性行业判定 + 周期位置评分（0~100，分数越低越接近周期底部）----
