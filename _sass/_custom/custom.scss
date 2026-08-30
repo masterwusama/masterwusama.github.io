@@ -1,7 +1,8 @@
 // Custom styles.
 
-// ---- 价值分析菜单的子菜单（价值分析/模拟持仓） ----
-.menu-item-stocks { position: relative; }
+// ---- 带子菜单的导航项（股票：价值分析/模拟持仓/农化价格；冰箱做菜：做菜推荐/物价查询） ----
+.menu-item-stocks,
+.menu-item-cook { position: relative; }
 .menu-sub { list-style: none; margin: 2px 0 4px; padding-left: 20px; }
 .menu-sub-item a { font-size: 13px; opacity: .85; }
 
@@ -14,7 +15,9 @@
     box-shadow: 0 4px 12px rgba(15, 23, 42, .12);
   }
   .menu-item-stocks:hover .menu-sub,
-  .menu-item-stocks:focus-within .menu-sub { display: block; }
+  .menu-item-stocks:focus-within .menu-sub,
+  .menu-item-cook:hover .menu-sub,
+  .menu-item-cook:focus-within .menu-sub { display: block; }
   .menu-sub-item a {
     display: block; padding: 6px 14px; white-space: nowrap; opacity: 1;
     color: #555;
