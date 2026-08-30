@@ -2296,12 +2296,18 @@
     return false;
   }
 
-  // 从一行记录里按列名子串优先级取值（列名带前缀且各表不一，取首个非空匹配）
+  // 从一行记录里按列名优先级取值（列名带前缀且各表不一）。
+  // 先精确后子串：防“最新一期机构持股比例”被子串匹配抢到含它的“…合计”列
   function pickVal(rec, subs) {
-    for (var i = 0; i < subs.length; i++) {
-      for (var k in rec) {
+    var i, k, v;
+    for (i = 0; i < subs.length; i++) {
+      v = rec[subs[i]];
+      if (v !== null && v !== undefined && v !== '') return v;
+    }
+    for (i = 0; i < subs.length; i++) {
+      for (k in rec) {
         if (k.indexOf(subs[i]) >= 0) {
-          var v = rec[k];
+          v = rec[k];
           if (v !== null && v !== undefined && v !== '') return v;
         }
       }

@@ -212,6 +212,93 @@ def _merge_holders(dst, src):
     return dst
 
 
+def _pick_col(keys, *musts, **kw):
+    """在列名中选首个含全部 musts 子串的列；exclude=元组则需全部不含。"""
+    ex = kw.get("exclude") or ()
+    for k in keys:
+        if all(m in k for m in musts) and not any(e in k for e in ex):
+            return k
+    return None
+
+
+def reconstruct_holder_rows(recs):
+    """Wind 股东类表（institutions/top10/top10_float）偶发返回“最新期名次 i × 上期名次 j”
+    交叉展开行：同一名次重复、“较上期变动”列是 i-j 错配差值（如 -3 亿股）。
+    检测到名次重复时重建：每家最新期股东一行，上期值按同名称回接，
+    变动重算为最新−上期；单名列在前、“合计”常量列在后（配合前端 pickVal
+    精确优先）；幂等（重建后名次唯一，重跑直接返回）。"""
+    if not recs:
+        return recs
+    # 聚合行形态：单行多机构名分号串接（Wind 汇总返回，无名次）→ 拆每家一行；
+    # 比例/数量是全体合计不随拆分行下发，只保留“合计”列，避免被误读为单家持股
+    if len(recs) == 1:
+        r0 = recs[0]
+        nk = _pick_col(r0.keys(), "股东名称", exclude=("合计", "名次", "实际"))
+        nm = str(r0.get(nk) or "") if nk else ""
+        if (";" in nm or "；" in nm):
+            out = []
+            for p in nm.replace("；", ";").split(";"):
+                p = p.strip()
+                if not p:
+                    continue
+                rec = {k: v for k, v in r0.items() if "合计" in k or "持股机构数" in k}
+                rec[nk] = p
+                out.append(rec)
+            if out:
+                return out
+    ranks = [r.get("名次") for r in recs if "名次" in r]
+    if not ranks or len(set(ranks)) == len(ranks):
+        return recs
+    cols = set()
+    for r in recs[:5]:
+        cols.update(r.keys())
+    c_now_name = _pick_col(cols, "最新", "股东名称", exclude=("合计", "名次", "实际"))
+    c_prev_name = _pick_col(cols, "股东名称", exclude=("最新", "合计", "名次", "实际"))
+    if not (c_now_name and c_prev_name):
+        return recs
+    c_now_ratio = _pick_col(cols, "最新", "持股比例", exclude=("合计", "名次", "变动"))
+    c_prev_ratio = _pick_col(cols, "持股比例", exclude=("最新", "合计", "名次", "变动"))
+    c_now_qty = _pick_col(cols, "最新", "持股数量", exclude=("合计", "名次", "变动"))
+    c_prev_qty = _pick_col(cols, "持股数量", exclude=("最新", "合计", "名次", "变动"))
+    c_now_share = _pick_col(cols, "最新", "股本性质")
+    # 变动列名沿用原表（机构持股数量变动/股东持股数量变动/流通股东持股数量变动），前端配置兼容
+    c_chg_qty = _pick_col(cols, "数量变动")
+    c_chg_ratio = _pick_col(cols, "比例变动")
+    consts = {k: next((r.get(k) for r in recs if r.get(k) is not None), None)
+              for k in cols if "合计" in k or "持股机构数" in k}
+    # 最新期列表：按名次取首次出现（交叉行内最新列恒定，重复行等价）；上期映射按名称
+    now_by_rank = {}
+    prev_map = {}
+    for r in recs:
+        rk = r.get("名次")
+        nm = r.get(c_now_name)
+        if rk is not None and nm and rk not in now_by_rank:
+            now_by_rank[rk] = r
+        pn = r.get(c_prev_name)
+        if pn and pn not in prev_map:
+            prev_map[pn] = r
+    out = []
+    for rk in sorted(now_by_rank):
+        r = now_by_rank[rk]
+        nm = str(r.get(c_now_name))
+        rec = {"名次": rk, c_now_name: r.get(c_now_name)}
+        if c_now_ratio:
+            rec[c_now_ratio] = r.get(c_now_ratio)
+        if c_now_qty:
+            rec[c_now_qty] = r.get(c_now_qty)
+        if c_now_share:
+            rec[c_now_share] = r.get(c_now_share)
+        p = prev_map.get(nm)
+        if p is not None:
+            if c_chg_ratio and c_now_ratio and c_prev_ratio and p.get(c_prev_ratio) is not None:
+                rec[c_chg_ratio] = round(_num(r.get(c_now_ratio)) - _num(p.get(c_prev_ratio)), 4)
+            if c_chg_qty and c_now_qty and c_prev_qty and p.get(c_prev_qty) is not None:
+                rec[c_chg_qty] = int(_num(r.get(c_now_qty)) - _num(p.get(c_prev_qty)))
+        rec.update({k: v for k, v in consts.items() if v is not None})
+        out.append(rec)
+    return out
+
+
 def fetch_one(code, name, wc, uniq_prefix):
     ev, hd = {}, {}
     n = 0
@@ -229,6 +316,8 @@ def fetch_one(code, name, wc, uniq_prefix):
         if key == "ma":
             recs = clean_ma_rows(recs, name, wc)
         ev[key] = recs
+    for bk in ("institutions", "top10", "top10_float"):
+        hd[bk] = reconstruct_holder_rows(hd.get(bk) or [])
     return {
         "code": code, "name": name, "windcode": wc,
         "fetched_at": dt.datetime.now().isoformat(timespec="seconds"),
@@ -396,7 +485,7 @@ def compute_deltas(data):
     ev = data.get("events") or {}
     hd = data.get("holders") or {}
     short = data.get("name") or ""
-    top10 = hd.get("top10") or []
+    top10 = reconstruct_holder_rows(hd.get("top10") or [])
     flags = []
 
     # --- 违规处罚：条数 + 立案/重大处罚（仅扫值列，不扫列名），小计封顶 +15 ---
@@ -477,17 +566,24 @@ def compute_deltas(data):
 
     # ================= 管理增量 mgmt（越高越好）=================
     mgmt = 0.0
-    inst = hd.get("institutions") or []
+    inst = reconstruct_holder_rows(hd.get("institutions") or [])  # 存量未透视的行幂等重建
     has_shebao = any("社保" in _txt(r) or "养老" in _txt(r) for r in inst)
-    # 机构持股比例合计环比上升
+    # 机构持股比例合计环比上升：用行内常量“合计”列（最新 vs 上期/上一季），
+    # 不用“机构持股比例变动”列——交叉展开行里那是名次错配差值，任一正数即误判
     inst_ratio_up = False
     inst_hold = None
     for r in inst:
-        c = _num(r.get("机构持股比例变动"))
-        ratio = _num(r.get("最新一期机构持股比例合计"))
-        if ratio:
-            inst_hold = ratio
-        if c > 0:
+        now_t = prev_t = None
+        for k, v in r.items():
+            if "机构持股比例合计" not in k:
+                continue
+            if k.startswith("最新"):
+                now_t = _num(v)
+            elif "上一期" in k or "上一季" in k:
+                prev_t = _num(v)
+        if now_t:
+            inst_hold = now_t
+        if now_t and prev_t and now_t > prev_t:
             inst_ratio_up = True
     if increase_flag:
         mgmt += 8
@@ -521,19 +617,18 @@ def compute_deltas(data):
         flags.append("未来解禁占比 %.1f%%" % unlock_ratio)
     mgmt = _clamp(mgmt, -30.0, 15.0)
 
-    # --- 前十大股东摘要（供前端展示；按名次去重，取最新一期字段）---
+    # --- 前十大股东摘要（供前端展示；行已透视，按名次取最新期字段，列名容错）---
     names = []
-    seen_rank = set()
-    for r in sorted(top10, key=lambda x: _num(x.get("名次"))):
-        rk = _num(r.get("名次"))
-        nm = r.get("最新一期十大股东名称")
-        rt = r.get("最新一期十大股东持股比例")
-        if not nm or rk in seen_rank:
+    for r in sorted(top10, key=lambda x: _num(x.get("名次")))[:10]:
+        nm = rt = None
+        for k, v in r.items():
+            if "股东名称" in k and "最新" in k and "名次" not in k and nm is None:
+                nm = v
+            elif "持股比例" in k and "最新" in k and "合计" not in k and rt is None:
+                rt = v
+        if not nm:
             continue
-        seen_rank.add(rk)
         names.append("%s %s%%" % (nm, rt) if rt else str(nm))
-        if len(names) >= 10:
-            break
     top_summary = "；".join(names)
 
     return {

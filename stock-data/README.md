@@ -157,6 +157,11 @@ python scripts/fetch_data.py --limit 2
   `clean_ma_rows`（仅保留本公司代码/简称出现在并购各方的行，并合并同事件出让/竞买方展开行）；
   存量明细重清洗：对每家 `data/events/<code>.json` 的 `events.ma` 套用 `clean_ma_rows(recs, name, windcode)`
   回写后，再 `--recompute` 重建覆盖层（均离线，不耗积分）。
+- **股东表透视重建**：Wind 股东类表（`holders.institutions/top10/top10_float`）偶发返回“最新期名次 i ×
+  上期名次 j”的交叉展开行（名次重复、“较上期变动”是错配差值，如 -3 亿股），且 MAX_ROWS=20 截断后
+  最新期只能恢复到前几家；抓取/计算两层均由 `reconstruct_holder_rows` 透视回每家一行（上期值按同名回接、
+  变动重算，幂等）；“机构增持”信号改比较两期“持股比例合计”常量列；前端 `pickVal` 精确匹配优先，
+  防单家比例列被子串抢到“…合计”列。存量已离线重建（2026-08-30）。
 
 ```bash
 # 依赖 wind-mcp-skill（Node CLI），需有效 Wind token；token 有限时按 --codes 精抓
