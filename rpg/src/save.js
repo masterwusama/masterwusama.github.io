@@ -6,6 +6,7 @@
 
   var SAVE_KEY = 'rpg_save_v1';
   var SNAP_KEY = 'rpg_snap_v1';
+  var SPAWN_KEY = 'rpg_spawn_v1';
 
   function readLS(key) {
     try {
@@ -30,11 +31,15 @@
   G.Save = {
     collect: function () {
       var cur = G.core.current();
+      var p = G.core.player();
       return {
         version: 1,
         flags: G.Flags.all(),
         nodesDone: G.Events.doneSnapshot(),
         status: G.Status.snapshot(),
+        inventory: G.Inventory.snapshot(),
+        attr: p ? p.attr : null,
+        skills: p ? p.skills : null,
         map: cur.mapId,
         x: cur.tileX,
         y: cur.tileY
@@ -42,6 +47,8 @@
     },
 
     write: function () {
+      var cur = G.core.current();
+      writeLS(SPAWN_KEY, { map: cur.mapId, x: cur.tileX, y: cur.tileY }); // 记为复活点
       return writeLS(SAVE_KEY, G.Save.collect());
     },
     read: function () {
@@ -52,13 +59,23 @@
       return !!readLS(SAVE_KEY);
     },
 
-    // 应用存档/快照到运行时（flags、消费记录、状态、回到地图）
+    // 复活点（最近一次手动存档位置）；无则默认起点
+    spawn: function () {
+      var d = readLS(SPAWN_KEY);
+      return d && d.map ? d : { map: 'prologue', x: 10, y: 60 };
+    },
+
+    // 应用存档/快照到运行时（flags、消费记录、状态、背包、属性、回到地图）
     apply: function (d) {
       if (!d) return false;
       G.Flags.restore(d.flags);
       G.Events.restoreDone(d.nodesDone);
       G.Status.restore(d.status);
+      G.Inventory.restore(d.inventory);
       G.core.enterMap(d.map, d.x, d.y);
+      var p = G.core.player();
+      if (p && d.attr) p.attr = d.attr;
+      if (p && d.skills) p.skills = d.skills;
       return true;
     },
 
@@ -79,10 +96,12 @@
       try {
         localStorage.removeItem(SAVE_KEY);
         localStorage.removeItem(SNAP_KEY);
+        localStorage.removeItem(SPAWN_KEY);
       } catch (e) { /* ignore */ }
       G.Flags.init();
       G.Events.restoreDone({});
-      G.Status.restore({ hp: 100, hunger: 100, mind: 100, day: 1, hour: 8 });
+      G.Status.restore({ hp: 100, hunger: 100, mind: 100, sp: 30, maxSp: 30, day: 1, hour: 8 });
+      G.Inventory.init();
       G.core.enterMap('prologue', 10, 60);
     }
   };

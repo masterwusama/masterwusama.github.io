@@ -93,5 +93,70 @@ Game.NODES.register([
     choices: [
       { "text": "继续赶路", "goto": null }
     ]
+  },
+
+  // ===================== M2 战斗节点（明雷敌人接触触发）=====================
+  // battle 节点：enemies=敌人类型数组；win/lose=战后分支节点（lose 走濒死，§6.4）
+  {
+    id: "battle_rat",
+    type: "battle",
+    enemies: ["rat"],
+    win: "battle_rat_win",
+    lose: "near_death_wake"
+  },
+  {
+    id: "battle_rat_win",
+    type: "dialog",
+    text: [
+      "巨鼠瘫软在地，不动了。",
+      "你喘着粗气，环顾四周——镇上的危险，远不止这一只。"
+    ],
+    choices: [ { "text": "继续", "goto": null } ]
+  },
+
+  {
+    id: "battle_hound",
+    type: "battle",
+    enemies: ["hound"],
+    win: "battle_hound_win",
+    lose: "near_death_wake"
+  },
+  {
+    id: "battle_hound_win",
+    type: "dialog",
+    text: [
+      "饿犬呜咽一声，再爬不起来。",
+      "它的肋骨根根分明——这镇上饿死的不仅是人。"
+    ],
+    choices: [ { "text": "继续", "goto": null } ]
+  },
+
+  {
+    id: "battle_cultist",
+    type: "battle",
+    enemies: ["cultist"],
+    win: "battle_cultist_win",
+    lose: "near_death_wake"
+  },
+  {
+    id: "battle_cultist_win",
+    type: "dialog",
+    text: [
+      "黑袍倒地，兜帽下是一张苍白而平静的人脸，仿佛在笑。",
+      "「……你也会成为祂的一部分。」"
+    ],
+    choices: [ { "text": "离开", "goto": null } ]
+  },
+
+  // 濒死唤醒（战败/生存耗尽共用）：由 core 传送回存档点并施加惩罚后触发
+  {
+    id: "near_death_wake",
+    type: "dialog",
+    text: [
+      "黑暗吞噬了你……",
+      "再睁眼时，你躺在熟悉的地方，浑身剧痛，身上的许多东西都不见了。",
+      "（濒死：状态恶化、物品散落，被送回存档点）"
+    ],
+    choices: [ { "text": "挣扎着起身", "goto": null } ]
   }
 ]);

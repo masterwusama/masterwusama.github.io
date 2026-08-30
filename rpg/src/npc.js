@@ -25,9 +25,9 @@
     return tx >= t0x && tx < t0x + this.w / 32 && ty >= t0y && ty < t0y + this.h / 32;
   };
 
-  // P0 占位绘制：灰衣老人（与玩家小人同构，配色区分）
-  NPC.prototype.render = function (ctx) {
-    var x = this.x, y = this.y;
+  // P0 占位绘制：灰衣老人（与玩家小人同构，配色区分）；(ox,oy) 为相机偏移（世界→屏幕）
+  NPC.prototype.render = function (ctx, ox, oy) {
+    var x = this.x + (ox || 0), y = this.y + (oy || 0);
     ctx.fillStyle = '#2e2a26';
     ctx.fillRect(x + 8, y + 24, 6, 8);
     ctx.fillRect(x + 18, y + 24, 6, 8);

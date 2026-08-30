@@ -18,6 +18,8 @@
     map: null,
     player: null,
     npcs: [],
+    enemies: [],
+    battleEnemy: null, // 触发当前战斗的地图敌人实体（胜利后移除；逃跑后冷却）
     mapId: 'prologue',
     tileX: 10,
     tileY: 60
@@ -49,6 +51,11 @@
     scene.npcs = [];
     for (var i = 0; i < scene.map.npcSpawns.length; i++) {
       scene.npcs.push(new G.NPC(scene.map.npcSpawns[i]));
+    }
+    // 明雷敌人实例（位置每图重生；战斗结果由 flag/移除处理）
+    scene.enemies = [];
+    for (var ei = 0; ei < scene.map.enemySpawns.length; ei++) {
+      scene.enemies.push(new G.Enemy(scene.map.enemySpawns[ei]));
     }
     G.Camera.follow(scene.player);
     G.Camera.update(scene.map);
@@ -96,6 +103,64 @@
     }
   }
 
+  // 明雷敌人：更新 AI + 接触检测（接触→触发该敌人的 battle 节点）
+  function updateEnemies() {
+    var p = scene.player;
+    for (var i = 0; i < scene.enemies.length; i++) {
+      var en = scene.enemies[i];
+      if (en.cooldown > 0) en.cooldown--;
+      en.update(scene.map, p);
+      if (en.cooldown === 0 && en.battle && en.touches(p)) {
+        scene.battleEnemy = en;
+        G.Events.run(en.battle); // battle 节点 → G.Battle.start + 切战斗场景
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 濒死处理（HP 归零：战斗失败或生存耗尽，§6.4）：状态恶化 + 散落物品 + 传送回存档点
+  function handleDefeat() {
+    G.Status.hp = 30;                 // 复活至低血量
+    G.Status.adjust('mind', -25);
+    G.Status.adjust('hunger', -15);
+    G.Status.adjust('sp', G.Status.maxSp); // SP 回满（重整旗鼓）
+    G.Status.removeEffect('fear');
+    G.Status.removeEffect('dark');    // 脱离黑暗区域
+    G.Status.removeEffect('bleed');   // 被拖回后粗略包扎，止住持续伤害（避免濒死循环）
+    G.Status.removeEffect('poison');
+    G.Status.removeEffect('broken_arm'); // 骨折也被简易固定（否则探索中永久减速）
+    G.Status.removeEffect('broken_leg');
+    G.Inventory.scatter();            // 丢失多余物品
+    var sp = G.Save.spawn();
+    enterMap(sp.map, sp.x, sp.y);     // 传送回存档点
+  }
+
+  // 战斗收尾（win/lose/flee 分支）
+  function finishBattle() {
+    var oc = G.Battle.outcome();
+    var nodes = G.Battle.resultNodes();
+    G.Battle.end();
+    if (oc === 'win') {
+      if (scene.battleEnemy) {
+        var idx = scene.enemies.indexOf(scene.battleEnemy);
+        if (idx >= 0) scene.enemies.splice(idx, 1); // 胜利：永久移除该明雷敌人
+        scene.battleEnemy = null;
+      }
+      switchScene('explore');
+      G.Save.writeSnapshot();
+      if (nodes.win) G.Events.run(nodes.win);
+    } else if (oc === 'flee') {
+      if (scene.battleEnemy) { scene.battleEnemy.cooldown = 100; scene.battleEnemy = null; }
+      switchScene('explore');
+    } else { // lose → 濒死
+      if (scene.battleEnemy) { scene.battleEnemy.cooldown = 120; scene.battleEnemy = null; }
+      handleDefeat();
+      switchScene('explore');
+      G.Events.run(nodes.lose || 'near_death_wake');
+    }
+  }
+
   var scenes = {
     explore: {
       enter: function () { G.Input.setStickDisabled(false); },
@@ -122,13 +187,32 @@
           return;
         }
 
+        // 明雷敌人更新 + 接触触发战斗（若进入战斗则中断本步）
+        if (updateEnemies()) { G.Input.endFrame(); return; }
+
         checkEnterTriggers();
-        G.Status.update(); // 生存状态衰减 + 时钟推进
+        // 游戏时间按移动距离推进：本步实际位移（player.update 已置 prevX 为步前值）
+        var ddx = p.x - p.prevX, ddy = p.y - p.prevY;
+        G.Status.travel(Math.sqrt(ddx * ddx + ddy * ddy));
+        G.Status.update(); // 生存状态（状态效果按秒结算）
+        // 生存耗尽（饥饿/持续伤害归零）→ 濒死
+        if (G.Status.hp <= 0) { handleDefeat(); G.Events.run('near_death_wake'); G.Input.endFrame(); return; }
         G.Camera.update(scene.map);
         G.Input.endFrame(); // 清空本步按键（否则 pressed 永真，单键无限触发）
       },
       render: function (alpha) {
-        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, alpha, true);
+        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, scene.enemies, alpha, true);
+      }
+    },
+
+    battle: {
+      enter: function () { G.Input.setStickDisabled(true); },
+      update: function () {
+        G.Battle.update(G.Input);
+        if (G.Battle.isFinished()) finishBattle();
+      },
+      render: function (alpha) {
+        G.Battle.render(G.Renderer.ctx());
       }
     },
 
@@ -138,7 +222,7 @@
         G.Dialog.update(G.Input);
       },
       render: function (alpha) {
-        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, alpha, false);
+        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, scene.enemies, alpha, false);
         G.Dialog.render(G.Renderer.ctx());
       }
     },
@@ -149,7 +233,7 @@
         G.UI.update(G.Input);
       },
       render: function (alpha) {
-        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, alpha, false);
+        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, scene.enemies, alpha, false);
       }
     }
   };
@@ -212,9 +296,16 @@
     sceneName: function () { return current; },
     enterMap: enterMap,
     switchScene: switchScene,
-    // 存档收集用：当前地图/玩家 tile 坐标
+    player: function () { return scene.player; },
+    // 存档收集用：当前地图 + 玩家实时 tile 坐标（非进图落点）
     current: function () {
-      return { mapId: scene.mapId, tileX: scene.tileX, tileY: scene.tileY };
+      var p = scene.player;
+      var ts = scene.map ? scene.map.tileSize : 32;
+      return {
+        mapId: scene.mapId,
+        tileX: p ? Math.floor(p.centerX() / ts) : scene.tileX,
+        tileY: p ? Math.floor(p.centerY() / ts) : scene.tileY
+      };
     }
   };
 
@@ -230,6 +321,7 @@
     });
 
     G.Flags.init();
+    G.Inventory.init();
     // 优先恢复临时快照（刷新/掉线防丢进度）；无快照则从起点开始
     var snap = G.Save.readSnapshot();
     if (!snap || !G.Save.apply(snap)) {

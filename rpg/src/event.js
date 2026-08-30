@@ -80,6 +80,17 @@
       G.Dialog.start(node);
       return; // 对话结束后由 Dialog 回调继续 goto 链
     }
+    if (node.type === 'battle') {
+      // 明雷/触发器进入战斗：交由 Battle 子状态机，胜负分支在战斗结束时由 core 触发
+      afterNode(node);
+      G.Battle.start(node.enemies || [], {
+        player: G.core.player(),
+        win: node.win || null,
+        lose: node.lose || null
+      });
+      G.core.switchScene('battle');
+      return;
+    }
     if (node.type === 'effect') {
       applyEffects(node.effects || []);
       afterNode(node);

@@ -131,6 +131,7 @@ Game.MAPS.register({
   "doors": [{"x": 109, "y": 88, "flag": "town_house_open"}],
   "exits": [{"x": 159, "y": 59, "w": 1, "h": 2, "to": "test", "toX": 0, "toY": 5}],
   "npcSpawns": [{"id": "oldman", "x": 106, "y": 86, "dir": "down", "trigger": "town_oldman"}],
+  "enemySpawns": [{"type": "rat", "x": 16, "y": 60, "battle": "battle_rat", "path": [{"x": 16, "y": 60}, {"x": 26, "y": 60}]}, {"type": "hound", "x": 70, "y": 64, "battle": "battle_hound", "path": [{"x": 64, "y": 64}, {"x": 80, "y": 64}]}, {"type": "cultist", "x": 140, "y": 60, "battle": "battle_cultist", "path": [{"x": 134, "y": 60}, {"x": 150, "y": 60}]}],
   "triggers": [{"x": 109, "y": 88, "w": 1, "h": 1, "type": "interact", "node": "town_house_door"}, {"x": 109, "y": 94, "w": 1, "h": 1, "type": "interact", "node": "town_bed"}, {"x": 28, "y": 40, "w": 3, "h": 2, "type": "enter", "node": "town_river_whisper", "once": true}],
   "autostart": null
 });

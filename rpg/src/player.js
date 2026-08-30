@@ -1,4 +1,5 @@
-/* player.js - 玩家实体：移动、碰撞（0.5 tile 内缩）、水域减速、面向
+/* player.js - 玩家实体：移动、碰撞（0.5 tile 内缩）、水域减速、面向 + 角色属性体系（M2）
+ * 属性体系（§14）：力量/敏捷/智力/精神 → 衍生攻击/防御/行动序；技能列表（战斗用）。
  * 逻辑步移动（固定步长由 core 驱动）；prevX/prevY 供渲染插值平滑。 */
 (function (G) {
   'use strict';
@@ -17,10 +18,22 @@
     this.h = H;
     this.dir = 'down';
     this.walkFrame = 0;
+    // 角色属性（M2：力量/敏捷/智力/精神）
+    this.attr = { str: 5, agi: 6, int: 4, spirit: 4 };
+    // 初始技能（战斗指令用）
+    this.skills = ['heavy_strike', 'double_slash', 'rend_armor'];
   }
 
   Player.prototype.centerX = function () { return this.x + this.w / 2; };
   Player.prototype.centerY = function () { return this.y + this.h / 2; };
+
+  /* ---------- 战斗数值（由属性衍生） ---------- */
+  Player.prototype.atk = function () { return 8 + this.attr.str; };
+  Player.prototype.def = function () { return 4 + Math.floor(this.attr.str / 2); };
+  // 行动序敏捷（断腿减半）
+  Player.prototype.battleAgi = function () { return this.attr.agi * G.Status.moveRate(); };
+  // 移动速度倍率（断腿减半）
+  Player.prototype.moveRate = function () { return G.Status.moveRate(); };
 
   // 碰撞盒覆盖的所有 tile 是否含阻挡
   Player.prototype.hits = function (map, nx, ny) {
@@ -65,7 +78,7 @@
     if (input.held('down')) vy += 1;
     if (vx !== 0 && vy !== 0) { vx *= 0.7071; vy *= 0.7071; } // 斜向归一化
 
-    var speed = SPEED * (this.onSlow(map) ? SLOW_FACTOR : 1);
+    var speed = SPEED * (this.onSlow(map) ? SLOW_FACTOR : 1) * this.moveRate();
 
     // 轴分离移动：先 X 后 Y，贴墙可沿墙滑动
     if (vx !== 0 && !this.hits(map, this.x + vx * speed, this.y)) {

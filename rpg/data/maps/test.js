@@ -21,6 +21,7 @@ Game.MAPS.register({
   "doors": [],
   "exits": [{"x": 9, "y": 5, "to": "prologue", "toX": 158, "toY": 60}],
   "npcSpawns": [],
+  "enemySpawns": [],
   "triggers": [],
   "autostart": null
 });

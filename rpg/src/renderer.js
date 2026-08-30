@@ -129,7 +129,7 @@
   }
 
   // alpha ∈ [0,1)：逻辑位置到渲染位置的时间插值（固定步长 + 渲染插值）
-  function render(map, camera, player, npcs, alpha, showDebug) {
+  function render(map, camera, player, npcs, enemies, alpha, showDebug) {
     var ts = map.tileSize;
     var camX = camera.getX(), camY = camera.getY();
 
@@ -159,11 +159,17 @@
       }
     }
 
-    // 第 2 层：实体（NPC → 玩家，渲染位置为插值坐标）
+    // 第 2 层：实体（NPC → 敌人 → 玩家，渲染位置为插值坐标）
+    // 世界坐标需减相机偏移转屏幕坐标（与 tile / drawEnemy 一致），否则画在视口外不可见
     for (var ni = 0; ni < npcs.length; ni++) {
-      npcs[ni].render(ctx);
+      npcs[ni].render(ctx, offX - camX, offY - camY);
     }
-    player.render(ctx, ix, iy);
+    if (enemies) {
+      for (var ei = 0; ei < enemies.length; ei++) {
+        drawEnemy(ctx, enemies[ei], camX, camY, offX, offY);
+      }
+    }
+    player.render(ctx, ix - camX + offX, iy - camY + offY);
 
     // 第 3 层：树（玩家中心在树底之下 → 树半透明，玩家可见）
     for (var ty2 = y0; ty2 <= y1; ty2++) {
@@ -213,6 +219,26 @@
     }
   }
 
+  // 明雷敌人（地图实体）：按摄像机偏移画在对应像素位置
+  function drawEnemy(ctx, en, camX, camY, offX, offY) {
+    var x = en.x - camX + offX, y = en.y - camY + offY;
+    var s = en.size;
+    if (x < -40 || y < -40 || x > G.Camera.VIEW_W + 40 || y > G.Camera.VIEW_H + 40) return;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; // 阴影
+    ctx.beginPath(); ctx.ellipse(x, y + s / 2, s / 2, s / 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = en.data.color;
+    ctx.fillRect(x - s / 2, y - s / 2, s, s);
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.strokeRect(x - s / 2 + 0.5, y - s / 2 + 0.5, s - 1, s - 1);
+    // 眼睛（朝向偏移，红色=警戒）
+    ctx.fillStyle = '#e04040';
+    var ex = x, ey = y;
+    if (en.dir === 'left') ex -= 4; else if (en.dir === 'right') ex += 4;
+    if (en.dir === 'up') ey -= 4; else if (en.dir === 'down') ey += 4;
+    ctx.fillRect(ex - 5, ey - 1, 3, 3);
+    ctx.fillRect(ex + 2, ey - 1, 3, 3);
+  }
+
   // 虚拟摇杆：触摸设备显示左下角半透明提示圈；激活时在手指处绘制摇杆（仅探索场景）
   function drawStick() {
     if (G.core.sceneName() !== 'explore') return;
@@ -244,18 +270,20 @@
     var x = 14, y = 12, w = 128, h = 9, gap = 14;
     var bars = [
       { v: s.hp, c: '#c84a4a', label: 'HP' },
+      { v: s.sp, c: '#4a86c8', label: 'SP', max: s.maxSp },
       { v: s.hunger, c: '#c8944a', label: '食' },
       { v: s.mind, c: '#7a6ac8', label: '神' }
     ];
     ctx.font = '11px sans-serif';
     for (var i = 0; i < bars.length; i++) {
       var by = y + i * gap;
+      var mx = bars[i].max || 100;
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(x - 4, by - 2, w + 34, h + 4);
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.fillRect(x, by, w, h);
       ctx.fillStyle = bars[i].c;
-      ctx.fillRect(x, by, w * Math.max(0, Math.min(1, bars[i].v / 100)), h);
+      ctx.fillRect(x, by, w * Math.max(0, Math.min(1, bars[i].v / mx)), h);
       ctx.fillStyle = '#e8e0d0';
       ctx.fillText(bars[i].label, x + w + 8, by + h);
       ctx.fillText(Math.round(bars[i].v), x + w + 26, by + h);

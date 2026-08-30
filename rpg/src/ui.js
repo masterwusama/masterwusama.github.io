@@ -7,6 +7,7 @@
   var el = null;      // 菜单根元素
   var items = [];     // 当前菜单项（DOM li）
   var idx = 0;
+  var mode = 'main';  // main | items
   var built = false;
 
   function build() {
@@ -32,16 +33,32 @@
     });
   }
 
-  function refreshList() {
-    var ul = el.querySelector('#g-ui-list');
-    ul.innerHTML = '';
-    items = [];
-    var defs = [
+  function menuDefs() {
+    return [
       { action: 'status', label: '状态' },
+      { action: 'items', label: '物品' },
       { action: 'load', label: '读取存档', enabled: G.Save.has() },
       { action: 'new', label: '新游戏' },
       { action: 'close', label: '关闭' }
     ];
+  }
+
+  function itemDefs() {
+    var list = G.Inventory.usable();
+    var defs = [];
+    for (var i = 0; i < list.length; i++) {
+      defs.push({ action: 'use:' + list[i].id, label: list[i].name + ' ×' + list[i].count + '　' + (list[i].desc || '') });
+    }
+    if (!defs.length) defs.push({ action: 'noop', label: '（没有可用的物品）', enabled: false });
+    defs.push({ action: 'back', label: '← 返回' });
+    return defs;
+  }
+
+  function refreshList() {
+    var defs = mode === 'items' ? itemDefs() : menuDefs();
+    var ul = el.querySelector('#g-ui-list');
+    ul.innerHTML = '';
+    items = [];
     for (var i = 0; i < defs.length; i++) {
       var li = document.createElement('li');
       li.dataset.action = defs[i].action;
@@ -65,12 +82,21 @@
   function refreshStatus() {
     var box = el.querySelector('#g-ui-status');
     var s = G.Status;
-    box.textContent = 'HP ' + s.hp + ' / 饥饿 ' + s.hunger + ' / 精神 ' + s.mind + '　' + s.timeText();
+    var eff = '';
+    var ids = s.effectIds();
+    if (ids.length) {
+      var names = [];
+      for (var i = 0; i < ids.length; i++) { var d = G.EFFECTS.get(ids[i]); names.push(d ? d.name : ids[i]); }
+      eff = '　异常：' + names.join('/');
+    }
+    box.textContent = 'HP ' + s.hp + ' / SP ' + s.sp + ' / 饥饿 ' + s.hunger + ' / 精神 ' + s.mind +
+      ' / 金币 ' + s.gold + '　' + s.timeText() + eff;
   }
 
   G.UI = {
     open: function () {
       build();
+      mode = 'main';
       refreshList();
       refreshStatus();
       el.style.display = 'block';
@@ -88,8 +114,17 @@
     select: function (i) {
       var it = items[i];
       if (!it || !it.enabled) return;
-      switch (it.action) {
+      var act = it.action;
+      if (act.indexOf('use:') === 0) {
+        var id = act.slice(4);
+        if (G.Inventory.use(id)) { G.Save.writeSnapshot(); }
+        refreshList(); refreshStatus();
+        return;
+      }
+      switch (act) {
         case 'status': refreshStatus(); break;
+        case 'items': mode = 'items'; refreshList(); break;
+        case 'back': mode = 'main'; refreshList(); break;
         case 'load':
           if (G.Save.apply(G.Save.read())) {
             G.UI.close();

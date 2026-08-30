@@ -31,6 +31,7 @@
     this.exits = raw.exits || [];
     this.triggers = raw.triggers || [];
     this.npcSpawns = raw.npcSpawns || [];
+    this.enemySpawns = raw.enemySpawns || []; // [{type,x,y,path:[{x,y}..],battle}]（M2 明雷）
     this.doors = raw.doors || []; // [{x, y, flag}]：flag 为真时门可走
 
     // 字符画 → tile 类型（缺行/缺列按草地补齐，宽松容错）
