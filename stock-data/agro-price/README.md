@@ -4,7 +4,7 @@
 市场价格走势，将"产品价格 → 出厂价/毛利率 → 公司业绩"的传导链可视化。
 
 模块顶部提供行业切换：**农化制品**（生意社/中农立华价格，原有能力）与
-**汽车 / 电解铝 / 航运**（万得 Wind 宏观行业 EDB 量价指标）。
+**汽车 / 电解铝 / 航运 / 轮胎橡胶 / 地产链 / 煤炭 / 钢铁**（万得 Wind 宏观行业 EDB 量价指标）。
 
 ## 页面
 
@@ -100,7 +100,7 @@ python scripts/fetch_prices.py
   主序列以本轮 fresh 抓取为准，旧文件仅补 fresh 未覆盖的更早历史，避免旧聚合值重复参与聚合
 - **数据仅供个人学习研究**，商业使用请确认数据源协议
 
-## 行业 EDB 量价（汽车 / 电解铝 / 航运）
+## 行业 EDB 量价（汽车 / 电解铝 / 航运 / 轮胎橡胶 / 地产链 / 煤炭 / 钢铁）
 
 农化视图之外，`assets/edb.js` 消费 `data/edb.json`，按行业分类渲染最近一年的
 宏观行业 EDB 量价指标：KPI 指标卡（最新值 / 环比 / 同比 / 区间位置）→
@@ -116,5 +116,24 @@ python scripts/fetch_prices.py
 ```bash
 # 依赖本地 Wind 能力已配置 WIND_API_KEY（config.json 已被 .gitignore 忽略）
 python scripts/fetch_edb.py            # 抓全部分类，输出 data/edb.json
-python scripts/fetch_edb.py --only alu # 只抓某一类
+python scripts/fetch_edb.py --only alu # 只抓某一类（合并写回，保留其它分类不重抓）
 ```
+
+### 地产链 / 煤炭 / 钢铁（2026-08-30 一次性抓取，2025-01 起月度为主）
+
+```bash
+python scripts/fetch_edb.py --only realestate --begin 2025-01-01
+python scripts/fetch_edb.py --only coal --begin 2025-01-01
+python scripts/fetch_edb.py --only steel --begin 2025-01-01
+```
+
+- **地产链**（7 项）：统计局商品房销售面积/销售额、开发投资、新开工、竣工（均累计值，
+  每年 1 月重置属正常形态）；70 城新房价格同比；30 大中城市日均成交（日频按月均聚合，
+  见脚本 `MONTH_MEAN_CODES`，避免单日值周内噪声）。
+- **煤炭**（6 项）：原煤/焦炭当月产量（统计局 1-2 月合并发布导致缺月）、煤炭进口（海关）、
+  秦皇岛动力煤 Q5500（周）、炼焦煤/冶金焦价（日频折周）。
+- **钢铁**（6 项）：粗钢/生铁/钢材当月产量、螺纹钢价（日频折周）、进口铁矿石均价（月）、
+  钢材社会库存（周频，非官方整理口径）。
+- EDB 代码由 `search_economic_indicator`（只回元信息不取数）检索确认后批量提数；
+  批量接口偶发“服务超时/全空回包”属后端瞬断，单码探测确认后等待重试即可；分类级
+  `range` 记录各自数据区间，新分类单独 `--only --begin` 抓取不影响旧分类。

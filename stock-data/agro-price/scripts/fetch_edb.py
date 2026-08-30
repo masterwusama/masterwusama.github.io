@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""行业 EDB 量价抓取器（汽车 / 电解铝 / 航运）。
+"""行业 EDB 量价抓取器（汽车 / 电解铝 / 航运 / 轮胎橡胶 / 地产链 / 煤炭 / 钢铁）。
 
 数据源：本地 Wind 金融能力 .agents/skills/wind-mcp-skill/scripts/cli.mjs
         economic_data.query_economic_indicator_data（question 直接传 EDB 代码，逗号分隔）。
@@ -8,7 +8,8 @@
   - 一次调用按分类批量传该类的多个 EDB 代码（共享同一日期区间），减少调用数。
   - 日频序列自动聚合到"每周最后交易日的值"（周中密度 > 1/周 才折叠）；
     周频、月频原生序列保持不变（月频无法由更少数据补出，原样保留）。
-  - 只保留最近一年（--begin/--end，默认今天往前 365 天）。
+  - 只保留最近一年（--begin/--end，默认今天往前 365 天）；新分类单独 --only
+    --begin 2025-01-01 抓取后合并写回，分类级 range 记录各自区间。
 
 产物：../data/edb.json  结构：
   { "updated_at", "range":{begin,end}, "categories":[
@@ -83,6 +84,44 @@ CATEGORIES = [
             ("S6124651", "半钢胎开工率", "开工率"),
             ("S5470428", "天然橡胶", "原料价格"),
             ("S5470420", "丁苯橡胶", "原料价格"),
+        ],
+    },
+    {
+        "id": "realestate", "name": "地产链",
+        # 统计局月度累计值为主曲线（每年 1 月重置形成锯齿属累计口径正常形态）；
+        # 70 城同比与 30 城成交为市场高频侧确认。码源：search_economic_indicator 检索。
+        "indicators": [
+            ("S0029658", "商品房销售面积累计", "销售"),
+            ("S0029659", "商品房销售额累计", "销售"),
+            ("S0029656", "开发投资完成额累计", "投资"),
+            ("S0029669", "房屋新开工面积累计", "施工"),
+            ("S0029670", "房屋竣工面积累计", "施工"),
+            ("S2707411", "70城新房价格同比", "价格"),
+            ("S2707380", "30城日均成交(月均)", "销售"),
+        ],
+    },
+    {
+        "id": "coal", "name": "煤炭",
+        # 产/需（统计局原煤、海关进口、统计局焦炭）+ 价格（秦皇岛动力煤周频、焦链日频折周）。
+        "indicators": [
+            ("S0026989", "原煤产量", "产销"),
+            ("S0027001", "煤炭进口量", "产销"),
+            ("S0026997", "焦炭产量", "产销"),
+            ("S5104572", "秦皇岛动力煤Q5500", "价格"),
+            ("S5132102", "炼焦煤均价", "价格"),
+            ("S5132320", "冶金焦平仓价", "价格"),
+        ],
+    },
+    {
+        "id": "steel", "name": "钢铁",
+        # 统计局当月产量 + 螺纹钢现货（日频折周）+ 进口矿月度均价 + 钢材社会库存（周频）。
+        "indicators": [
+            ("S0027374", "粗钢产量", "产量"),
+            ("S0027370", "生铁产量", "产量"),
+            ("S0027378", "钢材产量", "产量"),
+            ("S5707798", "螺纹钢价格", "价格"),
+            ("S5704501", "铁矿石进口均价", "价格"),
+            ("L3818799", "钢材社会库存", "库存"),
         ],
     },
 ]
@@ -167,6 +206,27 @@ def collapse_weekly(dates, values):
     return [[d.strftime("%Y-%m-%d"), v] for (_y, _w), (d, v) in sorted(weekly.items())]
 
 
+def month_mean(dates, values):
+    """日频波动大的成交类序列 -> 每月均值（抹平周内噪声，对齐月度展示）。"""
+    buckets = {}
+    for ds, vs in zip(dates, values):
+        d = parse_date(ds)
+        n = to_num(vs)
+        if d is None or n is None:
+            continue
+        buckets.setdefault((d.year, d.month), []).append((d, n))
+    out = []
+    for (_y, _m), items in sorted(buckets.items()):
+        last_d = items[-1][0]
+        avg = sum(v for _d, v in items) / len(items)
+        out.append([last_d.strftime("%Y-%m-%d"), round(avg, 2)])
+    return out
+
+
+# 成交面积等日频量能指标单日值周内噪声大，不走折周取末点，改按月均聚合
+MONTH_MEAN_CODES = {"S2707380"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="仅抓取指定分类 id（auto/alu/shipping）")
@@ -191,7 +251,10 @@ def main():
             if not mt or not mt["date"]:
                 print("  [warn] %s(%s) 无数据返回，跳过" % (disp, code))
                 continue
-            pts = collapse_weekly(mt["date"], mt["value"])
+            if code in MONTH_MEAN_CODES:
+                pts = month_mean(mt["date"], mt["value"])
+            else:
+                pts = collapse_weekly(mt["date"], mt["value"])
             if not pts:
                 continue
             meta = mt["meta"]
@@ -209,7 +272,9 @@ def main():
             print("  [ok] %-8s %-22s freq=%s n=%d" % (
                 code, disp, meta.get("freq", "?"), len(pts)))
         if inds:
-            cats_out.append({"id": cat["id"], "name": cat["name"], "indicators": inds})
+            cats_out.append({"id": cat["id"], "name": cat["name"],
+                             "range": {"begin": begin, "end": end},
+                             "indicators": inds})
 
     out = {
         "updated_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),

@@ -1,5 +1,5 @@
 /**
- * 行业 EDB 量价跟踪 —— 汽车 / 电解铝 / 航运
+ * 行业 EDB 量价跟踪 —— 汽车 / 电解铝 / 航运 / 轮胎橡胶 / 地产链 / 煤炭 / 钢铁
  *
  * 消费 data/edb.json（由 scripts/fetch_edb.py 从万得 Wind 抓取，周/月聚合）。
  * 顶部行业切换栏协调「农化制品（原有 agro.js 视图）」与「EDB 视图」的显隐；
@@ -385,6 +385,81 @@
         note: '汽车轮胎(半钢胎)开工率，反映轮胎厂景气度；周频',
         series: [{ code: 'S6124651', type: 'line' }]
       }
+    ],
+    realestate: [
+      {
+        title: '销售与投资（统计局累计值）', yName: '万㎡',
+        note: '左轴：商品房销售面积累计（万㎡，柱）；右轴：销售额与开发投资完成额累计（亿元，线）；每年 1 月累计重置属正常形态',
+        series: [
+          { code: 'S0029658', type: 'bar' },
+          { code: 'S0029659', type: 'line', yAxisIndex: 1, y2: '亿元' },
+          { code: 'S0029656', type: 'line', yAxisIndex: 1, y2: '亿元' }
+        ]
+      },
+      {
+        title: '施工端：新开工 vs 竣工（累计万㎡）', yName: '万㎡',
+        note: '统计局房屋新开工/竣工面积累计值，同为万平方米直接叠比',
+        series: [
+          { code: 'S0029669', type: 'line' },
+          { code: 'S0029670', type: 'line' }
+        ]
+      },
+      {
+        title: '房价同比 & 30 城高频成交', yName: '%',
+        note: '左轴：70 城新建商品住宅价格指数当月同比（%）；右轴：30 大中城市日均成交面积（万㎡，日频按月均聚合）',
+        series: [
+          { code: 'S2707411', type: 'line' },
+          { code: 'S2707380', type: 'line', yAxisIndex: 1, y2: '万㎡' }
+        ]
+      }
+    ],
+    coal: [
+      {
+        title: '原煤 / 焦炭产量与煤炭进口（万吨）', yName: '万吨',
+        note: '统计局原煤、焦炭当月产量（1-2 月合并发布导致缺月）与海关煤炭进口量，同为万吨',
+        series: [
+          { code: 'S0026989', type: 'line' },
+          { code: 'S0026997', type: 'line' },
+          { code: 'S0027001', type: 'line' }
+        ]
+      },
+      {
+        title: '动力煤价：秦皇岛港 Q5500（元/吨）', yName: '元/吨',
+        note: '秦皇岛港平仓价（周频），动力煤长协/市场价的基准锚',
+        series: [{ code: 'S5104572', type: 'line' }]
+      },
+      {
+        title: '焦链价格：炼焦煤 vs 冶金焦（元/吨）', yName: '元/吨',
+        note: '主要港口炼焦煤均价与冶金焦平仓价（日频折周），焦炭利润看两线开口',
+        series: [
+          { code: 'S5132102', type: 'line' },
+          { code: 'S5132320', type: 'line' }
+        ]
+      }
+    ],
+    steel: [
+      {
+        title: '粗钢 / 生铁 / 钢材产量（万吨，当月）', yName: '万吨',
+        note: '统计局当月值（1-2 月合并发布导致缺月）',
+        series: [
+          { code: 'S0027374', type: 'line' },
+          { code: 'S0027370', type: 'line' },
+          { code: 'S0027378', type: 'line' }
+        ]
+      },
+      {
+        title: '螺纹钢价 vs 进口铁矿石（元/吨 / 美元/吨）', yName: '元/吨',
+        note: '左轴：螺纹钢 HRB400E 20mm 全国价（日频折周）；右轴：进口铁矿石平均价（美元/吨，月）',
+        series: [
+          { code: 'S5707798', type: 'line' },
+          { code: 'S5704501', type: 'line', yAxisIndex: 1, y2: '美元/吨' }
+        ]
+      },
+      {
+        title: '钢材社会库存（万吨）', yName: '万吨',
+        note: '主要市场钢材社会库存量（周频，非官方整理口径），去库/累库拐点参考',
+        series: [{ code: 'L3818799', type: 'line' }]
+      }
     ]
   };
 
@@ -416,9 +491,10 @@
     state.current = catId;
     disposeCharts();
 
+    var rng = cat.range || state.data.range;
     $('edb-cat-head').innerHTML =
       '<span class="edb-cat-name">' + cat.name + '</span>' +
-      '<span class="edb-cat-meta">区间 ' + state.data.range.begin + ' ~ ' + state.data.range.end +
+      '<span class="edb-cat-meta">区间 ' + rng.begin + ' ~ ' + rng.end +
       ' · 指标 ' + cat.indicators.length + ' 项 · 更新于 ' + fmtUpdated(state.data.updated_at) + '</span>';
 
     renderKpis(cat);
