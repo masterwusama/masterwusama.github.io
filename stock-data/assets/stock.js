@@ -280,7 +280,7 @@
       'value="' + (state.keyword || '') + '" aria-label="搜索公司"></div>' +
       // Wind 事件增强分切换档（仅当事件覆盖层存在时显示）：切换列表造假/管理两列口径，排序/筛选跟随
       (state.eventOverlay ? '<button type="button" class="s-wind-toggle' + (state.windMode ? ' active' : '') + '" id="stock-wind-toggle" ' +
-        'title="切换造假/管理分口径：基础财报分 ↔ Wind 事件增强分（基础分 + 一次性 Wind 事件增量，仅A股有事件数据时生效）">' +
+        'title="切换造假/管理分口径：基础财报分 ↔ Wind 事件增强分（基础分 + 一次性 Wind 事件增量；Wind 档下无事件数据的公司不给分显示 -，切回基础档可看全部）">' +
         '<span class="swt-lab">事件增强分</span><span class="swt-val">' + (state.windMode ? 'Wind' : '基础') + '</span></button>' : '') +
       '<div class="s-filter' + (isMobile && !state.fltOpen ? ' s-filter-folded' : '') + '">' +
       // 移动端折叠面板：默认收起为一行摘要（含已启用条件概览），与排序面板同样式风格
@@ -523,26 +523,33 @@
     return Math.max(0, Math.min(100, base + delta));
   }
 
-  // 展示用造假/管理分（按代码）：Wind 档下为优化分，否则基础财报分
+  // 展示用造假/管理分（按代码）：Wind 档下仅对有事件数据的公司给优化分，无数据公司不给分（显示 -）；基础档为财报基础分
   function dispFraudCode(code) {
     var sc = state.scores[code];
     var base = sc ? sc.fraud : null;
-    if (windActiveCode(code)) return applyDelta(base, (state.eventOverlay[code].fraudDelta) || 0);
-    return base;
+    if (!state.windMode || !state.eventOverlay) return base; // 覆盖层整体缺失（加载失败/无数据）时视同基础档
+    var o = state.eventOverlay[code];
+    if (!o) return null;
+    return applyDelta(base, o.fraudDelta || 0);
   }
   function dispMgmtCode(code) {
     var sc = state.scores[code];
     var base = sc ? sc.mgmt : null;
-    if (windActiveCode(code)) return applyDelta(base, (state.eventOverlay[code].mgmtDelta) || 0);
-    return base;
+    if (!state.windMode || !state.eventOverlay) return base;
+    var m = state.eventOverlay[code];
+    if (!m) return null;
+    return applyDelta(base, m.mgmtDelta || 0);
   }
   // 展示用造假/管理分（按公司对象）
   function dispFraud(c) { return dispFraudCode(c.code); }
   function dispMgmt(c) { return dispMgmtCode(c.code); }
 
-  // 单元格悬停提示：windMode 下补充“基础+delta→优化”与触发红旗摘要
+  // 单元格悬停提示：windMode 下补充“基础+delta→优化”与触发红旗摘要；Wind 档无事件数据时说明不给分
   function windCellTip(c, base, disp, kind, baseTip) {
-    if (!windActiveCode(c.code)) return baseTip;
+    if (!state.windMode || !state.eventOverlay) return baseTip;
+    if (!windActiveCode(c.code)) {
+      return '无 Wind 事件数据（一次性抓取仅覆盖部分 A 股），“事件增强分”档下不给分；切回“基础”档可看财报基础分';
+    }
     var o = state.eventOverlay[c.code] || {};
     var d = (kind === 'fraud' ? o.fraudDelta : o.mgmtDelta) || 0;
     var flags = (o.flags && o.flags.length) ? '；事件：' + o.flags.join('、') : '';

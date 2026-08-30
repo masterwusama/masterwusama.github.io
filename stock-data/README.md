@@ -148,7 +148,7 @@ python scripts/fetch_data.py --limit 2
 并新增 **⑨ 公司事件与股东结构** 模块。事件信号来自万得（Wind）付费数据，
 由 `scripts/fetch_events.py` **本地手动跑一次**生成，**不接入每日 Actions 定时更新**（避免持续消耗 Wind 配额）。
 
-- **仅覆盖 A 股**：港美股无事件数据 → 列表回落基础分、详情页隐藏 ⑨ 模块。
+- **仅覆盖 A 股**：无事件数据的公司（港美股/未抓取）在“Wind 事件增强分”档下造假/管理两列不给分显示 `-`，基础档正常显示；详情页隐藏 ⑨ 模块。
 - **存储隔离**：产物写入 `data/events/`，独立于每日 `data/*` 的自动提交，互不干扰。
   - `data/events/<code>.json`：单家原始明细（增减持/并购/违规/诉讼/ST + 前十大/机构/实控人/解禁）
   - `data/events/index.json`：列表覆盖层 `{updated_at, byCode:{code:{fraudDelta, mgmtDelta, flags, ...}}}`
