@@ -728,4 +728,42 @@
   .lv-table { font-size: 12px; }
 }
 
+/* =========================================================
+ * 宽屏自适应（dnd-wide · 仅跑团桌页面生效）
+ * Mist 主题 .main-inner 固定 700px（≥1600px 屏幕 900px），
+ * 大屏下跑团桌会被挤成窄条；这里撑破主题容器，
+ * 让网格/列表随浏览器宽高自适应。仅本页 html 带 dnd-wide 标记。
+ * ========================================================= */
+.dnd-wide .main-inner,
+.dnd-wide .header-inner,
+.dnd-wide .footer-inner { width: auto; margin-left: 20px; margin-right: 20px; }
+/* Mist 悬浮侧栏在全宽下会遮挡内容，连切换按钮一并隐藏 */
+.dnd-wide .sidebar,
+.dnd-wide .sidebar-toggle,
+.dnd-wide .sidebar-overlay { display: none !important; }
+.dnd-wide #dnd-app { padding: 22px 26px 28px; }
+
+/* 图鉴列表：高度随视口变化（屏幕越高显示条目越多） */
+.dnd-wide .lib-list { max-height: calc(100vh - 240px); }
+
+/* 大屏（≥1400px）：卡片最小列宽与列表列加宽 */
+@media (min-width: 1400px) {
+  .dnd-wide .dnd-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+  .dnd-wide .lib-list { width: 320px; }
+}
+
+/* 超大屏（≥1800px）：字号与间距整体上浮一档，避免留白过大 */
+@media (min-width: 1800px) {
+  .dnd-wide #dnd-app { padding: 28px 40px 36px; }
+  .dnd-wide .dnd-title { font-size: 40px; }
+  .dnd-wide .dnd-tabs { margin: 24px 0 18px; }
+  .dnd-wide .dnd-tab-btn { padding: 9px 30px; font-size: 17px; }
+  .dnd-wide .dnd-card-title { font-size: 18px; }
+  .dnd-wide .dnd-grid { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; }
+  .dnd-wide .lib-list { width: 360px; }
+  .dnd-wide .lib-item { padding: 8px 10px; font-size: 14px; }
+  .dnd-wide .lib-desc-p,
+  .dnd-wide .lib-info-row { font-size: 14px; }
+}
+
 
