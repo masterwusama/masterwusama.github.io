@@ -88,14 +88,15 @@ CATEGORIES = [
     },
     {
         "id": "realestate", "name": "地产链",
-        # 统计局月度累计值为主曲线（每年 1 月重置形成锯齿属累计口径正常形态）；
-        # 70 城同比与 30 城成交为市场高频侧确认。码源：search_economic_indicator 检索。
+        # 统计局月度累计值经 monthly_from_cumulative 差分回当月值展示（每年首点为
+        # 1-2 月合并发布值）；70 城同比与 30 城成交为市场高频侧确认。
+        # 码源：search_economic_indicator 检索。
         "indicators": [
-            ("S0029658", "商品房销售面积累计", "销售"),
-            ("S0029659", "商品房销售额累计", "销售"),
-            ("S0029656", "开发投资完成额累计", "投资"),
-            ("S0029669", "房屋新开工面积累计", "施工"),
-            ("S0029670", "房屋竣工面积累计", "施工"),
+            ("S0029658", "商品房销售面积当月", "销售"),
+            ("S0029659", "商品房销售额当月", "销售"),
+            ("S0029656", "开发投资完成额当月", "投资"),
+            ("S0029669", "房屋新开工面积当月", "施工"),
+            ("S0029670", "房屋竣工面积当月", "施工"),
             ("S2707411", "70城新房价格同比", "价格"),
             ("S2707380", "30城日均成交(月均)", "销售"),
         ],
@@ -226,6 +227,27 @@ def month_mean(dates, values):
 # 成交面积等日频量能指标单日值周内噪声大，不走折周取末点，改按月均聚合
 MONTH_MEAN_CODES = {"S2707380"}
 
+# 统计局累计值口径序列：抓取后差分回当月值展示（分析看单月动能，累计锯齿不便读）
+CUM_TO_MONTHLY_CODES = {"S0029658", "S0029659", "S0029656", "S0029669", "S0029670"}
+
+
+def monthly_from_cumulative(points):
+    """统计局累计值序列 -> 当月值差分：新年首点（1-2 月合并发布）原样保留=前两月合计；
+    同年且上月有点才差分；缺月时输出为跨月合并差值。"""
+    out = []
+    prev = None  # (date, 累计值)
+    for ds, v in points:
+        d = parse_date(ds)
+        if d is None or v is None:
+            continue
+        if prev and prev[0].year == d.year and d.month - prev[0].month == 1:
+            m = v - prev[1]
+        else:
+            m = v
+        out.append([d.strftime("%Y-%m-%d"), round(m, 2)])
+        prev = (d, v)
+    return out
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -255,6 +277,8 @@ def main():
                 pts = month_mean(mt["date"], mt["value"])
             else:
                 pts = collapse_weekly(mt["date"], mt["value"])
+            if code in CUM_TO_MONTHLY_CODES:
+                pts = monthly_from_cumulative(pts)
             if not pts:
                 continue
             meta = mt["meta"]
