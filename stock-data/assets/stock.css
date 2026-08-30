@@ -256,8 +256,26 @@
   gap: 14px;
 }
 
+/* ---- 统一工具栏卡片（PC）：市场 Tab / 搜索 / 筛选 / 排序整合进一个浅底圆角容器；
+   筛选与排序以 display:contents 扁平化，控件直接参与工具栏 flex 排布、同一行自动换行 ---- */
+.s-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  background: #f8fafd;
+  border: 1px solid #e3e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0 14px;
+}
+
 .stock-search-wrap {
-  margin: 10px 0 4px;
+  margin: 0;
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 #stock-search {
@@ -276,32 +294,31 @@
   outline-offset: -1px;
 }
 
-/* ---- 列表条件筛选面板（造假/管理阈值 + 买卖点多选 + 打折促销） ---- */
+/* ---- 筛选条件：PC 端无独立盒子，控件直接摊入工具栏流式排布（移动端在 @media 恢复面板形态） ---- */
 .s-filter {
-  margin: 6px 0 10px;
+  display: contents;
 }
 
 .s-filter-body {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border: 1px solid #e3e8f0;
-  background: #f9fbfd;
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-
-.s-flt-row {
-  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 8px 14px;
   font-size: 12px;
   color: #4a6076;
 }
 
+.s-flt-row {
+  display: contents;
+}
+
 .s-flt-t {
-  color: #94a3b8;
+  /* 分组标签胶囊化：换行到行首也不突兀，替代分隔线方案 */
+  color: #7d8ea1;
+  background: #edf1f7;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .s-flt-num {
@@ -359,6 +376,7 @@
 }
 
 .s-flt-hint {
+  display: none; /* PC 端规则说明收进各控件 title 提示，不占版面；移动端无悬停恢复显示 */
   font-size: 12px;
   color: #999;
 }
@@ -1049,7 +1067,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 4px 0 8px;
+  margin: 0;
 }
 
 .s-tab {
@@ -1086,7 +1104,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin: 8px 0 14px;
+  margin: 0;
 }
 
 /* 排序按钮容器：桌面端不改变原有 flex 布局（子元素直接参与 .s-sort 排布），
@@ -1095,7 +1113,7 @@
   display: contents;
 }
 
-.s-sort button {
+.s-sort-body button {
   font-size: 12px;
   color: #4a6076;
   background: #f3f6fa;
@@ -1106,18 +1124,19 @@
   transition: all 0.15s;
 }
 
-.s-sort button:hover {
+.s-sort-body button:hover {
   color: #2b7bd4;
   border-color: #2b7bd4;
 }
 
-.s-sort button.active {
+.s-sort-body button.active {
   background: #2b7bd4;
   border-color: #2b7bd4;
   color: #fff;
 }
 
 .s-sort-hint {
+  display: none; /* PC 端收进按钮 title，移动端恢复 */
   font-size: 12px;
   color: #999;
 }
@@ -1226,6 +1245,36 @@
     display: contents;
   }
 
+  /* 工具栏卡片样式不适用移动端（吸顶白底网格另定）；筛选面板恢复竖排卡片形态 */
+  .s-toolbar {
+    border: none;
+    border-radius: 0;
+  }
+
+  .stock-search-wrap {
+    flex: none;
+    display: block;
+  }
+
+  .s-filter-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    border: 1px solid #e3e8f0;
+    background: #f9fbfd;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .s-flt-row {
+    display: flex;
+  }
+
+  .s-flt-hint,
+  .s-sort-hint {
+    display: inline; /* 移动端无悬停，规则说明恢复直接可见 */
+  }
+
   /* 行 2：筛选与排序摘要按钮并排各占一格，长摘要省略号收进（JS 互斥保证同时只展开一个面板） */
   .s-filter-toggle,
   .s-sort-toggle {
@@ -1285,7 +1334,11 @@
     font-size: 13px;
   }
 
-  .s-sort button {
+  .s-flt-t {
+    font-size: 13px;
+  }
+
+  .s-sort-body button {
     padding: 6px 10px;
     font-size: 13px;
   }

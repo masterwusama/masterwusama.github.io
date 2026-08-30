@@ -286,14 +286,14 @@
       '<label class="s-flt-num" title="管理层管理水平（0-100，越高越好），只保留 ≥ 该分的公司">管理能力 ≥ ' +
       '<input id="flt-mgmt" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="不限" value="' + fltVal(state.flt.mgmtMin) + '"></label>' +
       '</div>' +
-      '<div class="s-flt-row"><span class="s-flt-t">买点（多选需同时满足）</span>' +
+      '<div class="s-flt-row"><span class="s-flt-t" title="多选需同时满足：现价 ≤ 买价 × 折扣%">买点</span>' +
       fltCb('buy', 'grahamAgg', '格进取') + fltCb('buy', 'grahamDef', '格防御') +
       fltCb('buy', 'schloss', '施洛斯') + fltCb('buy', 'buffett', '巴菲特') +
       '<label class="s-flt-num s-flt-disc" title="买点门槛 × 折扣%，如填 80 则要求现价 ≤ 买价×80%，填 120 则放宽到买价×120%（即现价距买点 20% 以内）；仅勾选买点后可用，留空等同 100%">打折促销 ' +
       '<input id="flt-disc" type="number" min="0" max="500" step="1" inputmode="numeric" placeholder="100" value="' + fltVal(state.flt.discount) + '"' +
       (state.flt.buys.length ? '' : ' disabled') + '> %</label>' +
       '</div>' +
-      '<div class="s-flt-row"><span class="s-flt-t">卖点（多选需同时满足，须同时达到保守与公允）</span>' +
+      '<div class="s-flt-row"><span class="s-flt-t" title="多选需同时满足：现价须同时 ≥ 保守卖价与公允卖价">卖点</span>' +
       fltCb('sell', 'grahamAgg', '格进取') + fltCb('sell', 'grahamDef', '格防御') +
       fltCb('sell', 'schloss', '施洛斯') + fltCb('sell', 'buffett', '巴菲特') +
       '</div>' +
@@ -306,6 +306,7 @@
         'aria-expanded="' + (state.sortOpen ? 'true' : 'false') + '">' +
         sortToggleLabel() + '</button>' : '') +
       '<div class="s-sort-body">' +
+      '<span class="s-flt-t">排序</span>' +
       sortBtn('score-grahamAgg', '格·进取') +
       sortBtn('score-grahamDef', '格·防御') +
       sortBtn('score-schloss', '施洛斯') +
@@ -722,7 +723,7 @@
   // 排序按钮 HTML（当前选中标准高亮并显示升降箭头）
   function sortBtn(key, label) {
     var active = state.sortKey === key;
-    return '<button data-sort="' + key + '"' + (active ? ' class="active"' : '') + '>' +
+    return '<button data-sort="' + key + '" title="按' + label + '排序，再点同列切换升/降序"' + (active ? ' class="active"' : '') + '>' +
       label + (active ? (state.sortDir === 'desc' ? ' ↓' : ' ↑') : '') + '</button>';
   }
 
