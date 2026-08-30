@@ -5,7 +5,7 @@ Game.MAPS.register({
   "tileSize": 32,
   "width": 10,
   "height": 10,
-  "legend": {".": "grass", "#": "wall", "T": "tree", "~": "water"},
+  "legend": {".": "grass", "#": "wall", "T": "tree", "~": "water", "+": "door", "B": "bed"},
   "ground": [
     "##########",
     "#........#",
@@ -18,6 +18,7 @@ Game.MAPS.register({
     "#........#",
     "##########",
   ],
+  "doors": [],
   "exits": [{"x": 9, "y": 5, "to": "prologue", "toX": 158, "toY": 60}],
   "npcSpawns": [],
   "triggers": [],

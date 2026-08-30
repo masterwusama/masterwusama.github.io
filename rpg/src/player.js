@@ -42,6 +42,18 @@
     return map.isSlowAt(Math.floor(this.centerX() / ts), Math.floor(this.centerY() / ts));
   };
 
+  // 玩家面前一格的 tile 坐标（按当前面向），供 interact 触发检测
+  Player.prototype.facingTile = function (map) {
+    var ts = map.tileSize;
+    var tx = Math.floor(this.centerX() / ts);
+    var ty = Math.floor(this.centerY() / ts);
+    if (this.dir === 'up') ty--;
+    else if (this.dir === 'down') ty++;
+    else if (this.dir === 'left') tx--;
+    else if (this.dir === 'right') tx++;
+    return { x: tx, y: ty };
+  };
+
   Player.prototype.update = function (map, input) {
     this.prevX = this.x;
     this.prevY = this.y;

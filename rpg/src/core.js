@@ -1,7 +1,8 @@
-/* core.js - 主循环、场景管理、启动
+/* core.js - 主循环、场景状态机、启动
  * requestAnimationFrame 驱动 + 固定逻辑步（50ms）+ 渲染插值；
- * 场景对象约定 scene.enter/update/render（M0 仅 EXPLORE）；
- * 出口检测 → 切图（重新加载地图 + 重置玩家落点）。 */
+ * 场景：explore（探索）/ dialog（对话）/ menu（菜单），switchScene 切换并清理触摸输入；
+ * 出口检测 → 切图（重新加载地图 + 重置玩家落点 + 写临时快照）；
+ * 交互：Z 对面向 tile 触发 NPC / interact 触发器；中心点进入 enter 触发器区域触发。 */
 (function (G) {
   'use strict';
 
@@ -12,64 +13,153 @@
   var fpsAcc = 0;
   var fpsFrames = 0;
 
+  var current = 'explore';
   var scene = {
     map: null,
     player: null,
+    npcs: [],
+    mapId: 'prologue',
+    tileX: 10,
+    tileY: 60
+  };
 
-    // 进入地图：mapId + 落点 tile 坐标（toX/toY）
-    enter: function (mapId, tx, ty) {
-      var raw = G.MAPS.get(mapId);
-      if (!raw) {
-        console.error('地图不存在：' + mapId);
+  // 进入地图：mapId + 落点 tile 坐标（toX/toY）
+  function enterMap(mapId, tx, ty) {
+    var raw = G.MAPS.get(mapId);
+    if (!raw) {
+      console.error('地图不存在：' + mapId);
+      return;
+    }
+    scene.map = new G.Map(raw);
+    scene.mapId = mapId;
+    scene.tileX = tx;
+    scene.tileY = ty;
+    var ts = scene.map.tileSize;
+    var px = tx * ts;
+    var py = ty * ts;
+    if (!scene.player) {
+      scene.player = new G.Player(px, py);
+    } else {
+      scene.player.x = px;
+      scene.player.y = py;
+    }
+    scene.player.prevX = px;
+    scene.player.prevY = py;
+    // NPC 生成（每图一份实例）
+    scene.npcs = [];
+    for (var i = 0; i < scene.map.npcSpawns.length; i++) {
+      scene.npcs.push(new G.NPC(scene.map.npcSpawns[i]));
+    }
+    G.Camera.follow(scene.player);
+    G.Camera.update(scene.map);
+    G.Save.writeSnapshot(); // 临时快照：刷新自动恢复，防丢进度
+    // 地图 autostart 剧情
+    if (scene.map.autostart && !G.Events.isDone(scene.map.autostart)) {
+      G.Events.run(scene.map.autostart);
+    }
+  }
+
+  // 交互检测：玩家面向 tile 上的 NPC / interact 触发器（Z 键触发）
+  function tryInteract() {
+    var ft = scene.player.facingTile(scene.map);
+    for (var i = 0; i < scene.npcs.length; i++) {
+      if (scene.npcs[i].coverTile(ft.x, ft.y)) {
+        G.Events.run(scene.npcs[i].trigger);
         return;
       }
-      this.map = new G.Map(raw);
-      var ts = this.map.tileSize;
-      var px = tx * ts;
-      var py = ty * ts;
-      if (!this.player) {
-        this.player = new G.Player(px, py);
-      } else {
-        this.player.x = px;
-        this.player.y = py;
-      }
-      this.player.prevX = px;
-      this.player.prevY = py;
-      G.Camera.follow(this.player);
-      // 摄像机瞬移到目标（避免切图后从远处飘过来）
-      G.Camera.update(this.map);
-    },
-
-    update: function () {
-      var p = this.player;
-      p.update(this.map, G.Input);
-
-      // F1 切换调试网格
-      if (G.Input.pressed('grid')) G.Renderer.toggleGrid();
-
-      // 出口检测：中心点落入出口矩形 → 切图
-      var exit = this.map.exitAt(p.centerX(), p.centerY());
-      if (exit) {
-        this.enter(exit.to, exit.toX, exit.toY);
-        G.Input.endFrame();
+    }
+    var trig = scene.map.triggers;
+    for (var j = 0; j < trig.length; j++) {
+      var t = trig[j];
+      if (t.type !== 'interact') continue;
+      if (ft.x >= t.x && ft.x < t.x + (t.w || 1) && ft.y >= t.y && ft.y < t.y + (t.h || 1)) {
+        G.Events.run(t.node);
         return;
       }
+    }
+  }
 
-      G.Camera.update(this.map);
-      G.Input.endFrame();
+  // 区域触发检测：玩家中心点落入 enter 触发器矩形
+  function checkEnterTriggers() {
+    var p = scene.player;
+    var tx = Math.floor(p.centerX() / scene.map.tileSize);
+    var ty = Math.floor(p.centerY() / scene.map.tileSize);
+    var trig = scene.map.triggers;
+    for (var i = 0; i < trig.length; i++) {
+      var t = trig[i];
+      if (t.type !== 'enter') continue;
+      if (t.once && G.Events.isDone(t.node)) continue;
+      if (tx >= t.x && tx < t.x + (t.w || 1) && ty >= t.y && ty < t.y + (t.h || 1)) {
+        G.Events.run(t.node);
+        return; // 每次只触发一个
+      }
+    }
+  }
+
+  var scenes = {
+    explore: {
+      enter: function () { G.Input.setStickDisabled(false); },
+      update: function () {
+        var p = scene.player;
+        p.update(scene.map, G.Input);
+
+        // F1 切换调试网格
+        if (G.Input.pressed('grid')) G.Renderer.toggleGrid();
+        // X/Esc 打开菜单
+        if (G.Input.pressed('cancel')) {
+          G.UI.open();
+          G.Input.endFrame();
+          return;
+        }
+        // Z 交互（面向 tile 的 NPC / 触发器）
+        if (G.Input.pressed('confirm')) tryInteract();
+
+        // 出口检测：中心点落入出口矩形 → 切图
+        var exit = scene.map.exitAt(p.centerX(), p.centerY());
+        if (exit) {
+          enterMap(exit.to, exit.toX, exit.toY);
+          G.Input.endFrame();
+          return;
+        }
+
+        checkEnterTriggers();
+        G.Status.update(); // 生存状态衰减 + 时钟推进
+        G.Camera.update(scene.map);
+        G.Input.endFrame(); // 清空本步按键（否则 pressed 永真，单键无限触发）
+      },
+      render: function (alpha) {
+        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, alpha, true);
+      }
     },
 
-    render: function (alpha) {
-      G.Renderer.render(this.map, G.Camera, this.player, alpha);
+    dialog: {
+      enter: function () { G.Input.setStickDisabled(true); },
+      update: function () {
+        G.Dialog.update(G.Input);
+      },
+      render: function (alpha) {
+        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, alpha, false);
+        G.Dialog.render(G.Renderer.ctx());
+      }
+    },
+
+    menu: {
+      enter: function () { G.Input.setStickDisabled(true); },
+      update: function () {
+        G.UI.update(G.Input);
+      },
+      render: function (alpha) {
+        G.Renderer.render(scene.map, G.Camera, scene.player, scene.npcs, alpha, false);
+      }
     }
   };
 
   function update() {
-    scene.update();
+    scenes[current].update();
   }
 
   function renderFrame(alpha) {
-    scene.render(alpha);
+    scenes[current].render(alpha);
   }
 
   function loop(t) {
@@ -105,8 +195,27 @@
     canvas.style.height = Math.floor(608 * s) + 'px';
   }
 
+  // 场景切换：先清理触摸输入（防对话打开瞬间摇杆残留）
+  function switchScene(name) {
+    if (!scenes[name]) {
+      console.error('场景不存在：' + name);
+      return;
+    }
+    if (current === name) return;
+    current = name;
+    G.Input.clearTouch();
+    scenes[name].enter();
+  }
+
   G.core = {
-    fps: 0
+    fps: 0,
+    sceneName: function () { return current; },
+    enterMap: enterMap,
+    switchScene: switchScene,
+    // 存档收集用：当前地图/玩家 tile 坐标
+    current: function () {
+      return { mapId: scene.mapId, tileX: scene.tileX, tileY: scene.tileY };
+    }
   };
 
   G.boot = function (canvasEl) {
@@ -120,7 +229,12 @@
       setTimeout(fitCanvas, 120);
     });
 
-    scene.enter('prologue', 10, 60); // 初始落点：镇口河畔
+    G.Flags.init();
+    // 优先恢复临时快照（刷新/掉线防丢进度）；无快照则从起点开始
+    var snap = G.Save.readSnapshot();
+    if (!snap || !G.Save.apply(snap)) {
+      enterMap('prologue', 10, 60); // 初始落点：镇口河畔
+    }
     last = performance.now();
     requestAnimationFrame(loop);
   };

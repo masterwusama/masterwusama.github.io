@@ -86,6 +86,38 @@
       g.beginPath(); g.arc(10, 8, 3, 0, Math.PI * 2); g.fill();
     });
 
+    set[T.DOOR] = makeTile(function (g) {
+      g.fillStyle = '#2f4d2b'; // 草地底（与门体同 tile，门体留出门缝）
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle = '#6b4a2a'; // 木门
+      g.fillRect(4, 2, 22, 30);
+      g.fillStyle = '#4a3018'; // 门缝竖线
+      g.fillRect(15, 2, 2, 30);
+      g.fillRect(4, 14, 22, 2);
+      g.fillStyle = '#8a6a3a'; // 门框
+      g.fillRect(2, 0, 28, 2);
+      g.fillRect(2, 0, 2, 32);
+      g.fillRect(28, 0, 2, 32);
+    });
+
+    set[T.BED] = makeTile(function (g) {
+      g.fillStyle = '#2f4d2b'; // 草地底
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle = '#8a6a48'; // 床架
+      g.fillRect(2, 8, 28, 4);
+      g.fillRect(2, 8, 2, 22);
+      g.fillRect(28, 8, 2, 22);
+      g.fillStyle = '#d8c8a8'; // 褥子
+      g.fillRect(4, 12, 24, 12);
+      g.fillStyle = '#b8a888'; // 枕头
+      g.fillRect(4, 12, 10, 4);
+      g.fillStyle = '#c8b898'; // 被角
+      g.fillRect(16, 16, 12, 8);
+      g.fillStyle = '#6a4a2a'; // 床腿
+      g.fillRect(4, 26, 3, 4);
+      g.fillRect(25, 26, 3, 4);
+    });
+
     return set;
   }
 
@@ -97,7 +129,7 @@
   }
 
   // alpha ∈ [0,1)：逻辑位置到渲染位置的时间插值（固定步长 + 渲染插值）
-  function render(map, camera, player, alpha) {
+  function render(map, camera, player, npcs, alpha, showDebug) {
     var ts = map.tileSize;
     var camX = camera.getX(), camY = camera.getY();
 
@@ -127,7 +159,10 @@
       }
     }
 
-    // 第 2 层：实体（渲染位置为插值坐标）
+    // 第 2 层：实体（NPC → 玩家，渲染位置为插值坐标）
+    for (var ni = 0; ni < npcs.length; ni++) {
+      npcs[ni].render(ctx);
+    }
     player.render(ctx, ix, iy);
 
     // 第 3 层：树（玩家中心在树底之下 → 树半透明，玩家可见）
@@ -146,7 +181,8 @@
     }
 
     if (showGrid) drawGrid(map, camera, offX, offY, x0, y0, x1, y1);
-    drawDebug(map, player, camera, x0, y0, x1, y1, offX, offY);
+    drawHud();
+    if (showDebug) drawDebug(map, player, camera, x0, y0, x1, y1, offX, offY);
     drawStick();
   }
 
@@ -177,8 +213,9 @@
     }
   }
 
-  // 虚拟摇杆：触摸设备显示左下角半透明提示圈；激活时在手指处绘制摇杆
+  // 虚拟摇杆：触摸设备显示左下角半透明提示圈；激活时在手指处绘制摇杆（仅探索场景）
   function drawStick() {
+    if (G.core.sceneName() !== 'explore') return;
     var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     var s = G.Input.stick();
     if (!s.active) {
@@ -201,35 +238,62 @@
     ctx.beginPath(); ctx.arc(s.ox + s.dx * (R - 22), s.oy + s.dy * (R - 22), 22, 0, Math.PI * 2); ctx.fill();
   }
 
+  // 生存 HUD：左上 HP/饥饿/精神三色条 + 右上游戏时钟（M1 验收：状态可见）
+  function drawHud() {
+    var s = G.Status;
+    var x = 14, y = 12, w = 128, h = 9, gap = 14;
+    var bars = [
+      { v: s.hp, c: '#c84a4a', label: 'HP' },
+      { v: s.hunger, c: '#c8944a', label: '食' },
+      { v: s.mind, c: '#7a6ac8', label: '神' }
+    ];
+    ctx.font = '11px sans-serif';
+    for (var i = 0; i < bars.length; i++) {
+      var by = y + i * gap;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(x - 4, by - 2, w + 34, h + 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(x, by, w, h);
+      ctx.fillStyle = bars[i].c;
+      ctx.fillRect(x, by, w * Math.max(0, Math.min(1, bars[i].v / 100)), h);
+      ctx.fillStyle = '#e8e0d0';
+      ctx.fillText(bars[i].label, x + w + 8, by + h);
+      ctx.fillText(Math.round(bars[i].v), x + w + 26, by + h);
+    }
+    // 右上：游戏时钟
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(G.Camera.VIEW_W - 116, 12, 102, 18);
+    ctx.fillStyle = '#e8e0d0';
+    ctx.fillText(s.timeText(), G.Camera.VIEW_W - 108, 25);
+  }
+
   // 调试 HUD：验证"移动后范围地图同步跟随"（tile 坐标 / 摄像机 / 可视范围）
   function drawDebug(map, player, camera, x0, y0, x1, y1, offX, offY) {
     ctx.fillStyle = 'rgba(0,0,0,0.62)';
-    ctx.fillRect(10, 10, 316, 88);
+    ctx.fillRect(camera.VIEW_W - 326, camera.VIEW_H - 128, 316, 118);
     ctx.fillStyle = '#9fd49f';
     ctx.font = '12px Consolas, "Courier New", monospace';
     var ts = map.tileSize;
+    var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     var lines = [
       'map   ' + map.id + '  ' + map.width + 'x' + map.height,
       'tile  (' + Math.floor(player.centerX() / ts) + ', ' + Math.floor(player.centerY() / ts) + ')  '
         + (offX || offY ? 'off(' + offX + ',' + offY + ')' : ''),
       'cam   (' + Math.round(camera.getX()) + ', ' + Math.round(camera.getY()) + ')',
-      'view  [' + x0 + '..' + x1 + ', ' + y0 + '..' + y1 + ']  fps ' + G.core.fps
+      'view  [' + x0 + '..' + x1 + ', ' + y0 + '..' + y1 + ']  fps ' + G.core.fps,
+      isTouch ? '拖动移动 · Esc 菜单' : 'WASD 移动 · Z 交互 · X 菜单 · F1 网格'
     ];
     for (var i = 0; i < lines.length; i++) {
-      ctx.fillText(lines[i], 16, 26 + i * 18);
+      ctx.fillText(lines[i], camera.VIEW_W - 312, camera.VIEW_H - 112 + i * 18);
     }
-    // 操作提示（触摸设备显示触摸操作）
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '12px sans-serif';
-    var tip = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0))
-      ? '拖动屏幕移动 · 右端缺口可切图'
-      : 'WASD/方向键 移动 · F1 网格 · 右端缺口可切图';
-    ctx.fillText(tip, 16, camera.VIEW_H - 14);
   }
 
   G.Renderer = {
     init: init,
     render: render,
+    ctx: function () { return ctx; },
+    viewW: function () { return G.Camera.VIEW_W; },
+    viewH: function () { return G.Camera.VIEW_H; },
     toggleGrid: function () { showGrid = !showGrid; }
   };
 })(window.Game = window.Game || {});

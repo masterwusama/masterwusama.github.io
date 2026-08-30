@@ -1,7 +1,7 @@
 /* input.js - 键盘 + 触摸输入
  * 键盘：方向/WASD 移动；Z=确认；X=取消/菜单；Shift=奔跑（预留）；F1=调试网格
- * 触摸：动态虚拟摇杆（按下处出现，拖动控制方向），支持手机游玩
- * held()：长按状态（键盘或摇杆）；pressed()：本逻辑步内刚按下（逻辑步末由 core 清空） */
+ * 触摸：动态虚拟摇杆（按下处出现，拖动控制方向）；
+ *       对话/菜单等场景摇杆禁用（setStickDisabled），改为 tap 点击（dialog 选项命中检测） */
 (function (G) {
   'use strict';
 
@@ -24,6 +24,13 @@
   var DEADZONE = 0.25;  // 方向死区，避免误触
   var stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0, touchId: null };
 
+  // 点击模式（dialog/menu 用）：短按 → tap 队列
+  var stickDisabled = false;
+  var press = null;         // {x, y, t} 按下起点（点击模式）
+  var tapQueue = [];
+  var TAP_DIST = 12;        // 位移阈值（逻辑像素）
+  var TAP_TIME = 350;       // 时长阈值（ms）
+
   window.addEventListener('keydown', function (e) {
     var k = KEYMAP[e.keyCode];
     if (!k) return;
@@ -44,6 +51,7 @@
     stick.active = false;
     stick.dx = 0;
     stick.dy = 0;
+    press = null;
   });
 
   // client 坐标 → canvas 逻辑坐标（考虑 CSS 缩放）
@@ -70,6 +78,10 @@
         e.preventDefault();
         var t = e.changedTouches[0];
         var p = canvasPos(canvas, t.clientX, t.clientY);
+        if (stickDisabled) {
+          press = { x: p.x, y: p.y, t: Date.now() };
+          return;
+        }
         stick.active = true;
         stick.touchId = t.identifier;
         stick.ox = p.x;
@@ -79,7 +91,7 @@
       }, { passive: false });
 
       canvas.addEventListener('touchmove', function (e) {
-        if (!stick.active) return;
+        if (stickDisabled || !stick.active) return;
         e.preventDefault();
         for (var i = 0; i < e.changedTouches.length; i++) {
           var t = e.changedTouches[i];
@@ -94,8 +106,21 @@
       }, { passive: false });
 
       var end = function (e) {
-        if (!stick.active) return;
         e.preventDefault();
+        if (stickDisabled) {
+          // 点击模式：短按且未拖动 → 记录 tap（供 dialog 选项/继续）
+          if (press) {
+            var t = e.changedTouches[0];
+            var p = canvasPos(canvas, t.clientX, t.clientY);
+            var dist = Math.abs(p.x - press.x) + Math.abs(p.y - press.y);
+            if (dist < TAP_DIST && Date.now() - press.t < TAP_TIME) {
+              tapQueue.push({ x: p.x, y: p.y });
+            }
+            press = null;
+          }
+          return;
+        }
+        if (!stick.active) return;
         for (var i = 0; i < e.changedTouches.length; i++) {
           if (e.changedTouches[i].identifier === stick.touchId) resetStick();
         }
@@ -119,6 +144,25 @@
 
     // 摇杆状态（供 renderer 绘制虚拟摇杆）
     stick: function () { return stick; },
+
+    // 点击模式开关（core 场景切换时调用：explore 用摇杆，dialog/menu 用点击）
+    setStickDisabled: function (v) {
+      stickDisabled = !!v;
+      if (stickDisabled) {
+        resetStick();
+        press = null;
+      }
+    },
+
+    // 取走一个未消费的 tap（无则 null）；tap 在场景内消费
+    tap: function () {
+      return tapQueue.shift() || null;
+    },
+
+    clearTouch: function () {
+      resetStick();
+      press = null;
+    },
 
     endFrame: function () { justPressed = {}; }
   };
