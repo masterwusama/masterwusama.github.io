@@ -3,11 +3,15 @@
 物价查询（杭州主要农产品）— 数据抓取脚本（仅标准库，供 GitHub Actions 定时运行）
 
 数据源（均已实测可直抓）：
-  1. 商务部商务预报「百家日报」——每日更新
+  1. 商务部商务预报「百家日报」——每日更新（蔬菜/肉类/蛋/粮油，48 品种）
      - 页面 /cif/seach.fhtml?commdityid={ID}，服务端直出表格
        行格式：<tr> <td>浙江省</td> <td>市场名</td> <td>当日价格</td> ...
      - 取浙江省各市场报价中位数（无浙江市场时回退全部市场中位数）
      - 单位：元/公斤（批发）
+  1b. 百家日报「水果/水产系列」——每日更新（6 水果 + 7 水产）
+     - 26xxxx 水果段 / 25xxxx 水产段，同口径浙江市场中位数
+     - 页面支持 ?searchDate=YYYY-MM-DD 查历史（可回溯一年以上），
+       新品种首次入库回填近一年，之后每日增量
   2. 杭州市商务局「生活必需品市场运行情况」周报（经浙江商务预报子站发布）——周更
      - 列表：浙江子站首页 /site/html/zhejiangsheng/index.html 直出文章链接
      - 正文格式：`猪全精肉31.44元/公斤，下跌0.51%`
@@ -15,9 +19,11 @@
        17~28 个蔬菜品种、鸡蛋鸭蛋、水产、水果等
      - 单位：元/公斤（元/500克 自动 ×2）
 
-说明：两源口径不同（百家日报=浙江批发市场，周报=杭州市监测），
-同名单品也分源存储（id 前缀 cif- / hz-），前端分别展示，不做混合。
-数据自 2026-08-30 起采集，不回填历史；滚动保留最近 365 天。
+说明：各源口径不同（百家日报=浙江批发市场，周报=杭州市监测，
+周度=全国均价），同名单品也分源存储（id 前缀 cif- / cifw- / hz-），
+前端分别展示，不做混合。
+基础品种自 2026-08-30 起采集不回填；水果/水产日报与周度源自带可查历史，
+入库时一次性回填近一年。滚动保留最近 365 天。
 
 输出：data/prices.json（增量合并，按 (id, date) 去重）
 """
@@ -30,7 +36,8 @@ import sys
 import time
 import urllib.request
 import ssl
-from datetime import datetime, timezone, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime, timezone, timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE = os.path.join(BASE_DIR, 'data', 'prices.json')
@@ -101,6 +108,26 @@ BAIJIA_PRODUCTS = [
     ('veg-yam', '山药', '170500', '蔬菜'),
     ('veg-pumpkin', '南瓜', '170470', '蔬菜'),
     ('veg-bean', '豆角', '170170', '蔬菜'),
+]
+
+# 百家日报——水果/水产系列（浙江市场批发，元/公斤）
+# 页面支持 ?searchDate=YYYY-MM-DD 查历史（实测可回溯一年以上），
+# 故新品种首次入库时回填近一年历史，之后每日增量。
+# id, name, commdityid, category
+BAIJIA_FF_PRODUCTS = [
+    ('fruit-apple', '苹果', '260010', '水果'),
+    ('fruit-banana', '香蕉', '260020', '水果'),
+    ('fruit-grape', '葡萄', '260030', '水果'),
+    ('fruit-pineapple', '菠萝', '260040', '水果'),
+    ('fruit-pear', '梨', '260050', '水果'),
+    ('fruit-watermelon', '西瓜', '260060', '水果'),
+    ('fish-carp', '鲤鱼', '250010', '水产'),
+    ('fish-silvercarp', '鲢鱼', '250020', '水产'),
+    ('fish-grasscarp', '草鱼', '250030', '水产'),
+    ('fish-crucian', '鲫鱼', '250040', '水产'),
+    ('fish-hairtail', '大带鱼', '250050', '水产'),
+    ('fish-yellowcroaker', '大黄花鱼', '250070', '水产'),
+    ('fish-smallcroaker', '小黄花鱼', '250080', '水产'),
 ]
 
 # 商务部周度数据（全国批发/零售周均价，接口自带近一年历史）
@@ -231,6 +258,62 @@ def fetch_baijia(today):
         except Exception as e:  # noqa: BLE001
             print('  [warn] 百家日报 %s(%s) 失败: %r' % (name, cid, e))
     return out
+
+
+# ---------------- 源1b：百家日报（水果/水产，含历史回填） ----------------
+
+def fetch_ff_day(cid, day):
+    """抓某品种某日的日报价格（浙江市场中位数），无数据返回 None"""
+    url = '%s/cif/seach.fhtml?commdityid=%s&searchDate=%s' % (CIF_BASE, cid, day)
+    try:
+        html = http_get(url)
+    except Exception as e:  # noqa: BLE001
+        print('    [warn] %s %s 抓取失败: %r' % (cid, day, e))
+        return None
+    rows = parse_baijia_rows(html)
+    if not rows:
+        return None
+    zj = [p for prov, _m, p in rows if '浙江' in prov]
+    price = median(zj) if zj else median([p for _a, _b, p in rows])
+    return round(price, 2) if price else None
+
+
+def fetch_baijia_ff(old_products, cutoff, today):
+    """水果/水产日报：缺的天数逐日补采（>7 天视为回填，多线程加速）"""
+    days = []
+    d = date.fromisoformat(cutoff)
+    end = date.fromisoformat(today)
+    while d <= end:
+        days.append(d.isoformat())
+        d += timedelta(days=1)
+    for pid, name, cid, cat in BAIJIA_FF_PRODUCTS:
+        fid = 'cif-' + pid
+        p = old_products.get(fid) or {
+            'id': fid, 'name': name, 'category': cat, 'unit': '元/公斤',
+            'source': '商务部百家日报（浙江市场）', 'prices': []}
+        existing = set(x['date'] for x in p['prices'])
+        missing = [x for x in days if x not in existing]
+        if not missing:
+            continue
+        got = {}
+        if len(missing) > 7:
+            print('   %s 回填 %d 天历史' % (name, len(missing)))
+            with ThreadPoolExecutor(max_workers=5) as ex:
+                futs = {ex.submit(fetch_ff_day, cid, dd): dd for dd in missing}
+                for fu in as_completed(futs):
+                    v = fu.result()
+                    if v:
+                        got[futs[fu]] = v
+        else:
+            for dd in missing:
+                v = fetch_ff_day(cid, dd)
+                if v:
+                    got[dd] = v
+                time.sleep(SLEEP)
+        p['prices'] += [{'date': dd, 'price': v} for dd, v in got.items()]
+        p['prices'].sort(key=lambda x: x['date'])
+        old_products[fid] = p
+        print('   %s: 新增 %d 点，共 %d 点' % (name, len(got), len(p['prices'])))
 
 
 # ---------------- 源3：商务部周度 ----------------
@@ -396,6 +479,9 @@ def main():
         if not any(x['date'] == today for x in p['prices']):
             p['prices'].append({'date': today, 'price': baijia[pid]})
         old_products[fid] = p
+
+    print('== 百家日报 水果/水产（浙江市场，新品种回填一年）')
+    fetch_baijia_ff(old_products, cutoff, today)
 
     print('== 杭州周报')
     wk = fetch_hz_weekly(fetched_articles)
