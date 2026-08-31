@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var state = { pf: null, trades: null, key: 'schloss' };
+  var state = { pf: null, trades: null, key: 'schloss', sort: { key: null, dir: -1 } };
   var KEYS = ['schloss', 'grahamDef', 'buffett'];
 
   function load(url) {
@@ -49,6 +49,35 @@
       (sub ? '<div class="s">' + sub + '</div>' : '') + '</div>';
   }
 
+  // 持仓排序：无排序键时保持引擎原始序；文本列（标的）按拼音，其余按数值
+  function sortPositions(pos, nav) {
+    var k = state.sort.key;
+    if (!k) return pos.slice();
+    var dir = state.sort.dir;
+    var val = function (p) { return k === 'weight' ? p.value / nav : p[k]; };
+    return pos.slice().sort(function (a, b) {
+      if (k === 'name') return String(a.name).localeCompare(String(b.name), 'zh-CN') * dir;
+      return ((val(a) || 0) - (val(b) || 0)) * dir;
+    });
+  }
+
+  // 表头点击排序：同列再点切换升降，换列时数值列默认降序、文本列默认升序
+  function bindSort() {
+    var box = $('pf-positions');
+    box.querySelectorAll('th[data-key]').forEach(function (th) {
+      th.addEventListener('click', function () {
+        var key = th.getAttribute('data-key');
+        if (state.sort.key === key) {
+          state.sort.dir *= -1;
+        } else {
+          state.sort.key = key;
+          state.sort.dir = (key === 'name') ? 1 : -1;
+        }
+        renderStrategy();
+      });
+    });
+  }
+
   function renderStrategy() {
     var s = state.pf.strategies[state.key];
     var pos = s.positions || [];
@@ -63,16 +92,35 @@
         '<span class="' + cls(s.day_pnl_pct) + '">' + sign(s.day_pnl_pct) + '%</span>') +
       stat('总持仓比例', fmt(s.position_pct, 1) + '%', '持仓 ' + pos.length + ' 只');
 
-    // 持仓：桌面表格 + 移动卡片（CSS 切换显示）
+    // 持仓：桌面表格（点表头排序）+ 移动卡片（CSS 切换显示）
+    var COLS = [
+      { key: 'name', label: '标的' },
+      { key: 'cost', label: '成本价' },
+      { key: 'shares', label: '持股数' },
+      { key: 'value', label: '市值' },
+      { key: 'weight', label: '持仓比例' },
+      { key: 'price', label: '现价' },
+      { key: 'pnl_pct', label: '盈亏比例' },
+      { key: 'pnl', label: '盈亏额' },
+      { key: 'days', label: '持仓天数' }
+    ];
+    var list = sortPositions(pos, s.nav);
+    var thead = '<tr>' + COLS.map(function (col) {
+      var active = state.sort.key === col.key;
+      var caret = active ? (state.sort.dir < 0 ? ' ▼' : ' ▲') : '';
+      return '<th data-key="' + col.key + '" class="pf-th-sort' + (active ? ' pf-th-on' : '') +
+        '" title="点击排序">' + col.label + caret + '</th>';
+    }).join('') + '</tr>';
     var rows = '', cards = '';
-    if (!pos.length) {
+    if (!list.length) {
       cards = '<div class="pf-empty">当前空仓（等待买点出现）</div>';
-      rows = '<tr><td colspan="8" style="text-align:center;color:#8a94a6">当前空仓（等待买点出现）</td></tr>';
+      rows = '<tr><td colspan="' + COLS.length + '" style="text-align:center;color:#8a94a6">当前空仓（等待买点出现）</td></tr>';
     }
-    pos.forEach(function (p) {
+    list.forEach(function (p) {
       rows += '<tr>' +
         '<td><b>' + p.name + '</b> <span style="color:#8a94a6">' + p.code + '</span></td>' +
         '<td>' + fmt(p.cost) + '</td><td>' + p.shares.toLocaleString('zh-CN') + '</td>' +
+        '<td>' + fmt(p.value) + '</td>' +
         '<td>' + fmt(p.value / s.nav * 100, 1) + '%</td>' +
         '<td>' + fmt(p.price) + '</td>' +
         '<td class="' + cls(p.pnl_pct) + '">' + sign(p.pnl_pct) + '%</td>' +
@@ -86,15 +134,15 @@
         '<div><div class="k">成本价</div><div class="v">' + fmt(p.cost) + '</div></div>' +
         '<div><div class="k">现价</div><div class="v">' + fmt(p.price) + '</div></div>' +
         '<div><div class="k">持股数</div><div class="v">' + p.shares.toLocaleString('zh-CN') + '</div></div>' +
+        '<div><div class="k">市值</div><div class="v">' + fmt(p.value) + '</div></div>' +
         '<div><div class="k">持仓比例</div><div class="v">' + fmt(p.value / s.nav * 100, 1) + '%</div></div>' +
         '<div><div class="k">盈亏额</div><div class="v ' + cls(p.pnl) + '">' + sign(p.pnl) + '</div></div>' +
         '<div><div class="k">持仓天数</div><div class="v">' + p.days + ' 天</div></div>' +
         '</div></div>';
     });
     $('pf-positions').innerHTML =
-      '<table class="pf-table"><thead><tr><th>标的</th><th>成本价</th><th>持股数</th>' +
-      '<th>持仓比例</th><th>现价</th><th>盈亏比例</th><th>盈亏额</th><th>持仓天数</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>' + cards;
+      '<table class="pf-table"><thead>' + thead + '</thead><tbody>' + rows + '</tbody></table>' + cards;
+    bindSort();
 
     // 调仓记录（该策略，倒序）
     var tr = (state.trades[state.key] || []).slice().reverse();

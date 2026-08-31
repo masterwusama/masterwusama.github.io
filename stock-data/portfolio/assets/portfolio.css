@@ -55,6 +55,9 @@
     border: 1px solid #e4e9f2; border-radius: 8px; overflow: hidden; }
   .pf-table th, .pf-table td { padding: 8px 12px; text-align: right; font-size: 13px; }
   .pf-table th { background: #f0f3f7; color: #5a6577; font-weight: 600; }
+  .pf-table th.pf-th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+  .pf-table th.pf-th-sort:hover { background: #e6ebf2; }
+  .pf-table th.pf-th-on { color: #2b6cb0; background: #eaf1fa; }
   .pf-table th:first-child, .pf-table td:first-child { text-align: left; }
   .pf-table tbody tr:hover { background: #f7f9fc; }
   .pf-card, .pf-empty { display: none; }
