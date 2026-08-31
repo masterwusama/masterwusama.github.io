@@ -24,7 +24,9 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 名单增长后全量抓取（含定期报告 PDF 审计解析）本地实测约 40~50 分钟，
+    # 原 30 分钟上限会导致抓取步骤被掐死、后续调仓与提交整步跳过（连续多日空更新的根因）。提到 60 分钟。
+    timeout-minutes: 60
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
@@ -40,18 +42,32 @@ jobs:
 
       - name: 抓取数据
         working-directory: stock-data/scripts
+        # 单步封顶 50 分钟，给后面的调仓+提交留出缓冲；即便偶尔挂死也不会吃掉整个 job 预算
+        timeout-minutes: 50
         run: python fetch_data.py
 
       - name: 模拟持仓调仓（基于刚更新的收盘价）
         working-directory: stock-data/scripts
+        # 抓取步骤即使超时被杀，也基于已落盘的（部分新、部分昨日）数据完成调仓，避免又一次整天为空
+        if: always()
         run: python portfolio_engine.py
 
       - name: 提交数据变更
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(stock-data): 更新 A 股财务数据"
-          file_pattern: stock-data/data/* stock-data/portfolio/data/*
-          commit_user_name: stock-data-bot
-          commit_user_email: stock-data-bot@users.noreply.github.com
-          skip_fetch: true
-          skip_checkout: true
+        if: always()
+        run: |
+          git config user.name stock-data-bot
+          git config user.email stock-data-bot@users.noreply.github.com
+          git add -A stock-data/data stock-data/portfolio/data
+          if git diff --cached --quiet; then echo "本次无数据变更"; exit 0; fi
+          git commit -m "chore(stock-data): 更新 A 股财务数据"
+          # 容忍与 agro-price / market-price 等并行 workflow 抢先推进 master 的推送竞争：
+          # 提交后工作树已干净，rebase 到最新 origin/master 再推，冲突则退避重试。
+          n=0
+          until git push origin "HEAD:${GITHUB_REF_NAME}"; do
+            n=$((n+1)); [ "$n" -ge 6 ] && { echo "推送多次失败，放弃"; exit 1; }
+            echo "推送失败，第 $n 次重试（rebase 最新远端）"
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}" || { git rebase --abort; break; }
+            sleep 3
+          done
+          echo "已提交并推送"
