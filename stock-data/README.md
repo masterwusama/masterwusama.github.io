@@ -6,7 +6,7 @@
 ## 工作原理
 
 ```
-GitHub Actions（定时任务，每天 3 次）
+GitHub Actions（定时任务，每天 2 次，双时段兜底）
    └─ Python + AKShare 抓取 → 生成 JSON → 自动 commit 回 master
                         ↓
         GitHub Pages 发布（仓库已启用 Pages 从 master 构建）
@@ -170,15 +170,48 @@ python scripts/fetch_events.py --codes 002027,601899  # 只抓指定代码（增
 python scripts/fetch_events.py --recompute           # 离线用已存 JSON 重算 delta/index.json（不耗 Wind）
 ```
 
-> 当前已抓取 12 家 A 股事件数据；后续 token 恢复可用 `--codes` 增量补齐，无需重抓已有。
+> 当前已抓取 21 家 A 股事件数据；后续 token 恢复可用 `--codes` 增量补齐，无需重抓已有。
 >
-> 2026-08-31 新增的海螺水泥 / 东航物流 / 上港集团 / 长江传媒按要求**不抓 Wind 事件数据**（不跑
-> `fetch_events.py`）：详情页 ⑥/⑦ 的“Wind 事件增强分”档两列显示 `-`、⑨ 模块隐藏，基础财报档正常评分与展示。
+> 已抓的 12 家（2026-08 批）+ 长江传媒 600757 / 鲁泰A 000726 / 北大荒 600598 / 山西汾酒 600809 /
+> 海容冷链 603187 / 云铝股份 000807（2026-09-01）+ 江苏国泰 002091 / 中创智领 601717 /
+> 盐湖股份 000792（2026-09-01）。其余公司按要求**不抓 Wind 事件数据**：详情页 ⑥/⑦ 的
+> “Wind 事件增强分”档两列显示 `-`、⑨ 模块隐藏，基础财报档正常评分与展示。
+
+## 每日更新与自查
+
+模拟持仓与股票数据由 GitHub Actions 定时抓取，**默认周一至周六每天 2 个时段**触发
+（北京 16:00 主 + 22:00 兜底）。若某天页面数据未刷新（详情页/持仓 `as_of` 或 `data/index.json`
+的 `updated_at` 未推进到当日），按以下流程排查：
+
+1. **先看 Actions 运行记录**（判别是超时还是 cron 未触发）：
+
+   ```bash
+   curl -s "https://api.github.com/repos/masterwusama/masterwusama.github.io/actions/workflows/stock-data-update.yml/runs?per_page=6"
+   # 看每条 created_at / status / conclusion
+   ```
+
+   - 当天**没有记录** → cron 调度延迟/漏触发（GitHub 侧调度问题，非代码问题）；
+   - 当天有记录但 `conclusion=cancelled` 且起止时间卡满 timeout → 抓取超时被掐；
+   - `conclusion=success` 但仍未更新 → 数据无变更（正常，可忽略）。
+
+2. **本地手动补跑**（脚本幂等，按交易日跳重，可放心重跑）：
+
+   ```bash
+   cd stock-data/scripts
+   python fetch_data.py        # 重抓最新财务/行情数据（可选，价格旧时再抓）
+   python portfolio_engine.py  # 基于最新数据做当日调仓，推进 as_of
+   ```
+
+   之后 `git add stock-data/data stock-data/portfolio/data && git commit && git push`
+   （手动补跑不消耗 Wind 积分，仅用免费东财/同花顺接口）。
+
+> 提示：cron 双时段只是降低漏触发概率，GitHub Actions 的 schedule 调度高峰期仍可能延迟
+> 或偶发漏跑，若页面长期未更新优先按本节流程自查+手动补跑。
 
 ## 注意
 
-- **更新频率**：定时任务每天 3 次（北京 9:00 / 17:00 / 次日 1:00），适合财报、
-  日线类数据；实时行情请勿依赖本服务
+- **更新频率**：定时任务每天 2 次，双时段兜底（北京 16:00 主 + 22:00 兜底，周一至周六），
+  适合财报、日线类数据；实时行情请勿依赖本服务
 - **数据源**：AKShare（同花顺 / 新浪 / 东方财富公开接口），免费、无需 token，
   但接口偶尔会变动，脚本需相应维护；港股数据源为东财港股接口 + 腾讯行情，
   报表科目按 IFRS 口径（与 A 股科目名不同，脚本内已做映射归一化）
