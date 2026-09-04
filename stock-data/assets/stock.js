@@ -263,13 +263,13 @@
   function renderList() {
     var box = $('stock-list');
     var list = sortCompanies().filter(function (c) { return c.market === state.tab; });
-    // 市场 Tab：A股/港股/美股 分流展示（带各市场数量），切换仅过滤不重拉数据
-    var tabLabels = { A: 'A股', HK: '港股', US: '美股' };
+    // 市场 Tab：跟踪名单当前为纯 A 股，故仅渲染 A股（日后重新纳入港美股时在此扩展市场）
+    var tabLabels = { A: 'A股' };
     var isMobile = mqMobile.matches;
     // 工具栏（Tab/搜索/排序）：移动端整组吸顶，切市场/搜索/排序无需滚回顶部
     var html = '<div class="s-toolbar">' +
       '<div class="s-tabs" role="tablist">' +
-      ['A', 'HK', 'US'].map(function (m) {
+      ['A'].map(function (m) {
         var n = state.companies.filter(function (c) { return c.market === m; }).length;
         return '<button class="s-tab' + (state.tab === m ? ' active' : '') + '" data-tab="' + m +
           '" role="tab" aria-selected="' + (state.tab === m ? 'true' : 'false') + '">' +
