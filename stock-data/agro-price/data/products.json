@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-09-07T14:02:07+08:00",
+ "updated_at": "2026-09-08T02:26:21+08:00",
  "products": [
   {
    "id": "carbendazim",
@@ -35,18 +35,6 @@
     {
      "date": "2023-11-05",
      "price": 38000.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-14",
-     "price": 35500.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-28",
-     "price": 35500.0,
      "source": "sino-agri",
      "note": "中农立华"
     },
@@ -699,82 +687,28 @@
      "note": "中农立华"
     },
     {
-     "date": "2026-08-03",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
+     "date": "2026-08-09",
+     "price": 36000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
     },
     {
-     "date": "2026-08-04",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
+     "date": "2026-08-16",
+     "price": 36000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
     },
     {
-     "date": "2026-08-06",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
+     "date": "2026-08-23",
+     "price": 36000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
     },
     {
-     "date": "2026-08-07",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-11",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-13",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-14",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-18",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-20",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-21",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-25",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-27",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
-    },
-    {
-     "date": "2026-08-28",
-     "price": 40000.0,
-     "source": "sunsirs",
-     "note": "苏州市森菲达化工有限公司"
+     "date": "2026-08-30",
+     "price": 36000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
     },
     {
      "date": "2026-09-01",
@@ -836,18 +770,6 @@
     {
      "date": "2023-11-05",
      "price": 38000.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-14",
-     "price": 39000.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-28",
-     "price": 39000.0,
      "source": "sino-agri",
      "note": "中农立华"
     },
@@ -1495,6 +1417,30 @@
     },
     {
      "date": "2026-08-02",
+     "price": 32000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-09",
+     "price": 32000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-16",
+     "price": 32000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-23",
+     "price": 32000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-30",
      "price": 32000.0,
      "source": "sino-agri",
      "note": "中农立华"
@@ -2473,6 +2419,12 @@
      "price": 55000.0,
      "source": "sunsirs",
      "note": "佳恩化学（山东）有限公司"
+    },
+    {
+     "date": "2026-09-07",
+     "price": 55000.0,
+     "source": "sunsirs",
+     "note": "佳恩化学（山东）有限公司"
     }
    ]
   },
@@ -2552,24 +2504,6 @@
     {
      "date": "2023-11-05",
      "price": 30000.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-14",
-     "price": 26000.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-21",
-     "price": 26000.0,
-     "source": "sino-agri",
-     "note": "中农立华"
-    },
-    {
-     "date": "2024-01-28",
-     "price": 26000.0,
      "source": "sino-agri",
      "note": "中农立华"
     },
@@ -3232,6 +3166,30 @@
      "price": 26000.0,
      "source": "sino-agri",
      "note": "中农立华"
+    },
+    {
+     "date": "2026-08-09",
+     "price": 26000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-16",
+     "price": 26000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-23",
+     "price": 26000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
+    },
+    {
+     "date": "2026-08-30",
+     "price": 26000.0,
+     "source": "sino-agri",
+     "note": "中农立华"
     }
    ]
   },
@@ -3271,12 +3229,6 @@
      "price": 15000.0,
      "source": "sunsirs",
      "note": "安徽中兴化工科技有限公司"
-    },
-    {
-     "date": "2026-08-08",
-     "price": 8800.0,
-     "source": "sunsirs",
-     "note": "聊城芫泽化工"
     },
     {
      "date": "2026-08-09",
@@ -7075,6 +7027,12 @@
     },
     {
      "date": "2026-09-05",
+     "price": 11000.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工有限公司"
+    },
+    {
+     "date": "2026-09-07",
      "price": 11000.0,
      "source": "sunsirs",
      "note": "山东艾特化工有限公司"
