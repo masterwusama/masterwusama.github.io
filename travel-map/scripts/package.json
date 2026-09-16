@@ -1,0 +1,12 @@
+{
+  "name": "travel-map-build",
+  "private": true,
+  "type": "module",
+  "description": "构建期依赖：抓取 DataV 边界并转 TopoJSON（产物 travel-map/data/china.json 已入库，运行站点不需要这些依赖）",
+  "scripts": {
+    "build": "node build-map.mjs"
+  },
+  "devDependencies": {
+    "topojson-server": "^3.0.1"
+  }
+}

@@ -124,6 +124,7 @@ menu:
   cook: /fridge-cook/
   dnd: /dnd-table/
   games: /rpg/
+  travel: /travel-map/
   #sitemap: /sitemap.xml
   #commonweal: /404.html
 
@@ -144,6 +145,7 @@ menu_icons:
   cook: cutlery
   dnd: magic
   games: gamepad
+  travel: map-marker
   sitemap: sitemap
   commonweal: heartbeat
 

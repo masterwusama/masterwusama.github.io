@@ -1,0 +1,157 @@
+{
+ "missing": [
+  "新疆维吾尔自治区 / 新星市 (659011→659011)",
+  "新疆维吾尔自治区 / 白杨市 (659012→659012)"
+ ],
+ "extra": [],
+ "byProvince": {
+  "北京市": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  },
+  "天津市": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  },
+  "河北省": {
+   "units": 11,
+   "matched": 11
+  },
+  "山西省": {
+   "units": 11,
+   "matched": 11
+  },
+  "内蒙古自治区": {
+   "units": 12,
+   "matched": 12
+  },
+  "辽宁省": {
+   "units": 14,
+   "matched": 14
+  },
+  "吉林省": {
+   "units": 9,
+   "matched": 9
+  },
+  "黑龙江省": {
+   "units": 13,
+   "matched": 13
+  },
+  "上海市": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  },
+  "江苏省": {
+   "units": 13,
+   "matched": 13
+  },
+  "浙江省": {
+   "units": 11,
+   "matched": 11
+  },
+  "安徽省": {
+   "units": 16,
+   "matched": 16
+  },
+  "福建省": {
+   "units": 9,
+   "matched": 9
+  },
+  "江西省": {
+   "units": 11,
+   "matched": 11
+  },
+  "山东省": {
+   "units": 16,
+   "matched": 16
+  },
+  "河南省": {
+   "units": 18,
+   "matched": 18
+  },
+  "湖北省": {
+   "units": 17,
+   "matched": 17
+  },
+  "湖南省": {
+   "units": 14,
+   "matched": 14
+  },
+  "广东省": {
+   "units": 21,
+   "matched": 21
+  },
+  "广西壮族自治区": {
+   "units": 14,
+   "matched": 14
+  },
+  "海南省": {
+   "units": 19,
+   "matched": 19
+  },
+  "重庆市": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  },
+  "四川省": {
+   "units": 21,
+   "matched": 21
+  },
+  "贵州省": {
+   "units": 9,
+   "matched": 9
+  },
+  "云南省": {
+   "units": 16,
+   "matched": 16
+  },
+  "西藏自治区": {
+   "units": 7,
+   "matched": 7
+  },
+  "陕西省": {
+   "units": 10,
+   "matched": 10
+  },
+  "甘肃省": {
+   "units": 14,
+   "matched": 14
+  },
+  "青海省": {
+   "units": 8,
+   "matched": 8
+  },
+  "宁夏回族自治区": {
+   "units": 5,
+   "matched": 5
+  },
+  "新疆维吾尔自治区": {
+   "units": 26,
+   "matched": 24
+  },
+  "台湾省": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  },
+  "香港特别行政区": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  },
+  "澳门特别行政区": {
+   "units": 1,
+   "matched": 1,
+   "mode": "province"
+  }
+ },
+ "lineFeatures": 1,
+ "sliverPolygons": 42,
+ "bytes": 1082123,
+ "gzEstimate": 302994,
+ "geometryCodes": 370
+}

@@ -1,0 +1,83 @@
+---
+layout: page
+title: 旅行足迹
+---
+
+<link rel="stylesheet" href="./assets/travel.css?v=20260916c">
+<script>document.documentElement.classList.add('travel-wide');</script>
+
+<div id="travel-app">
+  <header class="travel-heading">
+    <div>
+      <p class="travel-eyebrow">TRAVEL FOOTPRINTS</p>
+      <h1>旅行足迹</h1>
+      <p class="travel-intro">把走过的地方，留成一张图。</p>
+    </div>
+    <div class="travel-heading-note">精确到市 · 只记足迹，不算分数<br>无需登录，记录仅保存在当前浏览器</div>
+  </header>
+
+  <p id="travel-message" class="travel-message" role="status" aria-live="polite">正在载入地图数据…</p>
+  <button id="travel-retry" type="button" hidden>重新加载地图</button>
+  <noscript>请启用 JavaScript，以选择城市并下载足迹图片。</noscript>
+
+  <div class="travel-workspace">
+    <aside class="travel-editor" aria-label="编辑旅行足迹">
+      <fieldset id="travel-controls" disabled>
+        <section class="travel-control-section">
+          <h2><span class="travel-step">01</span> 选一种足迹</h2>
+          <div id="travel-palette" class="travel-palette" role="group" aria-label="足迹分类"></div>
+          <p id="travel-paint-hint" class="travel-hint">点击地图上的城市，标为「游玩」。</p>
+        </section>
+
+        <section class="travel-control-section">
+          <h2><span class="travel-step">02</span> 点亮去过的城市</h2>
+          <label class="travel-label" for="travel-province">省级地区</label>
+          <select id="travel-province"></select>
+          <label class="travel-label" for="travel-search">搜索城市 / 地区</label>
+          <input id="travel-search" type="search" placeholder="例如：杭州、苏州、阿坝" autocomplete="off" maxlength="60">
+          <p id="travel-results-label" class="travel-hint"></p>
+          <div id="travel-cities" class="travel-cities" aria-label="城市选择"></div>
+          <p class="travel-hint">每座城市保留一种分类；选择「没去过」再点城市即可取消。</p>
+        </section>
+
+        <section class="travel-control-section">
+          <h2><span class="travel-step">03</span> 留下你的标题</h2>
+          <label class="travel-label" for="travel-title">图片标题 <span>最多 28 个字</span></label>
+          <input id="travel-title" type="text" value="我的旅行足迹" maxlength="28" autocomplete="off">
+          <div class="travel-save-row">
+            <span id="travel-save-state">修改后自动保存</span>
+            <button id="travel-clear" class="travel-text-button" type="button">清空足迹</button>
+          </div>
+        </section>
+      </fieldset>
+    </aside>
+
+    <section class="travel-output" aria-label="足迹预览与下载">
+      <div class="travel-output-header">
+        <div>
+          <p class="travel-eyebrow">你的足迹，一目了然</p>
+          <div id="travel-summary" class="travel-summary" aria-live="polite"><strong>0</strong> 座城市 / 地区 <span>·</span> <strong>0</strong> 个省级地区</div>
+        </div>
+        <button id="travel-download" class="travel-download" type="button" disabled>下载高清 PNG <span aria-hidden="true">↓</span></button>
+      </div>
+      <div id="travel-counts" class="travel-counts" aria-label="各分类城市数量"></div>
+      <div class="travel-preview-frame" tabindex="0" aria-label="完整足迹图预览，可滚动查看">
+        <div id="travel-preview" class="travel-preview"></div>
+      </div>
+      <p class="travel-preview-note">按真实行政区划边界绘制，可直接点击地图上的城市；三沙市显示在右下角南海插图里。预览可滚动，下载图片包含全部地区且不受搜索条件影响。</p>
+      <details class="travel-data-note">
+        <summary>地区范围与数据说明</summary>
+        <p>统计以非「没去过」的标记为准，包含路过；同一城市只计一次。一个省级地区内有任一标记，即计入涉及省份数。</p>
+        <p>可选地区包含地级市、自治州、盟、地区和省直辖县级单位；北京、天津、上海、重庆及港澳各作为一个选择，台湾按市县列出，因此「城市 / 地区」不是严格的地级市数量。</p>
+        <p>地区名单采用 china-division 2.7.0（国家统计局 2023-06-30 快照，另补港澳台）；地图边界采用阿里云 DataV.GeoAtlas areas_v3（GCJ-02 坐标，2021-06 快照）。两者快照时间不同，且边界数据无审图号，因此本图定位为<b>位置示意图</b>，不作为标准地图使用。</p>
+        <p>快照限制：台湾只到省级面（22 个市县在左侧列表选择，任一选中即整省着色）；新疆新星市、白杨市为 2021 年后设立，可计数但地图上无独立边界；三沙市按惯例绘入南海插图，与九段线一并显示。</p>
+        <p>记录保存在当前设备、当前浏览器中，不上传服务器；清除浏览器数据会同时删除记录。</p>
+      </details>
+    </section>
+  </div>
+</div>
+
+<script src="./assets/vendor/d3-array.min.js"></script>
+<script src="./assets/vendor/d3-geo.min.js"></script>
+<script src="./assets/vendor/topojson-client.min.js"></script>
+<script type="module" src="./assets/travel.mjs?v=20260916c"></script>

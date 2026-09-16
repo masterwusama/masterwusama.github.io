@@ -1,0 +1,109 @@
+.travel-wide .sidebar,
+.travel-wide .sidebar-toggle,
+.travel-wide .sidebar-overlay,
+.travel-wide #posts > .post-header { display: none !important; }
+
+@media (min-width: 768px) {
+  .travel-wide .main-inner,
+  .travel-wide .header-inner,
+  .travel-wide .footer-inner {
+    width: auto;
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+#travel-app {
+  --travel-ink: #24342f;
+  --travel-muted: #717b75;
+  --travel-green: #305c4e;
+  --travel-line: #e2e6df;
+  color: var(--travel-ink);
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  text-align: left;
+  padding: 8px 0 24px;
+}
+#travel-app * { box-sizing: border-box; }
+#travel-app [hidden] { display: none !important; }
+#travel-app h1, #travel-app h2, #travel-app h3, #travel-app p { padding: 0; border: 0; }
+#travel-app button, #travel-app input, #travel-app select { font: inherit; }
+#travel-app button { cursor: pointer; color: inherit; transition: background .15s, border-color .15s; }
+#travel-app button:disabled { cursor: wait; opacity: .55; }
+#travel-app :focus-visible { outline: 3px solid #427f70; outline-offset: 3px; }
+#travel-app .travel-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 22px; }
+#travel-app .travel-eyebrow { color: var(--travel-muted); font-size: 11px; letter-spacing: 2px; margin: 0 0 6px; }
+#travel-app h1 { font-size: 36px; font-weight: 750; letter-spacing: 3px; line-height: 1.35; margin: 0; }
+#travel-app .travel-intro { margin: 8px 0 0; font-size: 15px; color: var(--travel-muted); }
+#travel-app .travel-heading-note { text-align: right; color: var(--travel-muted); font-size: 12px; line-height: 1.9; }
+#travel-app .travel-message { min-height: 23px; margin: 0 0 14px; color: var(--travel-green); }
+#travel-app .travel-message[data-error="true"] { color: #a2362b; }
+#travel-app .travel-workspace { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 28px; align-items: start; }
+#travel-app .travel-editor { background: #f8f9f5; border: 1px solid var(--travel-line); border-radius: 16px; overflow: hidden; }
+#travel-app fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+#travel-app .travel-control-section { padding: 20px; border-bottom: 1px solid var(--travel-line); }
+#travel-app .travel-control-section:last-child { border-bottom: 0; }
+#travel-app h2 { display: flex; align-items: center; gap: 10px; font-size: 15px; line-height: 1.4; margin: 0 0 16px; }
+#travel-app .travel-step { color: #8c9b91; font-size: 12px; letter-spacing: 1px; font-weight: 500; }
+#travel-app .travel-palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#travel-app .travel-palette button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 4px; min-height: 42px; background: #fff; border: 1px solid #dce2da; border-radius: 7px; font-size: 13px; }
+#travel-app .travel-palette button[aria-pressed="true"] { outline: 2px solid var(--travel-green); outline-offset: 1px; background: #eff5ef; font-weight: 700; }
+#travel-app .travel-swatch { display: inline-block; width: 13px; height: 13px; flex-shrink: 0; background: var(--status-color); border: 1px solid #24342f40; border-radius: 3px; }
+#travel-app .travel-hint { margin: 12px 0 0; font-size: 11px; color: var(--travel-muted); line-height: 1.8; }
+#travel-app .travel-label { display: flex; justify-content: space-between; font-size: 12px; margin: 12px 0 6px; font-weight: 600; }
+#travel-app .travel-label span { font-weight: 400; color: var(--travel-muted); }
+#travel-app input, #travel-app select { width: 100%; min-width: 0; height: 42px; border: 1px solid #d8dfd5; border-radius: 7px; color: var(--travel-ink); background: #fff; padding: 8px 10px; box-shadow: none; }
+#travel-app input::placeholder { color: #929a94; font-size: 12px; }
+#travel-app .travel-cities { max-height: 360px; overflow: auto; overscroll-behavior: contain; padding: 2px 4px 5px; margin: 10px -4px 0; scrollbar-width: thin; }
+#travel-app .travel-city-group + .travel-city-group { margin-top: 14px; }
+#travel-app h3 { margin: 0 0 7px; font-size: 12px; font-weight: 600; color: var(--travel-muted); }
+#travel-app .travel-city-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+#travel-app .travel-city { display: flex; align-items: center; justify-content: space-between; gap: 5px; width: 100%; min-height: 45px; padding: 8px; border: 1px solid #d5ddd3; border-radius: 6px; background: var(--status-color); font-size: 12px; line-height: 1.4; text-align: left; overflow-wrap: anywhere; }
+#travel-app .travel-city:hover { border-color: var(--travel-green); box-shadow: 0 0 0 1px var(--travel-green); }
+#travel-app .travel-city small { font-size: 10px; white-space: nowrap; flex-shrink: 0; opacity: .75; }
+#travel-app .travel-empty { padding: 20px 6px; color: var(--travel-muted); }
+#travel-app .travel-save-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 11px; color: var(--travel-muted); }
+#travel-app .travel-text-button { background: none; padding: 3px 0; border: 0; border-bottom: 1px solid #bbc4ba; flex-shrink: 0; font-size: 11px; }
+#travel-app .travel-output { min-width: 0; }
+#travel-app .travel-output-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+#travel-app .travel-summary { color: var(--travel-muted); font-size: 12px; line-height: 1.8; }
+#travel-app .travel-summary strong { color: var(--travel-ink); font-size: 28px; font-weight: 650; margin-right: 2px; }
+#travel-app .travel-summary span { margin: 0 8px; }
+#travel-app .travel-download { flex-shrink: 0; border: 1px solid var(--travel-green); border-radius: 8px; padding: 12px 18px; color: white; background: var(--travel-green); font-weight: 600; }
+#travel-app .travel-download:hover { background: #24493d; }
+#travel-app .travel-download span { padding-left: 10px; }
+#travel-app .travel-counts { display: flex; flex-wrap: wrap; gap: 8px 17px; margin-bottom: 18px; font-size: 12px; color: var(--travel-muted); }
+#travel-app .travel-counts > span { display: inline-flex; align-items: center; gap: 6px; }
+#travel-app .travel-counts strong { font-weight: 600; color: var(--travel-ink); }
+#travel-app .travel-preview-frame { background: #efb8b7; border: 1px solid #d5a6a3; border-radius: 12px; max-height: 820px; max-height: min(80vh, 920px); min-height: 260px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #bf8f8e #efb8b7; }
+#travel-app .travel-preview { width: 100%; }
+#travel-app .travel-preview svg { width: 100%; height: auto; display: block; max-width: none; }
+#travel-app .travel-preview svg path[data-city] { cursor: pointer; }
+#travel-app .travel-preview svg path[data-city]:hover { stroke-width: 2.4; }
+#travel-app .travel-preview-note { margin: 12px 0; font-size: 11px; color: var(--travel-muted); }
+#travel-app .travel-data-note { padding: 14px 0; border-top: 1px solid var(--travel-line); color: var(--travel-muted); font-size: 11px; line-height: 1.9; }
+#travel-app .travel-data-note summary { cursor: pointer; font-size: 12px; color: var(--travel-ink); }
+#travel-app .travel-data-note p { margin: 10px 0 0; }
+#travel-app #travel-retry { padding: 8px 16px; margin-bottom: 20px; background: #fff; border: 1px solid #d8dfd5; border-radius: 6px; }
+
+@media (max-width: 1100px) {
+  #travel-app .travel-workspace { grid-template-columns: 290px minmax(0, 1fr); gap: 20px; }
+  #travel-app .travel-control-section { padding: 16px; }
+  #travel-app .travel-output-header { align-items: flex-start; flex-direction: column; gap: 10px; }
+}
+@media (max-width: 767px) {
+  #travel-app { padding-top: 0; }
+  #travel-app .travel-heading { align-items: flex-start; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+  #travel-app h1 { font-size: 28px; }
+  #travel-app .travel-heading-note { text-align: left; }
+  #travel-app .travel-workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  #travel-app .travel-palette { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #travel-app .travel-cities { max-height: 260px; }
+  #travel-app .travel-output-header { flex-direction: column; }
+  #travel-app .travel-download { width: 100%; }
+  #travel-app .travel-summary strong { font-size: 25px; }
+  #travel-app .travel-summary span { margin: 0 4px; }
+  #travel-app input, #travel-app select { font-size: 16px; }
+}
