@@ -1,4 +1,4 @@
-import { STATUSES, summarize } from './model.mjs?v=20260916c';
+import { STATUSES, summarize, provinceStatus } from './model.mjs?v=20260918a';
 
 const INK = '#252725';
 const SEA = '#efb8b7';
@@ -26,18 +26,9 @@ function statusOf(selections, code) {
   return STATUSES.find(status => status.id === (selections[code] || 'none'));
 }
 
-const statusesNone = STATUSES.find(status => status.id === 'none');
-
-function taiwanStatus(selections) {
-  for (const status of STATUSES) {
-    if (status.id === 'none') continue;
-    if (Object.entries(selections).some(([code, id]) => code.startsWith('tw-') && id === status.id)) return status;
-  }
-  return statusesNone;
-}
-
-function fillFor(selections, code) {
-  const status = code === 'tw' ? taiwanStatus(selections) : statusOf(selections, code);
+function fillFor(selections, code, provinceByCode) {
+  // 台湾在地图上只有一个省级面，随省内市县的最高级标记着色。
+  const status = code === 'tw' ? provinceStatus(provinceByCode.get('tw'), selections) : statusOf(selections, code);
   return { status, color: status.id === 'none' ? LAND : status.color };
 }
 
@@ -47,8 +38,8 @@ export function pngDimensions(poster) {
   return { width: Math.floor(poster.width * scale), height: Math.floor(poster.height * scale) };
 }
 
-export function makeMapSvg(topology, provinces, state) {
-  const { feature, mesh } = globalThis.topojson;
+export function makeMapSvg(topology, provinces, state, mode = 'cities') {
+  const { feature, mesh, merge } = globalThis.topojson;
   const d3 = globalThis.d3;
   const cities = feature(topology, topology.objects.cities);
   const nineDash = feature(topology, topology.objects.nineDash);
@@ -56,6 +47,7 @@ export function makeMapSvg(topology, provinces, state) {
   const sansha = cities.features.find(current => current.properties.inset);
   const selections = state.selections;
   const stats = summarize(provinces, selections);
+  const provinceByCode = new Map(provinces.map(province => [province.code, province]));
   const elements = [];
   const text = (x, y, value, size, weight = 400, anchor = 'start', extra = '') => {
     elements.push(`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size}" font-weight="${weight}" text-anchor="${anchor}"${extra}>${escapeXml(value)}</text>`);
@@ -78,12 +70,25 @@ export function makeMapSvg(topology, provinces, state) {
     .fitExtent([[PADDING, mapTop], [inset.x - INSET_GAP, mapBottom]], { type: 'FeatureCollection', features: mainFeatures });
   const path = d3.geoPath(projection);
 
-  for (const current of mainFeatures) {
-    const code = current.properties.code;
-    const { status, color } = fillFor(selections, code);
-    const aggregate = code === 'tw';
-    const label = aggregate ? `台湾省：${status.label}（按市县在左侧列表选择，快照无市级边界）` : `${current.properties.name}：${status.label}`;
-    elements.push(`<path data-city="${escapeXml(code)}" d="${path(current)}" fill="${color}" stroke="${INK}" stroke-width="0.45" stroke-linejoin="round"${aggregate ? ' pointer-events="none"' : ''}><title>${escapeXml(label)}</title></path>`);
+  if (mode === 'provinces') {
+    // 省级视图：把省内所有市级面合并成一个多边形，颜色取省内最高级标记。
+    for (const province of provinces) {
+      const geometries = topology.objects.cities.geometries.filter(current => !current.properties.inset && current.properties.prov === province.code);
+      if (!geometries.length) continue;
+      const status = provinceStatus(province, selections);
+      const color = status.id === 'none' ? LAND : status.color;
+      const markedCount = province.cities.filter(city => (selections[city.code] || 'none') !== 'none').length;
+      const label = `${province.name}：${status.label}，已标记 ${markedCount} / ${province.cities.length} 座城市；点击可整省标记或取消`;
+      elements.push(`<path data-prov="${escapeXml(province.code)}" d="${path({ type: 'Feature', properties: {}, geometry: merge(topology, geometries) })}" fill="${color}" stroke="${INK}" stroke-width="0.45" stroke-linejoin="round"><title>${escapeXml(label)}</title></path>`);
+    }
+  } else {
+    for (const current of mainFeatures) {
+      const code = current.properties.code;
+      const { status, color } = fillFor(selections, code, provinceByCode);
+      const aggregate = code === 'tw';
+      const label = aggregate ? `台湾省：${status.label}（按市县在左侧列表选择，快照无市级边界）` : `${current.properties.name}：${status.label}`;
+      elements.push(`<path data-city="${escapeXml(code)}" d="${path(current)}" fill="${color}" stroke="${INK}" stroke-width="0.45" stroke-linejoin="round"${aggregate ? ' pointer-events="none"' : ''}><title>${escapeXml(label)}</title></path>`);
+    }
   }
   const provinceBorder = mesh(topology, topology.objects.cities, (a, b) => a !== b && a.properties.prov !== b.properties.prov);
   const outerBorder = mesh(topology, topology.objects.cities, (a, b) => a === b);
@@ -130,10 +135,15 @@ export function makeMapSvg(topology, provinces, state) {
   }
   text(inset.x + 12, inset.y + 19, '南海诸岛', 12.5, 600);
 
-  const notes = [
-    '按真实行政区划边界绘制的位置示意图，非官方标准地图、无审图号；省级界线仅供参考。',
-    '底图数据：阿里云 DataV.GeoAtlas areas_v3（GCJ-02 坐标，快照 2021-06）。数量按标记城市去重统计，含路过。'
-  ];
+  const notes = mode === 'provinces'
+    ? [
+        '按省级行政区划边界绘制的位置示意图，非官方标准地图、无审图号；省份颜色取省内已标记城市的最高等级。',
+        '底图数据：阿里云 DataV.GeoAtlas areas_v3（GCJ-02 坐标，快照 2021-06）。数量按标记城市去重统计。'
+      ]
+    : [
+        '按真实行政区划边界绘制的位置示意图，非官方标准地图、无审图号；省级界线仅供参考。',
+        '底图数据：阿里云 DataV.GeoAtlas areas_v3（GCJ-02 坐标，快照 2021-06）。数量按标记城市去重统计。'
+      ];
   notes.forEach((note, index) => text(PADDING, mapBottom + 26 + index * 20, note, 11.5));
 
   const height = mapBottom + 62;

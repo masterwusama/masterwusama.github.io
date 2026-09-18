@@ -77,11 +77,17 @@
 #travel-app .travel-counts { display: flex; flex-wrap: wrap; gap: 8px 17px; margin-bottom: 18px; font-size: 12px; color: var(--travel-muted); }
 #travel-app .travel-counts > span { display: inline-flex; align-items: center; gap: 6px; }
 #travel-app .travel-counts strong { font-weight: 600; color: var(--travel-ink); }
+#travel-app .travel-mode-row { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+#travel-app .travel-mode-toggle { display: inline-flex; gap: 3px; padding: 3px; background: #fff; border: 1px solid #d8dfd5; border-radius: 8px; }
+#travel-app .travel-mode-toggle button { padding: 6px 14px; border: 0; border-radius: 6px; background: none; font-size: 12px; color: var(--travel-muted); }
+#travel-app .travel-mode-toggle button[aria-pressed="true"] { background: var(--travel-green); color: #fff; font-weight: 600; }
 #travel-app .travel-preview-frame { background: #efb8b7; border: 1px solid #d5a6a3; border-radius: 12px; max-height: 820px; max-height: min(80vh, 920px); min-height: 260px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #bf8f8e #efb8b7; }
 #travel-app .travel-preview { width: 100%; }
 #travel-app .travel-preview svg { width: 100%; height: auto; display: block; max-width: none; }
 #travel-app .travel-preview svg path[data-city] { cursor: pointer; }
 #travel-app .travel-preview svg path[data-city]:hover { stroke-width: 2.4; }
+#travel-app .travel-preview svg path[data-prov] { cursor: pointer; }
+#travel-app .travel-preview svg path[data-prov]:hover { stroke-width: 2.4; }
 #travel-app .travel-preview-note { margin: 12px 0; font-size: 11px; color: var(--travel-muted); }
 #travel-app .travel-data-note { padding: 14px 0; border-top: 1px solid var(--travel-line); color: var(--travel-muted); font-size: 11px; line-height: 1.9; }
 #travel-app .travel-data-note summary { cursor: pointer; font-size: 12px; color: var(--travel-ink); }

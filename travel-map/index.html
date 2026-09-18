@@ -3,7 +3,7 @@ layout: page
 title: 旅行足迹
 ---
 
-<link rel="stylesheet" href="./assets/travel.css?v=20260916c">
+<link rel="stylesheet" href="./assets/travel.css?v=20260918a">
 <script>document.documentElement.classList.add('travel-wide');</script>
 
 <div id="travel-app">
@@ -61,13 +61,19 @@ title: 旅行足迹
         <button id="travel-download" class="travel-download" type="button" disabled>下载高清 PNG <span aria-hidden="true">↓</span></button>
       </div>
       <div id="travel-counts" class="travel-counts" aria-label="各分类城市数量"></div>
+      <div class="travel-mode-row">
+        <div id="travel-map-mode" class="travel-mode-toggle" role="group" aria-label="地图边界模式">
+          <button type="button" data-mode="cities" aria-pressed="true">市级边界</button>
+          <button type="button" data-mode="provinces" aria-pressed="false">仅省级边界</button>
+        </div>
+      </div>
       <div class="travel-preview-frame" tabindex="0" aria-label="完整足迹图预览，可滚动查看">
         <div id="travel-preview" class="travel-preview"></div>
       </div>
-      <p class="travel-preview-note">按真实行政区划边界绘制，可直接点击地图上的城市；三沙市显示在右下角南海插图里。预览可滚动，下载图片包含全部地区且不受搜索条件影响。</p>
+      <p class="travel-preview-note">按真实行政区划边界绘制，可直接点击地图上的城市；三沙市显示在右下角南海插图里。预览可滚动，下载图片包含全部地区且不受搜索条件影响。切换「仅省级边界」后，省份颜色取省内已标记城市的最高等级（居住 &gt; 短居 &gt; 游玩 &gt; 出差），点击省份可整省标记或取消。</p>
       <details class="travel-data-note">
         <summary>地区范围与数据说明</summary>
-        <p>统计以非「没去过」的标记为准，包含路过；同一城市只计一次。一个省级地区内有任一标记，即计入涉及省份数。</p>
+        <p>统计以非「没去过」的标记为准；同一城市只计一次。一个省级地区内有任一标记，即计入涉及省份数。省级视图下，省份颜色按省内已标记城市的最高等级显示，无标记的省份保持底色。</p>
         <p>可选地区包含地级市、自治州、盟、地区和省直辖县级单位；北京、天津、上海、重庆及港澳各作为一个选择，台湾按市县列出，因此「城市 / 地区」不是严格的地级市数量。</p>
         <p>地区名单采用 china-division 2.7.0（国家统计局 2023-06-30 快照，另补港澳台）；地图边界采用阿里云 DataV.GeoAtlas areas_v3（GCJ-02 坐标，2021-06 快照）。两者快照时间不同，且边界数据无审图号，因此本图定位为<b>位置示意图</b>，不作为标准地图使用。</p>
         <p>快照限制：台湾只到省级面（22 个市县在左侧列表选择，任一选中即整省着色）；新疆新星市、白杨市为 2021 年后设立，可计数但地图上无独立边界；三沙市按惯例绘入南海插图，与九段线一并显示。</p>
@@ -80,4 +86,4 @@ title: 旅行足迹
 <script src="./assets/vendor/d3-array.min.js"></script>
 <script src="./assets/vendor/d3-geo.min.js"></script>
 <script src="./assets/vendor/topojson-client.min.js"></script>
-<script type="module" src="./assets/travel.mjs?v=20260916c"></script>
+<script type="module" src="./assets/travel.mjs?v=20260918a"></script>

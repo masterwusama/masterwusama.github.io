@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DEFAULT_TITLE, STATUSES, normalizeState, summarize, findCities } from '../assets/model.mjs';
+import { DEFAULT_TITLE, STATUSES, normalizeState, summarize, findCities, provinceStatus } from '../assets/model.mjs';
 
 const data = JSON.parse(readFileSync(new URL('../data/regions.json', import.meta.url), 'utf8'));
 const topology = JSON.parse(readFileSync(new URL('../data/china.json', import.meta.url), 'utf8'));
@@ -118,10 +118,10 @@ test('restored state rejects unknown cities, invalid categories and unsupported 
   const restored = normalizeState({
     version: 1,
     title: '很长的标题'.repeat(10),
-    selections: { '11': 'lived', '12': 'none', '31': 'invalid', 'unknown': 'visited', 'hk': 'passed' }
+    selections: { '11': 'lived', '12': 'none', '31': 'invalid', 'unknown': 'visited', 'hk': 'passed', '50': 'stayed' }
   }, provinces);
   assert.equal(Array.from(restored.title).length, 28);
-  assert.deepEqual(restored.selections, { '11': 'lived', 'hk': 'passed' });
+  assert.deepEqual(restored.selections, { '11': 'lived', '50': 'stayed' }, 'removed 路过 marks are dropped');
 });
 
 test('counts are unique and reclassification never increases the total', () => {
@@ -130,17 +130,18 @@ test('counts are unique and reclassification never increases the total', () => {
   assert.equal(initial.total, 0);
   assert.equal(initial.counts.none, 393);
   selections['3301'] = 'visited';
-  selections['3302'] = 'passed';
-  selections['11'] = 'business';
+  selections['3302'] = 'business';
+  selections['11'] = 'lived';
   let stats = summarize(provinces, selections);
   assert.equal(stats.total, 3);
   assert.equal(stats.provinceCount, 2);
-  selections['3301'] = 'lived';
+  selections['3301'] = 'stayed';
   stats = summarize(provinces, selections);
   assert.equal(stats.total, 3);
   assert.equal(stats.counts.visited, 0);
+  assert.equal(stats.counts.stayed, 1);
+  assert.equal(stats.counts.business, 1);
   assert.equal(stats.counts.lived, 1);
-  assert.equal(stats.counts.passed, 1);
   delete selections['11'];
   stats = summarize(provinces, selections);
   assert.equal(stats.total, 2);
@@ -162,7 +163,23 @@ test('search works across provinces, by province name, and with empty results', 
 });
 
 test('every category is available for marking and the default title stays sane', () => {
-  assert.deepEqual(STATUSES.map(status => status.id), ['lived', 'stayed', 'visited', 'business', 'passed', 'none']);
+  assert.deepEqual(STATUSES.map(status => status.id), ['lived', 'stayed', 'visited', 'business', 'none']);
   assert.ok(STATUSES.every(status => /^#[0-9a-f]{6}$/.test(status.color)));
   assert.equal(blank().title, DEFAULT_TITLE);
+});
+
+test('province color follows the highest-ranked marked city', () => {
+  const hebei = provinces.find(province => province.code === '13');
+  const pick = index => hebei.cities[index].code;
+  assert.equal(provinceStatus(hebei, {}).id, 'none', 'unmarked provinces stay 未去');
+  assert.equal(provinceStatus(hebei, { [pick(0)]: 'business' }).id, 'business');
+  assert.equal(provinceStatus(hebei, { [pick(0)]: 'business', [pick(1)]: 'visited' }).id, 'visited');
+  assert.equal(provinceStatus(hebei, { [pick(0)]: 'stayed', [pick(1)]: 'visited' }).id, 'stayed');
+  assert.equal(
+    provinceStatus(hebei, { [pick(0)]: 'lived', [pick(1)]: 'stayed', [pick(2)]: 'visited', [pick(3)]: 'business' }).id,
+    'lived',
+    '居住 ranks above all other marks'
+  );
+  const taiwan = provinces.find(province => province.code === 'tw');
+  assert.equal(provinceStatus(taiwan, { [taiwan.cities[0].code]: 'stayed' }).id, 'stayed', 'Taiwan aggregates by its county marks');
 });

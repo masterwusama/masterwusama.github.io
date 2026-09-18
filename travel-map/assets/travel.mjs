@@ -1,5 +1,5 @@
-import { STATUSES, STORAGE_KEY, normalizeState, summarize, findCities } from './model.mjs?v=20260916c';
-import { makeMapSvg, pngDimensions } from './map.mjs?v=20260916c';
+import { STATUSES, STORAGE_KEY, normalizeState, summarize, findCities } from './model.mjs?v=20260918a';
+import { makeMapSvg, pngDimensions } from './map.mjs?v=20260918a';
 
 const element = id => document.getElementById(`travel-${id}`);
 const statuses = new Map(STATUSES.map(status => [status.id, status]));
@@ -8,6 +8,7 @@ let provinces = [];
 let topology = null;
 let state;
 let paint = 'visited';
+let mapMode = 'cities';
 
 function announce(message, error = false) {
   element('message').textContent = message;
@@ -93,7 +94,13 @@ function renderCities() {
 }
 
 function renderPreview() {
-  element('preview').innerHTML = makeMapSvg(topology, provinces, state).svg;
+  element('preview').innerHTML = makeMapSvg(topology, provinces, state, mapMode).svg;
+}
+
+function syncModeToggle() {
+  for (const button of element('map-mode').querySelectorAll('button[data-mode]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.mode === mapMode));
+  }
 }
 
 function renderSummary() {
@@ -122,6 +129,28 @@ function applyMark(code, name) {
   save();
 }
 
+function applyProvinceMark(code) {
+  const province = provinces.find(item => item.code === code);
+  if (!province) return;
+  if (paint === 'none') {
+    const marked = province.cities.filter(city => state.selections[city.code]).length;
+    if (!marked) {
+      announce(`「${province.name}」内还没有已标记的城市。`);
+      return;
+    }
+    if (!window.confirm(`取消「${province.name}」内全部 ${marked} 处标记？此操作无法撤销。`)) return;
+    for (const city of province.cities) delete state.selections[city.code];
+    announce(`已取消「${province.name}」内全部标记。`);
+  } else {
+    for (const city of province.cities) state.selections[city.code] = paint;
+    announce(`已将「${province.name}」内 ${province.cities.length} 个城市 / 地区标为「${statuses.get(paint).label}」。`);
+  }
+  for (const button of element('cities').querySelectorAll('button[data-code]')) syncCityButton(button.dataset.code);
+  renderSummary();
+  renderPreview();
+  save();
+}
+
 async function downloadImage() {
   const button = element('download');
   button.disabled = true;
@@ -129,7 +158,7 @@ async function downloadImage() {
   let svgUrl;
   try {
     await document.fonts.ready;
-    const poster = makeMapSvg(topology, provinces, state);
+    const poster = makeMapSvg(topology, provinces, state, mapMode);
     const image = new Image();
     svgUrl = URL.createObjectURL(new Blob([poster.svg], { type: 'image/svg+xml;charset=utf-8' }));
     await new Promise((resolve, reject) => {
@@ -191,10 +220,21 @@ element('cities').addEventListener('click', event => {
 });
 element('preview').addEventListener('click', event => {
   const shape = event.target.closest('path[data-city]');
-  if (!shape) return;
-  const code = shape.dataset.city;
-  const city = provinces.flatMap(province => province.cities).find(item => item.code === code);
-  applyMark(code, city ? city.name : code);
+  if (shape) {
+    const code = shape.dataset.city;
+    const city = provinces.flatMap(province => province.cities).find(item => item.code === code);
+    applyMark(code, city ? city.name : code);
+    return;
+  }
+  const provinceShape = event.target.closest('path[data-prov]');
+  if (provinceShape) applyProvinceMark(provinceShape.dataset.prov);
+});
+element('map-mode').addEventListener('click', event => {
+  const button = event.target.closest('button[data-mode]');
+  if (!button || button.dataset.mode === mapMode) return;
+  mapMode = button.dataset.mode;
+  syncModeToggle();
+  renderPreview();
 });
 element('title').addEventListener('input', () => {
   state.title = Array.from(element('title').value).slice(0, 28).join('');
@@ -222,8 +262,8 @@ async function initialize() {
   announce('正在载入地图数据…');
   try {
     const [regionResponse, topologyResponse] = await Promise.all([
-      fetch(new URL('../data/regions.json?v=20260916c', import.meta.url)),
-      fetch(new URL('../data/china.json?v=20260916c', import.meta.url))
+      fetch(new URL('../data/regions.json?v=20260918a', import.meta.url)),
+      fetch(new URL('../data/china.json?v=20260918a', import.meta.url))
     ]);
     if (!regionResponse.ok) throw new Error(`regions: HTTP ${regionResponse.status}`);
     if (!topologyResponse.ok) throw new Error(`map: HTTP ${topologyResponse.status}`);
@@ -241,6 +281,7 @@ async function initialize() {
     element('title').value = state.title;
     element('province').replaceChildren(...provinces.map(province => new Option(province.name, province.code)));
     renderPalette();
+    syncModeToggle();
     renderCities();
     renderSummary();
     renderPreview();

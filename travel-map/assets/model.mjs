@@ -1,11 +1,11 @@
 export const DEFAULT_TITLE = '我的旅行足迹';
 export const STORAGE_KEY = 'mw-travel-footprints-v1';
+// 数组顺序即等级从高到低：省级视图按省内已标记城市的最高等级取色。
 export const STATUSES = Object.freeze([
   { id: 'lived', label: '居住', color: '#ff8585' },
   { id: 'stayed', label: '短居', color: '#ffb880' },
   { id: 'visited', label: '游玩', color: '#ffe582' },
   { id: 'business', label: '出差', color: '#a9efbe' },
-  { id: 'passed', label: '路过', color: '#99b9ff' },
   { id: 'none', label: '没去过', color: '#ffffff' }
 ]);
 
@@ -39,6 +39,15 @@ export function summarize(provinces, selections) {
     if (marked) provinceCount += 1;
   }
   return { total, provinceCount, counts };
+}
+
+// 省份着色规则：取省内已标记城市中等级最高（STATUSES 顺序靠前）的那种标记；全部未标记则为「没去过」。
+export function provinceStatus(province, selections) {
+  for (const status of STATUSES) {
+    if (status.id === 'none') continue;
+    if (province.cities.some(city => selections[city.code] === status.id)) return status;
+  }
+  return STATUSES[STATUSES.length - 1];
 }
 
 export function findCities(provinces, provinceCode, query) {
