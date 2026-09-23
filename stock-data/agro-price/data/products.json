@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-09-18T01:52:25+08:00",
+ "updated_at": "2026-09-23T01:59:58+08:00",
  "products": [
   {
    "id": "carbendazim",
@@ -754,6 +754,24 @@
     },
     {
      "date": "2026-09-16",
+     "price": 40000.0,
+     "source": "sunsirs",
+     "note": "苏州市森菲达化工有限公司"
+    },
+    {
+     "date": "2026-09-18",
+     "price": 40000.0,
+     "source": "sunsirs",
+     "note": "苏州市森菲达化工有限公司"
+    },
+    {
+     "date": "2026-09-21",
+     "price": 40000.0,
+     "source": "sunsirs",
+     "note": "苏州市森菲达化工有限公司"
+    },
+    {
+     "date": "2026-09-22",
      "price": 40000.0,
      "source": "sunsirs",
      "note": "苏州市森菲达化工有限公司"
@@ -2503,6 +2521,30 @@
      "price": 55000.0,
      "source": "sunsirs",
      "note": "佳恩化学（山东）有限公司"
+    },
+    {
+     "date": "2026-09-18",
+     "price": 55000.0,
+     "source": "sunsirs",
+     "note": "佳恩化学（山东）有限公司"
+    },
+    {
+     "date": "2026-09-19",
+     "price": 55000.0,
+     "source": "sunsirs",
+     "note": "佳恩化学（山东）有限公司"
+    },
+    {
+     "date": "2026-09-20",
+     "price": 55000.0,
+     "source": "sunsirs",
+     "note": "佳恩化学（山东）有限公司"
+    },
+    {
+     "date": "2026-09-22",
+     "price": 55000.0,
+     "source": "sunsirs",
+     "note": "佳恩化学（山东）有限公司"
     }
    ]
   },
@@ -3309,36 +3351,6 @@
      "note": "安徽中兴化工科技有限公司"
     },
     {
-     "date": "2026-08-19",
-     "price": 8800.0,
-     "source": "sunsirs",
-     "note": "聊城芫泽化工"
-    },
-    {
-     "date": "2026-08-20",
-     "price": 8800.0,
-     "source": "sunsirs",
-     "note": "聊城芫泽化工"
-    },
-    {
-     "date": "2026-08-21",
-     "price": 8800.0,
-     "source": "sunsirs",
-     "note": "聊城芫泽化工"
-    },
-    {
-     "date": "2026-08-22",
-     "price": 8800.0,
-     "source": "sunsirs",
-     "note": "聊城芫泽化工"
-    },
-    {
-     "date": "2026-08-23",
-     "price": 8800.0,
-     "source": "sunsirs",
-     "note": "山东艾特化工"
-    },
-    {
      "date": "2026-08-24",
      "price": 8800.0,
      "source": "sunsirs",
@@ -3487,6 +3499,36 @@
      "price": 8800.0,
      "source": "sunsirs",
      "note": "聊城芫泽化工"
+    },
+    {
+     "date": "2026-09-18",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工"
+    },
+    {
+     "date": "2026-09-19",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "聊城芫泽化工"
+    },
+    {
+     "date": "2026-09-20",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工"
+    },
+    {
+     "date": "2026-09-21",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工"
+    },
+    {
+     "date": "2026-09-22",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工"
     }
    ]
   },
@@ -7165,6 +7207,30 @@
     },
     {
      "date": "2026-09-17",
+     "price": 11000.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工有限公司"
+    },
+    {
+     "date": "2026-09-18",
+     "price": 11000.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工有限公司"
+    },
+    {
+     "date": "2026-09-20",
+     "price": 11000.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工有限公司"
+    },
+    {
+     "date": "2026-09-21",
+     "price": 11000.0,
+     "source": "sunsirs",
+     "note": "山东艾特化工有限公司"
+    },
+    {
+     "date": "2026-09-22",
      "price": 11000.0,
      "source": "sunsirs",
      "note": "山东艾特化工有限公司"
