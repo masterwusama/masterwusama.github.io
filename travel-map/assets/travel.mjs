@@ -1,5 +1,5 @@
-import { STATUSES, STORAGE_KEY, normalizeState, summarize, findCities } from './model.mjs?v=20260918a';
-import { makeMapSvg, pngDimensions } from './map.mjs?v=20260918a';
+import { STATUSES, STORAGE_KEY, normalizeState, summarize, findCities } from './model.mjs?v=20260923a';
+import { makeMapSvg, pngDimensions } from './map.mjs?v=20260923a';
 
 const element = id => document.getElementById(`travel-${id}`);
 const statuses = new Map(STATUSES.map(status => [status.id, status]));

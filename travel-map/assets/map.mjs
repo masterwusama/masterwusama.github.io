@@ -1,4 +1,4 @@
-import { STATUSES, summarize, provinceStatus } from './model.mjs?v=20260918a';
+import { STATUSES, summarize, provinceStatus } from './model.mjs?v=20260923a';
 
 const INK = '#252725';
 const SEA = '#efb8b7';
@@ -16,7 +16,7 @@ function escapeXml(value) {
 
 function shortProvinceName(name) {
   return name
-    .replace(/^(.+?)(维吾尔|壮|回)?自治区$/, '$1')
+    .replace(/^(.+?)(?:维吾尔|壮|回)?族?自治区$/, '$1')
     .replace(/^(.+?)特别行政区$/, '$1')
     .replace(/^(.+?)省$/, '$1')
     .replace(/^(.+?)市$/, '$1');
@@ -101,14 +101,23 @@ export function makeMapSvg(topology, provinces, state, mode = 'cities') {
     const box = provinceBounds.get(current.properties.prov) || [x0, y0, x1, y1];
     provinceBounds.set(current.properties.prov, [Math.min(box[0], x0), Math.min(box[1], y0), Math.max(box[2], x1), Math.max(box[3], y1)]);
   }
+  // 省名分三档字号，最小的省（京津沪、山西、宁夏、海南、港澳等）也有名称；
+  // 港澳两点相距太近，改为左右错开、锚在各自图形旁。
+  const labelSizes = [
+    { minW: 150, minH: 90, size: 15 },
+    { minW: 70, minH: 45, size: 12.5 },
+    { minW: 0, minH: 0, size: 10 }
+  ];
+  const labelOffsets = { hk: { dx: 7, dy: 3, anchor: 'start' }, mo: { dx: -7, dy: 4, anchor: 'end' } };
   for (const label of topology.meta.provinceLabels) {
     const box = provinceBounds.get(label.code);
     if (!box) continue;
-    const size = box[2] - box[0] > 150 && box[3] - box[1] > 90 ? 15 : box[2] - box[0] > 70 && box[3] - box[1] > 45 ? 12.5 : 0;
+    const size = labelSizes.find(tier => box[2] - box[0] > tier.minW && box[3] - box[1] > tier.minH)?.size;
     if (!size) continue;
     const point = projection(label.point);
     if (!point) continue;
-    text(point[0], point[1], shortProvinceName(label.name), size, 600, 'middle', ` paint-order="stroke" stroke="${SEA}" stroke-width="3.5" stroke-linejoin="round" pointer-events="none"`);
+    const offset = labelOffsets[label.code] || {};
+    text(point[0] + (offset.dx || 0), point[1] + (offset.dy || 0), shortProvinceName(label.name), size, 600, offset.anchor || 'middle', ` paint-order="stroke" stroke="${SEA}" stroke-width="3.5" stroke-linejoin="round" pointer-events="none"`);
   }
 
   elements.push(`<text x="${PADDING}" y="46" font-size="12" font-weight="600" letter-spacing="2">TRAVEL FOOTPRINTS</text>`);
