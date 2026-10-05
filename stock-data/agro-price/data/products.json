@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-10-05T01:44:23+08:00",
+ "updated_at": "2026-10-05T14:59:06+08:00",
  "products": [
   {
    "id": "carbendazim",
@@ -2254,6 +2254,12 @@
     },
     {
      "date": "2026-10-04",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "聊城芫泽化工"
+    },
+    {
+     "date": "2026-10-05",
      "price": 8800.0,
      "source": "sunsirs",
      "note": "聊城芫泽化工"
