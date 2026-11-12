@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-11-12T04:18:21+08:00",
+ "updated_at": "2026-11-12T16:24:08+08:00",
  "products": [
   {
    "id": "carbendazim",
@@ -934,6 +934,12 @@
     },
     {
      "date": "2026-11-10",
+     "price": 40000.0,
+     "source": "sunsirs",
+     "note": "苏州市森菲达化工有限公司"
+    },
+    {
+     "date": "2026-11-12",
      "price": 40000.0,
      "source": "sunsirs",
      "note": "苏州市森菲达化工有限公司"
@@ -2185,6 +2191,12 @@
      "price": 55000.0,
      "source": "sunsirs",
      "note": "佳恩化学（山东）有限公司"
+    },
+    {
+     "date": "2026-11-12",
+     "price": 55000.0,
+     "source": "sunsirs",
+     "note": "佳恩化学（山东）有限公司"
     }
    ]
   },
@@ -2485,6 +2497,12 @@
      "price": 8800.0,
      "source": "sunsirs",
      "note": "山东佳铭化工"
+    },
+    {
+     "date": "2026-11-12",
+     "price": 8800.0,
+     "source": "sunsirs",
+     "note": "聊城芫泽化工"
     }
    ]
   },
@@ -5581,18 +5599,6 @@
     },
     {
      "date": "2026-05-21",
-     "price": 11000.0,
-     "source": "sunsirs",
-     "note": "山东艾特化工有限公司"
-    },
-    {
-     "date": "2026-05-22",
-     "price": 11000.0,
-     "source": "sunsirs",
-     "note": "山东艾特化工有限公司"
-    },
-    {
-     "date": "2026-05-23",
      "price": 11000.0,
      "source": "sunsirs",
      "note": "山东艾特化工有限公司"
